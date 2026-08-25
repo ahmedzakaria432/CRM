@@ -28,3 +28,17 @@ You are generating an agent-executable implementation plan for this project usin
 - **Respect existing conventions.** Read neighbouring plan files before inventing a new pattern.
 - If a plan file already starts with `<!-- squad-kit:`, **never change or remove that first line** when editing. New plans start with `# Story NN — …` per `generate-plan.md`; do not invent the API metadata comment. In later implementation sessions, treat the plan file as read-only unless the user explicitly asks to revise the plan.
 - Report back the path(s) you wrote and a one-line summary per file.
+
+## Commit the plan
+
+Every plan is committed on its own. After writing the plan file and updating `00-overview.md`:
+
+```bash
+git add .squad/plans/<feature-slug>/
+git commit -m "Plan Story NN — <title>"
+```
+
+The commit body should record: what was verified during planning (tool versions, package versions, mechanisms
+proven by a probe run), and any decision the plan makes that a later story must not silently reverse
+(pinned versions, licensing constraints, restated acceptance criteria). Do not commit application source in a
+planning session - there should be none.
