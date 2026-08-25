@@ -1,0 +1,18 @@
+# customer-management — plan overview
+
+Entry point for the **Customer Management** feature. This is **feature 3 of 12** in the project planning order
+(see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
+
+## Stories
+
+| NN | Intake | Title | Plan file | Depends on |
+|----|--------|-------|-----------|------------|
+| 11 | [`customer-aggregate-profiles-and-contact-details`](../../stories/customer-management/customer-aggregate-profiles-and-contact-details/intake.md) | Customer aggregate profiles and contact details | _not planned yet_ | CRM-02, CRM-06, CRM-09 |
+| 12 | [`customer-notes-and-attachments`](../../stories/customer-management/customer-notes-and-attachments/intake.md) | Customer notes and attachments | _not planned yet_ | CRM-11 |
+| 13 | [`interaction-history-and-unified-customer-timeline`](../../stories/customer-management/interaction-history-and-unified-customer-timeline/intake.md) | Interaction history and unified customer timeline | _not planned yet_ | CRM-11, CRM-02 |
+| 14 | [`customer-360-workspace-ui`](../../stories/customer-management/customer-360-workspace-ui/intake.md) | Customer 360 workspace UI | _not planned yet_ | CRM-04, CRM-05, CRM-11, CRM-12, CRM-13 |
+
+## Dependency notes
+
+_Plan the stories above in `NN` order. Replace "not planned yet" with the generated plan path as
+each `/squad-plan` run completes._
