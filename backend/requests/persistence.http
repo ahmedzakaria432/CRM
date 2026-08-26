@@ -1,0 +1,41 @@
+@host = http://localhost:5080
+
+### Create a sample — 200, echoes createdBy/createdAtUtc
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+
+{ "name": "Round trip", "lines": ["first", "second"] }
+
+### Read it back — value object and child both present
+GET {{host}}/api/Admin/Samples/{{sampleId}}
+
+### Update — populates modifiedBy/modifiedAtUtc, bumps rowVersion.
+### rowVersion is a base64 byte[]; send back exactly what the GET returned.
+PUT {{host}}/api/Admin/Samples/{{sampleId}}
+Content-Type: application/json
+
+{ "name": "Renamed", "rowVersion": "{{rowVersion}}" }
+
+### Stale rowVersion — 409, NOT 500
+PUT {{host}}/api/Admin/Samples/{{sampleId}}
+Content-Type: application/json
+
+{ "name": "Conflicting", "rowVersion": "AAAAAAAAB9E=" }
+
+### Soft delete — 204, no SQL DELETE in the EF log
+DELETE {{host}}/api/Admin/Samples/{{sampleId}}
+
+### Gone from the default query — 404
+GET {{host}}/api/Admin/Samples/{{sampleId}}
+
+### Arabic value object round-trips unmangled
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+
+{ "name": "عميل تجريبي", "lines": ["سطر أول"] }
+
+### Canonical query slice, now on a controller — 200
+GET {{host}}/api/Agent/Sample?name=Ahmed
+
+### Validation still returns RFC 9457 with field errors — 400
+GET {{host}}/api/Agent/Sample?name=

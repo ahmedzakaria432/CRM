@@ -7,7 +7,9 @@ services:
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Crm_Local_Dev_2026!}"
       MSSQL_PID: Developer
     ports:
-      - "1433:1433"
+      # Remapped from the default 1433 - already bound on this machine by another project's
+      # SQL Server container. See backend/README.md.
+      - "14330:1433"
     volumes:
       - crm-sqldata:/var/opt/mssql
     healthcheck:

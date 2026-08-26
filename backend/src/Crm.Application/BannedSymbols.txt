@@ -1,2 +1,3 @@
 P:System.DateTime.Now;Use DateTimeOffset.UtcNow. Local time is banned across the solution.
 P:System.DateTime.Today;Use DateTimeOffset.UtcNow. Local time is banned across the solution.
+P:System.DateTimeOffset.UtcNow;Inject TimeProvider so time is controllable. Direct clock reads are banned.

@@ -6,11 +6,13 @@ using MediatR;
 
 namespace Crm.Application.Sample.Queries.GetSample;
 
-public sealed class GetSampleQueryHandler : IRequestHandler<GetSampleQuery, Result<SampleDto>>
+// TimeProvider is injected rather than reading DateTimeOffset.UtcNow directly - that read is
+// banned solution-wide (Story 02 Task 11) so the clock is only ever reachable through the seam.
+public sealed class GetSampleQueryHandler(TimeProvider timeProvider) : IRequestHandler<GetSampleQuery, Result<SampleDto>>
 {
     public Task<Result<SampleDto>> Handle(GetSampleQuery request, CancellationToken cancellationToken)
     {
-        var dto = new SampleDto(request.Name, DateTimeOffset.UtcNow);
+        var dto = new SampleDto(request.Name, timeProvider.GetUtcNow());
         return Task.FromResult(Result.Success(dto));
     }
 }

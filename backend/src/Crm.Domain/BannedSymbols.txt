@@ -6,3 +6,4 @@ N:System.Data.Common;Crm.Domain must not open connections.
 N:System.Net.Http;Crm.Domain must not make network calls. Use an abstraction in Crm.Application.
 P:System.DateTime.Now;Use DateTimeOffset.UtcNow. Local time is banned across the solution.
 P:System.DateTime.Today;Use DateTimeOffset.UtcNow. Local time is banned across the solution.
+P:System.DateTimeOffset.UtcNow;Inject TimeProvider so time is controllable. Direct clock reads are banned.

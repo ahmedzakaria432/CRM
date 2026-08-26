@@ -12,7 +12,7 @@ backend/
     Crm.Domain/          aggregates, entities, value objects, domain events, domain services, invariants
     Crm.Application/     CQRS handlers, DTOs, validators, abstractions            (-> Domain)
     Crm.Infrastructure/  EF Core, SQL Server, channel adapters, AI, storage       (-> Application)
-    Crm.Api/             minimal API endpoints, auth, DI composition root         (-> Infrastructure)
+    Crm.Api/             MVC controllers in per-persona Areas, Swagger, auth, DI composition root  (-> Infrastructure)
   requests/              committed .http files, one per feature, for manual verification
 frontend/                Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
 .squad/                  squad-kit stories, plans, and backlog
@@ -50,6 +50,10 @@ frontend/                Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
 - **CQRS:** MediatR. One folder per use case under
   `Crm.Application/<Context>/{Commands,Queries}/<UseCase>/`, holding the request record, its handler, and its
   FluentValidation validator. Commands go through aggregates; queries bypass them.
+- **API surface:** MVC controllers, not minimal APIs. One **Area per persona** — `Agent`, `Portal`, `Admin`,
+  `Public` — under `Crm.Api/Areas/<Area>/Controllers/`. Every controller derives from `ApiControllerBase`,
+  carries `[Area(CrmAreas.X)]`, and inherits the `api/[area]/[controller]` route template. Each Area gets its
+  own Swagger document at `/swagger/{area}/swagger.json`; the UI at `/swagger` is Development-only.
 - **Queries** project straight to DTOs with `.Select(...)`, use `AsNoTracking()`, and never return an entity or
   a domain type across the API boundary.
 - **Results:** handlers return `Result` / `Result<T>`. Expected business failures are results, not exceptions.

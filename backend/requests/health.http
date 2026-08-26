@@ -7,10 +7,10 @@ GET {{host}}/health
 GET {{host}}/health/ready
 
 ### Canonical slice — 200
-GET {{host}}/api/sample?name=Ahmed
+GET {{host}}/api/Agent/Sample?name=Ahmed
 
 ### Canonical slice — 400 with an RFC 9457 body listing field errors
-GET {{host}}/api/sample?name=
+GET {{host}}/api/Agent/Sample?name=
 
 ### Arabic input round-trips unmangled
-GET {{host}}/api/sample?name=أحمد
+GET {{host}}/api/Agent/Sample?name=أحمد
