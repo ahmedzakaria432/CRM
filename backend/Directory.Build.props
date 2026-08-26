@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591: missing XML doc comment - GenerateDocumentationFile is on so analyzers see doc -->
+    <!-- comments, but requiring one on every public member would bury real warnings. -->
+    <!-- CA1716: "Error"/"Result" collide with reserved words in VB/F#. This is a private, -->
+    <!-- C#-only backend with no cross-language public surface, and Error/Result/Result<T> is the -->
+    <!-- exact vocabulary CLAUDE.md mandates - renaming it to dodge a multi-language-library rule -->
+    <!-- would be worse than suppressing the rule. -->
+    <NoWarn>$(NoWarn);CS1591;CA1716</NoWarn>
+  </PropertyGroup>
+</Project>

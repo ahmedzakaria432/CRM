@@ -1,0 +1,16 @@
+@host = http://localhost:5080
+
+### Liveness — 200 even when SQL Server is stopped
+GET {{host}}/health
+
+### Readiness — 200 when SQL Server is reachable, 503 when it is not
+GET {{host}}/health/ready
+
+### Canonical slice — 200
+GET {{host}}/api/sample?name=Ahmed
+
+### Canonical slice — 400 with an RFC 9457 body listing field errors
+GET {{host}}/api/sample?name=
+
+### Arabic input round-trips unmangled
+GET {{host}}/api/sample?name=أحمد

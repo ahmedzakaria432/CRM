@@ -6,3 +6,10 @@
 .squad/.last-copy-prompt.md
 .squad/runs/
 # End squad-kit block
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+appsettings.*.local.json

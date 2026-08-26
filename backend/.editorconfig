@@ -1,0 +1,5 @@
+root = true
+
+[*.cs]
+dotnet_diagnostic.RS0030.severity = error   # banned API used
+dotnet_diagnostic.RS0031.severity = error   # duplicate entry in BannedSymbols.txt
