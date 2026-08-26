@@ -8,7 +8,7 @@ Entry point for the **Platform Foundation** feature. This is **feature 1 of 12**
 | NN | Intake | Title | Plan file | Depends on |
 |----|--------|-------|-----------|------------|
 | 01 | [`backend-solution-scaffold-with-ddd-and-clean-architecture`](../../stories/platform-foundation/backend-solution-scaffold-with-ddd-and-clean-architecture/intake.md) | Backend solution scaffold with DDD and Clean Architecture | [`01-story-backend-solution-scaffold-with-ddd-and-clean-architecture.md`](01-story-backend-solution-scaffold-with-ddd-and-clean-architecture.md) | none. This is the first story |
-| 02 | [`persistence-baseline-with-auditing-and-soft-delete`](../../stories/platform-foundation/persistence-baseline-with-auditing-and-soft-delete/intake.md) | Persistence baseline with auditing and soft delete | _not planned yet_ | CRM-01 |
+| 02 | [`persistence-baseline-with-auditing-and-soft-delete`](../../stories/platform-foundation/persistence-baseline-with-auditing-and-soft-delete/intake.md) | Persistence baseline with auditing and soft delete | [`02-story-persistence-baseline-with-auditing-and-soft-delete.md`](02-story-persistence-baseline-with-auditing-and-soft-delete.md) | CRM-01 |
 | 03 | [`cross-cutting-concerns-error-handling-logging-and-caching`](../../stories/platform-foundation/cross-cutting-concerns-error-handling-logging-and-caching/intake.md) | Cross cutting concerns error handling logging and caching | _not planned yet_ | CRM-01, CRM-02 |
 | 04 | [`frontend-scaffold-with-nuxt-typescript-and-tailwind`](../../stories/platform-foundation/frontend-scaffold-with-nuxt-typescript-and-tailwind/intake.md) | Frontend scaffold with Nuxt TypeScript and Tailwind | _not planned yet_ | CRM-01, for the OpenAPI document |
 | 05 | [`bilingual-arabic-and-english-support-with-rtl-layout`](../../stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | Bilingual Arabic and English support with RTL layout | _not planned yet_ | CRM-03, CRM-04 |
@@ -26,3 +26,25 @@ each `/squad-plan` run completes._
 - **`dotnet ef` pinned to 10.0.11 via a local tool manifest.** The globally installed 10.0.3 is older than the
   EF Core packages story 02 needs, and EF errors on that skew rather than warning.
 - **`pnpm` is not installed on the dev machine.** It blocks Story 04, not this story.
+
+### Story 02 — decisions carried forward
+
+- **EF Core pinned to 10.0.11**, matching the `dotnet-ef` local tool already pinned in
+  `.config/dotnet-tools.json`. Tool and packages move together; EF errors, not warns, on skew.
+- **The soft-delete query filter is registered with EF Core 10's _named_ `HasQueryFilter` overload**
+  (`CrmDbContext.SoftDeleteFilterName`). **Story 06 must add its tenant/department/branch filter as a second
+  named filter.** The unnamed overload silently *replaces* an existing filter — using it would resurrect
+  soft-deleted rows product-wide with no error.
+- **Domain events dispatch from `TransactionBehavior` after `CommitAsync`, never from a `SaveChangesInterceptor`.**
+  Verified by probe: with an explicit transaction open, `SavedChangesAsync` fires *before* the commit.
+- **Soft delete converts `Deleted` → `Unchanged` and then rescues cascaded owned entries**, not
+  `Deleted` → `Modified`. The naive form nulls owned value-object columns — it throws on a non-nullable column
+  and silently blanks data on a nullable one.
+- **API surface changed by owner decision: MVC controllers in per-persona Areas (`Agent`, `Portal`, `Admin`,
+  `Public`) with Swashbuckle Swagger, one document per Area.** This replaces story 01's minimal-API
+  `IEndpointGroup` convention and `AddOpenApi`/`MapOpenApi`. Recorded in `CLAUDE.md` by Story 02 Task 15.
+  **Story 04 generates its typed client from the four per-Area Swagger documents — `/openapi/v1.json` is gone.**
+- **Swashbuckle pinned to 10.2.3**, which is OpenAPI.NET v2 — `OpenApiInfo` lives in `Microsoft.OpenApi`, not
+  `Microsoft.OpenApi.Models`.
+- **Only one OpenAPI generator ships.** `Microsoft.AspNetCore.OpenApi` stays pinned in
+  `Directory.Packages.props` but is no longer referenced by `Crm.Api`.
