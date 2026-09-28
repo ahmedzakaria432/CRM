@@ -17,7 +17,7 @@ Verified on the development machine while this scaffold was built:
 ## Run it
 
 ```bash
-# 1. Start SQL Server
+# 1. Start SQL Server, Redis, and the telemetry dashboard (http://localhost:18888)
 cd backend
 docker compose up -d
 
@@ -32,7 +32,7 @@ dotnet build backend/Crm.sln
 dotnet run --project backend/src/Crm.Api
 ```
 
-The API listens on the URL printed at startup (Kestrel's default `http://localhost:5080` in Development
+The API listens on the URL printed at startup (`http://localhost:5187`, from `src/Crm.Api/Properties/launchSettings.json`
 unless overridden). Swagger UI is at `/swagger` in Development — see "API surface: Areas and Swagger" below.
 
 **Port 1433 may already be taken** by another project's SQL Server container on a shared dev machine.
@@ -156,17 +156,19 @@ module the command's assembly belongs to (`IUnitOfWorkResolver`). Queries implem
 and never open one.
 
 Handlers return `Result` / `Result<T>` (`Crm.SharedKernel.Results`), never throw for expected business failures.
-`ResultActionResultExtensions.ToActionResult()` translates a failed `Result` into an RFC 9457 problem-details
-`ActionResult` — a deliberately minimal mapper that Story 03 replaces with the global exception handler and a
-static class of stable `type` URIs.
+`ApiControllerBase.ToActionResult()` translates a failed `Result` into an RFC 9457 problem through
+`ProblemDetailsFactory`, with a stable `type` from `ProblemTypes`; exceptions go through `GlobalExceptionHandler`.
+See "Error responses" below.
 
 ## Talking to another module
 
 - **Read it now:** call an interface from its Contracts project (see `ISampleModuleApi`). The owning module
   implements it in its Application project by sending its own query, so validation, authorisation, and scoping
   still apply.
-- **Tell it something happened:** publish an integration event from your Contracts; it is delivered after your
-  transaction commits, via the outbox Story 03 builds. Subscribers handle it in their own transaction.
+- **Tell it something happened:** declare an integration event record in your Contracts and `IEventBus.Publish` it
+  from the command handler; it is written to your outbox in your transaction and delivered after commit. The other
+  module subscribes with an `IIntegrationEventConsumer<T>` in its Application project and handles it in its own
+  transaction. See "Integration events and the outbox" below and `SampleRenamedIntegrationEvent` for the shape.
 - **Never** reference another module's Domain/Application/Infrastructure, read its schema, or mutate its state
   inside your own transaction.
 
@@ -223,6 +225,76 @@ that needs a timestamp takes it as a parameter (see `SampleAggregate.Rename`) ra
   (case-insensitive) — `SampleName`'s constructor takes `value` because the owned-type configuration maps
   `p.Value`. A mismatch fails at model build with `InvalidOperationException: No suitable constructor was found`.
 
+## Error responses
+
+Every error is RFC 9457 `application/problem+json` with a stable `type` (constants in
+`Crm.BuildingBlocks.Presentation/ErrorHandling/ProblemTypes.cs`), a fixed English `title`, `instance`, `traceId`,
+`correlationId`, and — for Result failures and domain rules — the error `code`. The frontend maps `type` (and
+`code`) to localised messages. Never rename a type; add one.
+
+| Status | `type` | When |
+|---|---|---|
+| 400 | `urn:crm:problem:validation` | A validator rejected the input, or the body could not be bound (`errors` by field) |
+| 400 | `urn:crm:problem:bad-request` | The request could not be read at all |
+| 401 | `urn:crm:problem:unauthorized` | Not authenticated |
+| 403 | `urn:crm:problem:forbidden` | `Error.Forbidden` |
+| 404 | `urn:crm:problem:not-found` | `Error.NotFound`, or no such route |
+| 405 | `urn:crm:problem:method-not-allowed` | Wrong HTTP method |
+| 409 | `urn:crm:problem:conflict` | `Error.Conflict`, including the concurrency clash (`code: Persistence.ConcurrencyConflict`) |
+| 415 | `urn:crm:problem:unsupported-media-type` | Wrong `Content-Type` |
+| 422 | `urn:crm:problem:domain-rule` | An aggregate threw `DomainException` (`code` = the `DomainError` code) |
+| 429 | `urn:crm:problem:rate-limited` | Public-Area rate limit; see `Retry-After` |
+| 500 | `urn:crm:problem:internal` | Anything unhandled. The detail is fixed text — **never** the exception message |
+| 503 | `urn:crm:problem:dependency-unavailable` | An outbound call failed, timed out, or its circuit is open |
+
+`backend/requests/diagnostics.http` produces every row above on demand (Development only).
+
+## Observability
+
+`docker compose up -d` also starts **Redis** on `16379` and the **Aspire dashboard** at `http://localhost:18888`
+(OTLP ingest on `14317`, `OpenTelemetry:OtlpEndpoint` in `appsettings.Development.json`). The dashboard shows
+traces, metrics, and the structured logs.
+
+- **Logs** are compact JSON on the console in every environment, plus OTLP when an endpoint is configured. Levels
+  live in the `Serilog` section of `appsettings*.json` — there is no `Logging` section.
+- **Correlation:** send `X-Correlation-Id` (1–64 chars of `A-Z a-z 0-9 . _ : -`) or get one generated (equal to the
+  trace id). It comes back on every response, is on every log line, is forwarded on outbound HTTP calls, and is
+  stored on outbox rows so a delivery logs under the request that caused it. To find a request: search the
+  dashboard's structured logs for `CorrelationId`, or its traces for `crm.correlation_id`.
+- **Traces** cover HTTP in (not `/health`), HTTP out (one span per attempt, so retries are visible), EF Core, every
+  MediatR request, and every outbox delivery (parented to the publishing request's trace).
+- **Metrics:** ASP.NET Core, HttpClient, runtime, Polly, and `crm.request.duration` per MediatR request.
+- **Redaction** is by property name, for objects logged with `{@X}` and for top-level properties. Free text inside an
+  exception message is **not** redacted — a connection string inside a `SqlException` reaches the log (never the
+  response). EF sensitive-data logging (Development only) prints SQL parameter values.
+
+## Caching
+
+`ICacheService` over Redis (`ConnectionStrings:Redis`); with no Redis configured, an in-process cache and a startup
+warning — correct on **one** instance only. A query implementing `ICacheableQuery` is cached by `CachingBehavior`
+under the caller's tenant/department/branch scope; a command implementing `ICacheInvalidatingCommand` invalidates its
+tags after commit, in every scope. If Redis goes down, the first cache call times out after 2 s and the cache is then
+bypassed for 30 s (uncached reads, Warning log); an invalidation that cannot reach Redis is logged at Error and the
+entry stays stale until its TTL (`Caching:DefaultExpiration`, 5 min).
+
+## Integration events and the outbox
+
+Every module has `{schema}.outbox_messages` and `{schema}.outbox_message_consumers`, mapped by `ModuleDbContext` —
+a new module's Initial migration includes them. A command handler calls `IEventBus.Publish`; the row is written in
+the command's transaction. `OutboxDispatcher` polls every `Outbox:PollingInterval`, delivers to each
+`IIntegrationEventConsumer<T>` in its own module's transaction, and records one consumer row per delivery.
+
+- **Retry:** a failing consumer is retried with backoff 2, 4, 8, 16 s…; consumers that already succeeded are
+  skipped. After `Outbox:MaxAttempts` (5) the row is **dead-lettered**: `ProcessedAtUtc IS NULL AND Attempts >= 5`,
+  with `LastError`. It is never deleted automatically.
+- **Replay** a dead letter: `UPDATE {schema}.outbox_messages SET Attempts = 0, NextAttemptAtUtc = NULL WHERE Id = …`.
+  Consumers that already applied it skip it. (With `sqlcmd`, pass `-I` — the filtered index needs QUOTED_IDENTIFIER.)
+- **Single instance assumed.** Two API instances would both deliver a message; the consumer row's primary key stops
+  the second from committing, but a consumer's side effects outside its transaction could double-fire. Add a
+  row-claim (`UPDLOCK, READPAST`) before running more than one instance.
+- **Rate limiting behind a proxy:** the Public-Area limiter partitions on `RemoteIpAddress`; add
+  `UseForwardedHeaders` with known proxies before deploying behind one.
+
 ## No automated tests
 
 This project ships without automated tests — a deliberate decision recorded in `CLAUDE.md` ("Testing policy").
@@ -240,3 +312,7 @@ NetArchTest to any project file. The compiler (`TreatWarningsAsErrors`, nullable
 - **`dotnet-ef` 10.0.11** via the local tool manifest at `.config/dotnet-tools.json` (repository root).
 - **Swashbuckle.AspNetCore 10.2.3** — this is OpenAPI.NET v2: `OpenApiInfo` lives in `Microsoft.OpenApi`, not
   `Microsoft.OpenApi.Models`. Every pre-2025 Swashbuckle sample online has the old import.
+- **Story 03 observability stack:** `Serilog.AspNetCore` 10.0.0, `Serilog.Sinks.OpenTelemetry` 4.2.0, OpenTelemetry
+  1.19.x, `Microsoft.Extensions.Http.Resilience` 10.10.0, `Microsoft.Extensions.Caching.StackExchangeRedis` 10.0.11,
+  `Polly.Core` 8.6.6. **`OpenTelemetry.Instrumentation.EntityFrameworkCore` is pinned to `1.19.1-beta.1`** — it has
+  never shipped a stable release; it is the only prerelease package in the solution.

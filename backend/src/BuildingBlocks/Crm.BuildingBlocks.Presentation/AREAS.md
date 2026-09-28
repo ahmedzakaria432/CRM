@@ -31,5 +31,9 @@ Story 02's demonstration Sample CRUD endpoints, deleted in Story 11.
 The versioned external API - public API key management, outbound webhooks, ERP integration.
 Filled by stories 55-57.
 
+Rate limited per client IP by the global limiter (`AddCrmRateLimiting`, `RateLimiting:Public`) - every controller
+in this Area, in any module, with no attribute to add. 429 + `Retry-After`. Stories 27 and 47 add named policies
+(per email, per account) with `[EnableRateLimiting]` for anonymous endpoints outside this Area.
+
 <!-- Story 09: this Area requires API-key authentication, not the JWT policies the other three Areas use. No [Authorize] yet - stories 07, 09, and 55 own authentication for this Area. -->
 

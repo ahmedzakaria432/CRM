@@ -1,4 +1,4 @@
-@host = http://localhost:5080
+@host = http://localhost:5187
 
 ### Create a sample — 200, echoes createdBy/createdAtUtc
 POST {{host}}/api/Admin/Samples

@@ -33,6 +33,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)build/BannedSymbols.Clock.txt" />
+    <!-- Story 03: every log line goes through ILogger<T> so it carries the correlation id and is redacted. -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)build/BannedSymbols.Logging.txt" />
     <!-- SystemDateTime, the one IDateTime implementation, lives in Crm.BuildingBlocks.Infrastructure. -->
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)build/BannedSymbols.TimeProvider.txt" Condition="'$(MSBuildProjectName)' != 'Crm.BuildingBlocks.Infrastructure'" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)build/BannedSymbols.Pure.txt" Condition="'$(CrmIsPureProject)' == 'true'" />

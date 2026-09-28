@@ -6,10 +6,13 @@
 
   <ItemGroup>
     <PackageReference Include="MediatR" />
+    <!-- Polly.ExecutionRejectedException (open circuit, timeout) maps to 503 in GlobalExceptionHandler. -->
+    <PackageReference Include="Polly.Core" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Crm.SharedKernel\Crm.SharedKernel.csproj" />
+    <ProjectReference Include="..\Crm.BuildingBlocks.Application\Crm.BuildingBlocks.Application.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,2 @@
+T:System.Console;Write through ILogger<T> with a [LoggerMessage] template. Console output bypasses Serilog, correlation, and redaction.
+T:System.Diagnostics.Debug;Write through ILogger<T> with a [LoggerMessage] template.

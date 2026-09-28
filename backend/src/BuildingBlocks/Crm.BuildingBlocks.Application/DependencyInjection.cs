@@ -1,5 +1,6 @@
 using System.Reflection;
 using Crm.BuildingBlocks.Application.Behaviors;
+using Crm.BuildingBlocks.Application.Messaging;
 using Crm.BuildingBlocks.Application.Modules;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,9 +10,9 @@ namespace Crm.BuildingBlocks.Application;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Registers MediatR and FluentValidation ONCE, over every module's Application assembly. Called
-    /// by the host only - a module must never call AddMediatR itself, because each call would register
-    /// the pipeline behaviours again and run every request through them twice.
+    /// Registers MediatR, FluentValidation, and integration-event handlers ONCE, over every module's
+    /// Application assembly. Called by the host only - a module must never call AddMediatR itself, because
+    /// each call would register the pipeline behaviours again and run every request through them twice.
     /// </summary>
     public static IServiceCollection AddBuildingBlocksApplication(
         this IServiceCollection services, IReadOnlyCollection<Assembly> moduleApplicationAssemblies)
@@ -26,10 +27,24 @@ public static class DependencyInjection
             cfg.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+            cfg.AddOpenBehavior(typeof(CachingBehavior<,>));
         });
 
         services.AddValidatorsFromAssemblies(moduleApplicationAssemblies);
         services.AddScoped<IUnitOfWorkResolver, UnitOfWorkResolver>();
+
+        // Integration events (Story 03): one bus per scope; handlers discovered here, registered by their
+        // concrete type so the outbox dispatcher can resolve each one in its own scope and transaction.
+        services.AddScoped<OutboxEventBus>();
+        services.AddScoped<IEventBus>(sp => sp.GetRequiredService<OutboxEventBus>());
+        services.AddScoped<IPendingIntegrationEvents>(sp => sp.GetRequiredService<OutboxEventBus>());
+
+        var registry = IntegrationEventConsumerRegistry.Scan(moduleApplicationAssemblies);
+        services.AddSingleton(registry);
+        foreach (Type handlerType in registry.HandlerTypes)
+        {
+            services.AddScoped(handlerType);
+        }
 
         return services;
     }

@@ -3,3 +3,10 @@ root = true
 [*.cs]
 dotnet_diagnostic.RS0030.severity = error   # banned API used
 dotnet_diagnostic.RS0031.severity = error   # duplicate entry in BannedSymbols.txt
+dotnet_diagnostic.CA2254.severity = error   # log message template must be a constant - no interpolated log strings
+dotnet_diagnostic.CA1848.severity = error   # use [LoggerMessage] source-generated logging
+
+# EF Core migrations are machine-generated (ef.ps1 ... migrations add) and must not be hand-edited, so they are
+# classified as generated code. Analyzers skip generated code; everything hand-written stays fully analyzed.
+[**/Persistence/Migrations/*.cs]
+generated_code = true

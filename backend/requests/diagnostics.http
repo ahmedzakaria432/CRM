@@ -1,0 +1,115 @@
+@host = http://localhost:5187
+
+# Story 03 - every failure mode, in one pass. Run top to bottom against a Development API with
+# `docker compose up -d` (SQL Server, Redis, and the Aspire dashboard at http://localhost:18888).
+# Every error body is RFC 9457 with a stable `type` (ProblemTypes), a `correlationId`, and a `traceId`.
+
+### Setup - create a fresh sample (captures sampleId and rowVersion for later requests)
+# @name created
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+
+{ "name": "Diagnostics", "lines": ["one", "two"] }
+
+@sampleId = {{created.response.body.id}}
+
+### 1. Unhandled exception - 500 urn:crm:problem:internal. Body has correlationId; NO "Password", "Server=", or stack frames
+GET {{host}}/api/Admin/Diagnostics/throw
+
+### 2. Correlation id round-trip - the response header X-Correlation-Id echoes diag-0001, and so does every log line
+GET {{host}}/api/Agent/Sample?name=Ahmed
+X-Correlation-Id: diag-0001
+
+### 3. Unsafe correlation id - replaced by a generated 32-hex id, never echoed
+GET {{host}}/api/Agent/Sample?name=Ahmed
+X-Correlation-Id: bad id with spaces
+
+### 4. Validation - 400 urn:crm:problem:validation, errors.Name
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+
+{ "name": "", "lines": [] }
+
+### 5. Malformed body - 400 urn:crm:problem:validation (model state), not 500
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+
+{ "name":
+
+### 6. Not found - 404 urn:crm:problem:not-found, code Sample.NotFound
+GET {{host}}/api/Admin/Samples/00000000-0000-0000-0000-00000000dead
+
+### 7. Unknown route - 404 urn:crm:problem:not-found (status-code pages)
+GET {{host}}/api/Admin/Nope
+
+### 8. Domain rule - 422 urn:crm:problem:domain-rule, code Sample.DuplicateLine (the validator allows it; the aggregate refuses)
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+
+{ "name": "Dup", "lines": ["a", "A"] }
+
+### 9. Concurrency - 409 urn:crm:problem:conflict. Also request 19: no outbox row is written for this rolled-back rename
+PUT {{host}}/api/Admin/Samples/{{sampleId}}
+Content-Type: application/json
+
+{ "name": "Stale", "rowVersion": "AAAAAAAAB9E=" }
+
+### 10. Forbidden - 403 urn:crm:problem:forbidden
+GET {{host}}/api/Admin/Diagnostics/forbidden
+
+### 11. Unauthorised - 401 urn:crm:problem:unauthorized
+GET {{host}}/api/Admin/Diagnostics/unauthorized
+
+### 12. Rate limit - run 6x within 30 s: the 6th is 429 urn:crm:problem:rate-limited with Retry-After (Development: 5 per 30 s)
+GET {{host}}/api/Public/Diagnostics/ping
+
+### 13. Redaction - 204. The log shows Password, ApiKey, Token, ClientSecret as "***"; Username and Note in plain text
+POST {{host}}/api/Admin/Diagnostics/credentials
+Content-Type: application/json
+
+{ "username": "agent.one", "password": "hunter2", "apiKey": "ak-123", "token": "eyJ-secret", "nested": { "clientSecret": "cs-456", "note": "visible" } }
+
+### 14. Cache miss then hit - run twice: ONE `SELECT ... FROM [sample].[Samples]` in the EF log across both calls
+# @name cached
+GET {{host}}/api/Admin/Samples/{{sampleId}}
+
+### 15. Cache invalidated + outbox written - rename with the current rowVersion (200). EF log: INSERT INTO [sample].[outbox_messages]
+### between BEGIN and COMMIT. Then run request 14 again: a fresh SELECT, and the new name.
+# 16. Outbox delivered - within ~2 s the log shows "Delivered to ...SampleRenamedAcknowledgementConsumer" and
+#     "... FlakySampleRenamedConsumer", with the same CorrelationId as this PUT.
+PUT {{host}}/api/Admin/Samples/{{sampleId}}
+Content-Type: application/json
+
+{ "name": "Renamed by diagnostics", "rowVersion": "{{cached.response.body.rowVersion}}" }
+
+### 17. Subscriber retried - re-run 14 first (fresh rowVersion). Two Warning "FlakySampleRenamedConsumer failed, attempt N" lines,
+### then "Delivered to ...Flaky...". The acknowledgement consumer is delivered once and logs "Skipping ... already handled" on retries.
+PUT {{host}}/api/Admin/Samples/{{sampleId}}
+Content-Type: application/json
+
+{ "name": "flaky one", "rowVersion": "{{cached.response.body.rowVersion}}" }
+
+### 18. Dead letter - re-run 14 first. Five attempts (backoff 2, 4, 8, 16 s), then "Outbox message dead-lettered after 5 attempts".
+PUT {{host}}/api/Admin/Samples/{{sampleId}}
+Content-Type: application/json
+
+{ "name": "poison one", "rowVersion": "{{cached.response.body.rowVersion}}" }
+
+# SQL below: SSMS works as-is. With sqlcmd pass -I (QUOTED_IDENTIFIER ON) - the outbox's filtered index rejects
+# an UPDATE without it (Msg 1934).
+#
+# 19. Rolled-back command publishes nothing - after request 9 (409), this returns no row with a "Stale" name:
+#     SELECT * FROM sample.outbox_messages WHERE Content LIKE '%"name":"Stale"%';
+#
+# 20. Redelivery is not re-applied - take the Id of the message from request 15:
+#     UPDATE sample.outbox_messages SET ProcessedAtUtc = NULL, Attempts = 0, NextAttemptAtUtc = NULL WHERE Id = '<id>';
+#     Within ~2 s both consumers log "Skipping ... already handled", and
+#     SELECT COUNT(*) FROM sample.outbox_message_consumers WHERE MessageId = '<id>';   -- stays 2
+
+### 21. Retries, then an open circuit - run 3x. Call 1: 503 urn:crm:problem:dependency-unavailable after 4 attempts (1 + 3 retries:
+### 4 GET .../unstable client spans in the dashboard, 3 Polly "OnRetry" log lines). Call 2: its first attempt is the 5th failure
+### (CircuitBreaker:MinimumThroughput) - "OnCircuitOpened", then 503. Call 3: 503 immediately, BrokenCircuitException, no downstream span.
+GET {{host}}/api/Admin/Diagnostics/outbound?fail=true
+
+### 22. Healthy downstream - after the 15 s break: 200 { "status": "downstream ok" }
+GET {{host}}/api/Admin/Diagnostics/outbound?fail=false

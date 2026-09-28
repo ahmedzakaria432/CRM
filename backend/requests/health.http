@@ -1,4 +1,4 @@
-@host = http://localhost:5080
+@host = http://localhost:5187
 
 ### Liveness — 200 even when SQL Server is stopped
 GET {{host}}/health

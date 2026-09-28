@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using Crm.BuildingBlocks.Application.Abstractions;
 using Crm.BuildingBlocks.Application.Exceptions;
+using Crm.BuildingBlocks.Infrastructure.Outbox;
 using Crm.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -34,6 +36,12 @@ public abstract class ModuleDbContext(DbContextOptions options) : DbContext(opti
         // annotation (CLAUDE.md, "Backend", Persistence). Scans the module's own Infrastructure
         // assembly, which is why a module has exactly one DbContext.
         modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+
+        // Every module gets its own outbox, in its own schema (CLAUDE.md, modular monolith). Applied here, not
+        // by assembly scan - these configurations live in this building-block assembly, not the module's.
+        modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
+        modelBuilder.ApplyConfiguration(new OutboxMessageConsumerConfiguration());
+
         modelBuilder.ApplySoftDeleteQueryFilter();
         modelBuilder.ApplyUtcDateTimeOffsetConverter();
 
@@ -103,6 +111,30 @@ public abstract class ModuleDbContext(DbContextOptions options) : DbContext(opti
 
         return domainEvents;
     }
+
+    public void AddToOutbox(IReadOnlyCollection<IIntegrationEvent> integrationEvents, string? correlationId)
+    {
+        ArgumentNullException.ThrowIfNull(integrationEvents);
+
+        string? traceParent = Activity.Current?.Id;
+        Set<OutboxMessage>().AddRange(integrationEvents.Select(e => OutboxMessage.From(e, correlationId, traceParent)));
+    }
+
+    internal async Task<IReadOnlyList<OutboxMessage>> GetDueOutboxMessagesAsync(
+        DateTimeOffset nowUtc, int maxAttempts, int batchSize, CancellationToken cancellationToken) =>
+        await Set<OutboxMessage>()
+            .Where(m => m.ProcessedAtUtc == null
+                        && m.Attempts < maxAttempts
+                        && (m.NextAttemptAtUtc == null || m.NextAttemptAtUtc <= nowUtc))
+            .OrderBy(m => m.OccurredOnUtc)
+            .Take(batchSize)
+            .ToListAsync(cancellationToken);
+
+    internal Task<bool> HasConsumedAsync(Guid messageId, string handler, CancellationToken cancellationToken) =>
+        Set<OutboxMessageConsumer>().AnyAsync(c => c.MessageId == messageId && c.Handler == handler, cancellationToken);
+
+    internal void RecordConsumer(Guid messageId, string handler, DateTimeOffset nowUtc) =>
+        Set<OutboxMessageConsumer>().Add(new OutboxMessageConsumer(messageId, handler, nowUtc));
 
     private async Task DisposeCurrentTransactionAsync()
     {

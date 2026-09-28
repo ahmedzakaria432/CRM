@@ -13,14 +13,18 @@ backend/
   build/                     BannedSymbols.*.txt
   scripts/ef.ps1             dotnet ef wrapper, one module at a time (-Module <Name>)
   src/
-    Crm.Api/                 host: composition root, Swagger, health checks, ModuleCatalog   (-> modules' Infrastructure + Presentation)
+    Crm.Api/                 host: composition root, Swagger, health checks, ModuleCatalog, Development-only
+                             Diagnostics controllers   (-> modules' Infrastructure + Presentation)
     BuildingBlocks/
-      Crm.SharedKernel/                   Entity, AggregateRoot, ValueObject, StronglyTypedId, domain events, Result/Error
+      Crm.SharedKernel/                   Entity, AggregateRoot, ValueObject, StronglyTypedId, domain events,
+                                          IIntegrationEvent, Result/Error
       Crm.BuildingBlocks.Application/     MediatR pipeline behaviours, ICommand, IRepository, IUnitOfWork, IDateTime,
-                                          ICurrentUserService, Specification
-      Crm.BuildingBlocks.Infrastructure/  ModuleDbContext, auditing/soft-delete interceptor, Repository, IModule,
-                                          AddModuleDbContext, SystemDateTime
-      Crm.BuildingBlocks.Presentation/    ApiControllerBase, CrmAreas, Result -> ProblemDetails
+                                          ICurrentUserService, CrmClaimTypes, ICorrelationIdAccessor, Specification,
+                                          ICacheService/ICacheableQuery, IEventBus/IIntegrationEventConsumer, CrmDiagnostics
+      Crm.BuildingBlocks.Infrastructure/  ModuleDbContext (+ outbox tables), auditing/soft-delete interceptor, Repository,
+                                          IModule, AddModuleDbContext, SystemDateTime, OutboxDispatcher, Serilog +
+                                          OpenTelemetry (AddCrmObservability), correlation id, Redis cache, AddCrmResilience
+      Crm.BuildingBlocks.Presentation/    ApiControllerBase, CrmAreas, ProblemTypes, GlobalExceptionHandler, rate limiting
     Modules/
       <Module>/
         Crm.Modules.<Module>.Domain/          aggregates, entities, value objects, domain events, domain services
@@ -77,8 +81,14 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
     scoping) applies. Use it for data needed now: "does this customer exist?". Primitives and contract DTOs only.
   - **Integration event** — a record in the publishing module's `Contracts`, published through the outbox after the
     publisher's transaction commits and handled in the subscriber's own transaction. Use it for "this happened":
-    `TicketCreated` feeding the customer timeline, the audit log, SLA, reporting. The in-process bus and outbox
-    are delivered by Story 03.
+    `TicketCreated` feeding the customer timeline, the audit log, SLA, reporting. Publish with
+    `IEventBus.Publish` **from the command handler** (never from a domain-event handler or a query — both throw:
+    the event would otherwise be lost). `TransactionBehavior` writes it to the module's own `outbox_messages` in the
+    command's transaction; `OutboxDispatcher` delivers it after commit. Subscribe with an
+    `IIntegrationEventConsumer<T>` in the subscriber's Application project — discovered automatically, run in the
+    subscriber's own transaction, at least once, with a per-consumer idempotency row (`outbox_message_consumers`),
+    retried with backoff and dead-lettered after `Outbox:MaxAttempts`. A consumer never sends a MediatR command.
+    Event records are **append-only**: an undelivered row still holds the old shape and type name.
   - **Never** call another module to change its state inside your transaction, never share an entity, and never
     read another module's tables.
 - **The build enforces the boundaries.** `backend/Directory.Build.targets` fails the build with `CRM0001` when a
@@ -143,8 +153,24 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
 - **Queries** project straight to DTOs with `.Select(...)`, use `AsNoTracking()`, and never return an entity or
   a domain type across the API boundary.
 - **Results:** handlers return `Result` / `Result<T>`. Expected business failures are results, not exceptions.
-  The API translates them to RFC 9457 `ProblemDetails`.
-- **Pipeline behaviours:** validation -> authorisation -> logging -> transaction -> caching.
+  The API translates them to RFC 9457 `ProblemDetails`. Error `type` URIs are the constants in
+  `Crm.BuildingBlocks.Presentation/ErrorHandling/ProblemTypes.cs` (`urn:crm:problem:*`) — never inline a type string,
+  never rename one (the frontend maps them to localised messages). A `DomainException` from an aggregate becomes 422
+  `domain-rule`; a validator failure 400 `validation`; an unhandled exception 500 `internal` with **no** exception text.
+- **Pipeline behaviours:** validation -> authorisation -> logging -> transaction -> caching. "Logging" is also the
+  OpenTelemetry span and the `crm.request.duration` metric per request.
+- **Logging:** Serilog, compact JSON in every environment; every line carries `CorrelationId` (from
+  `X-Correlation-Id`, generated when absent) and `UserId`/`TenantId`/`DepartmentId`/`BranchId` when authenticated
+  (claim names in `CrmClaimTypes`). Log only through `ILogger<T>` with a `[LoggerMessage]` method — CA1848/CA2254 are
+  errors and `System.Console` is banned (`BannedSymbols.Logging.txt`). Anything logged with `{@X}` is redacted by
+  property name (password, secret, token, apikey, …); never log a payload any other way.
+- **Caching:** mark a query `ICacheableQuery` (key and tags `{module}:{aggregate-plural}:{id}`, built by a
+  `<Module>CacheKeys` class) and every command that changes its data `ICacheInvalidatingCommand` with the same tag.
+  `CachingBehavior` prefixes the caller's tenant/department/branch scope; `TransactionBehavior` invalidates after
+  commit. Set `VaryByUser` when the result depends on who asks. Failures are never cached; a Redis outage degrades
+  to uncached reads.
+- **Outbound HTTP:** every `HttpClient` is registered with `.AddCrmResilience(configuration)` (correlation id +
+  retry, circuit breaker, timeouts from `Resilience:Outbound`). No hand-rolled retry loops.
 - **Time:** the clock is read only through `IDateTime` (`Crm.BuildingBlocks.Application.Abstractions`), whose
   one implementation is `SystemDateTime`. `System.DateTime` is banned outright, and `DateTimeOffset.UtcNow`/`Now`
   and `System.TimeProvider` are banned everywhere else (`backend/build/BannedSymbols.*.txt`). Values are

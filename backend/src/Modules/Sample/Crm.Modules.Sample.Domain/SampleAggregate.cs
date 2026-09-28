@@ -38,9 +38,19 @@ public sealed class SampleAggregate : AuditableEntity<SampleId>, ISoftDeletable,
     /// </summary>
     public static SampleAggregate Create(SampleName name, IEnumerable<string> lines, SampleId? id = null)
     {
+        ArgumentNullException.ThrowIfNull(lines);
+
+        // The first invariant only the aggregate can enforce - CreateSampleCommandValidator checks each line is
+        // not empty, not that lines are distinct. Surfaces as 422 urn:crm:problem:domain-rule (Story 03).
+        List<string> lineList = lines.ToList();
+        if (lineList.Count != lineList.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+        {
+            throw new DomainException(new DomainError("Sample.DuplicateLine", "A sample cannot contain the same line twice."));
+        }
+
         var aggregate = new SampleAggregate(id ?? SampleId.New(), name);
 
-        foreach (string line in lines)
+        foreach (string line in lineList)
         {
             aggregate._lines.Add(new SampleLine(line));
         }

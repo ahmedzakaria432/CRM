@@ -19,5 +19,28 @@ services:
       retries: 10
       start_period: 30s
 
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: crm-redis
+    ports:
+      # Remapped like SQL Server - 6379 is commonly taken on shared dev machines.
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  aspire-dashboard:
+    # Local OpenTelemetry viewer: traces, metrics, and structured logs (Story 03).
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    container_name: crm-telemetry
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true" # local dev only
+    ports:
+      - "18888:18888" # dashboard UI
+      - "14317:18889" # OTLP/gRPC ingest (OpenTelemetry:OtlpEndpoint)
+
 volumes:
   crm-sqldata:

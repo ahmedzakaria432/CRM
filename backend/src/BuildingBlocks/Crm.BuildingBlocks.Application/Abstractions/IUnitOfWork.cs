@@ -29,4 +29,8 @@ public interface IUnitOfWork
     /// aggregate in the same call. Must be read before CommitTransactionAsync - a handler that
     /// calls SaveChangesAsync and later clears the change tracker would otherwise lose them.</summary>
     IReadOnlyCollection<IDomainEvent> GetAndClearDomainEvents();
+
+    /// <summary>Stages integration events as outbox rows in THIS module's schema. TransactionBehavior calls it
+    /// before commit, so the rows commit or roll back with the change that raised them.</summary>
+    void AddToOutbox(IReadOnlyCollection<IIntegrationEvent> integrationEvents, string? correlationId);
 }
