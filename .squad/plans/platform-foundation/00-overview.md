@@ -11,7 +11,7 @@ Entry point for the **Platform Foundation** feature. This is **feature 1 of 12**
 |----|--------|-------|-----------|------------|
 | 01 | [`backend-solution-scaffold-with-ddd-and-clean-architecture`](../../stories/platform-foundation/backend-solution-scaffold-with-ddd-and-clean-architecture/intake.md) | Backend solution scaffold with DDD and Clean Architecture | [`01-story-backend-solution-scaffold-with-ddd-and-clean-architecture.md`](01-story-backend-solution-scaffold-with-ddd-and-clean-architecture.md) | none. This is the first story |
 | 02 | [`persistence-baseline-with-auditing-and-soft-delete`](../../stories/platform-foundation/persistence-baseline-with-auditing-and-soft-delete/intake.md) | Persistence baseline with auditing and soft delete | [`02-story-persistence-baseline-with-auditing-and-soft-delete.md`](02-story-persistence-baseline-with-auditing-and-soft-delete.md) | CRM-01 |
-| 03 | [`cross-cutting-concerns-error-handling-logging-and-caching`](../../stories/platform-foundation/cross-cutting-concerns-error-handling-logging-and-caching/intake.md) | Cross cutting concerns error handling logging and caching | _not planned yet_ | CRM-01, CRM-02 |
+| 03 | [`cross-cutting-concerns-error-handling-logging-and-caching`](../../stories/platform-foundation/cross-cutting-concerns-error-handling-logging-and-caching/intake.md) | Cross cutting concerns error handling logging and caching | [`03-story-cross-cutting-concerns-error-handling-logging-and-caching.md`](03-story-cross-cutting-concerns-error-handling-logging-and-caching.md) | CRM-01, CRM-02 |
 | 04 | [`frontend-scaffold-with-nuxt-typescript-and-tailwind`](../../stories/platform-foundation/frontend-scaffold-with-nuxt-typescript-and-tailwind/intake.md) | Frontend scaffold with Nuxt TypeScript and Tailwind | _not planned yet_ | CRM-01, for the OpenAPI document |
 | 05 | [`bilingual-arabic-and-english-support-with-rtl-layout`](../../stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | Bilingual Arabic and English support with RTL layout | _not planned yet_ | CRM-03, CRM-04 |
 | 06 | [`multi-department-and-multi-branch-organisation-scoping`](../../stories/platform-foundation/multi-department-and-multi-branch-organisation-scoping/intake.md) | Multi department and multi branch organisation scoping | _not planned yet_ | CRM-02, CRM-04 |
@@ -84,3 +84,19 @@ Story 03 onward is written against this layout (full rules in `CLAUDE.md`, runbo
 - **Story 03 now also owns the integration-event bus and outbox**, the only cross-module write path. Its intake was
   extended accordingly.
 - **Every intake's stack section was updated**, and each intake now names its backend module.
+
+### Story 03 — decisions carried forward
+
+- **Error `type` URIs are URNs in one class**, `Crm.BuildingBlocks.Presentation/ErrorHandling/ProblemTypes.cs`
+  (`urn:crm:problem:validation`, `…:domain-rule`, …). **Story 05 maps them to `en`/`ar` messages. Never rename one.**
+- **Claim names are fixed in `CrmClaimTypes`** (`sub`, `tenant_id`, `department_id`, `branch_id`). **Story 07 issues
+  tokens with exactly these**, and re-verifies the "log carries user/tenant/department/branch" criterion, which cannot
+  run before authentication exists.
+- **Cache keys are prefixed with the caller's tenant/department/branch scope; invalidation is by scope-free tag.**
+  Story 06 fills the scope values and must not change the key shape.
+- **Integration events are published from the command handler through `IEventBus`**, written to the module's own
+  `outbox_messages` in the command's transaction, and delivered at least once, with a per-handler idempotency row in
+  `outbox_message_consumers`. Publishing from a domain-event handler or a query throws. Event records are append-only.
+- **`OpenTelemetry.Instrumentation.EntityFrameworkCore` is pinned to a beta** (1.19.1-beta.1). It has never shipped
+  stable.
+- **All `.http` files use `http://localhost:5187`** (from `launchSettings.json`). The earlier `5080` was wrong.
