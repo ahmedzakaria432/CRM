@@ -3,6 +3,8 @@
 Entry point for the **Reports and Analytics** feature. This is **feature 11 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Reporting` (51; also 52–54). Read models are built only from other modules' integration events. See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

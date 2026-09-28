@@ -1,9 +1,0 @@
-N:Microsoft.EntityFrameworkCore;Crm.Domain must not know about persistence. Move this to Crm.Infrastructure.
-N:MediatR;Crm.Domain must not know about the mediator. Raise a domain event instead.
-N:Microsoft.AspNetCore;Crm.Domain must not know about HTTP. Move this to Crm.Api.
-N:Microsoft.Extensions.DependencyInjection;Crm.Domain must not resolve services. Pass the dependency in.
-N:System.Data.Common;Crm.Domain must not open connections.
-N:System.Net.Http;Crm.Domain must not make network calls. Use an abstraction in Crm.Application.
-P:System.DateTime.Now;Use DateTimeOffset.UtcNow. Local time is banned across the solution.
-P:System.DateTime.Today;Use DateTimeOffset.UtcNow. Local time is banned across the solution.
-P:System.DateTimeOffset.UtcNow;Inject TimeProvider so time is controllable. Direct clock reads are banned.

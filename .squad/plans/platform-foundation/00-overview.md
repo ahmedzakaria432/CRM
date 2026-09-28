@@ -3,6 +3,8 @@
 Entry point for the **Platform Foundation** feature. This is **feature 1 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** BuildingBlocks and the `Sample` template module (01–03); creates the `Organisation` module (06). Frontend only: 04, 05. See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |
@@ -48,3 +50,37 @@ each `/squad-plan` run completes._
   `Microsoft.OpenApi.Models`.
 - **Only one OpenAPI generator ships.** `Microsoft.AspNetCore.OpenApi` stays pinned in
   `Directory.Packages.props` but is no longer referenced by `Crm.Api`.
+
+### Architecture change — modular monolith (after Story 02, owner decision)
+
+The backend was restructured from four layer projects into a **modular monolith** after Stories 01 and 02 were
+implemented. Stories 01 and 02 are not re-planned; their plans stay as the historical record. Every plan from
+Story 03 onward is written against this layout (full rules in `CLAUDE.md`, runbook in `backend/README.md`):
+
+- **Projects.** `Crm.Domain/Common` became `BuildingBlocks/Crm.SharedKernel`; `Crm.Application/Common` became
+  `Crm.BuildingBlocks.Application`; the shared parts of `Crm.Infrastructure` became `Crm.BuildingBlocks.Infrastructure`;
+  `ApiControllerBase`/`CrmAreas`/the Result mapper moved to `Crm.BuildingBlocks.Presentation`. `Crm.Api` is only the
+  host. The Sample slice became the five-project template module `backend/src/Modules/Sample/`.
+- **One DbContext and schema per module.** `CrmDbContext` is gone. Each module has a `ModuleDbContext` subclass in its
+  own schema (`sample`) with its own `__EFMigrationsHistory`. The old `dbo` `Initial` migration was deleted and the
+  Sample module re-migrated (`20260927232755_Initial`). No production data existed. Drop the orphaned `dbo` tables
+  or run `docker compose down -v` on existing dev databases.
+- **The soft-delete filter name is now `ModuleDbContext.SoftDeleteFilterName`.** Story 06 adds the scope filter as a
+  second *named* filter in `ModuleDbContext`, which applies it to every module. The Story 02 rule against the unnamed
+  overload still stands.
+- **Per-module unit of work.** Handlers inject `I<Module>UnitOfWork`. `TransactionBehavior` resolves the command's
+  module from its assembly through `IUnitOfWorkResolver`. Repositories are registered per aggregate with
+  `AddRepository<TAggregate, TId, TContext>()`, not as an open generic.
+- **MediatR is registered once by the host** over every module's Application assembly (`ModuleCatalog`).
+- **Boundaries are build-enforced.** `backend/Directory.Build.targets` fails with `CRM0001` on a forbidden
+  `ProjectReference`. Presentation projects set `DisableTransitiveProjectReferences`, so Domain types are not visible
+  to controllers. Verified by probe: each rule fires, and a `using` of the Domain namespace in a controller gives `CS0234`.
+- **Banned-API lists are central.** `backend/build/BannedSymbols.{Clock,TimeProvider,Pure}.txt`, wired once in
+  `Directory.Build.props`. No per-project `BannedSymbols.txt` any more.
+- **Time goes through `IDateTime`** (owner decision). `System.DateTime` is banned as a type, `DateTimeOffset.UtcNow`/`Now`
+  are banned, and `System.TimeProvider` is banned everywhere except `Crm.BuildingBlocks.Infrastructure`, whose
+  `SystemDateTime` is the only implementation. `TimeProvider` is no longer registered in DI.
+- **`ef.ps1` takes `-Module <Name>`.** Migrations land in that module's `Persistence/Migrations`.
+- **Story 03 now also owns the integration-event bus and outbox**, the only cross-module write path. Its intake was
+  extended accordingly.
+- **Every intake's stack section was updated**, and each intake now names its backend module.

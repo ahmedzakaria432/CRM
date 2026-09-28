@@ -33,3 +33,10 @@ The full story-level map, with per-story dependencies and phases, is in [`.squad
 
 Plan stories in `NN` order within a feature, and features in the order above. Each plan lands at
 `.squad/plans/<feature-slug>/NN-story-<slug>.md` and its row is added to that feature's `00-overview.md`.
+
+## Modular monolith
+
+The backend is a modular monolith (see `CLAUDE.md`). Every plan names the backend module(s) its story touches,
+using the Module line in the intake and the module catalogue. If the story creates a module, the plan's first task
+scaffolds its five projects from `backend/src/Modules/Sample/` (or from the first real module once Story 11 deletes
+Sample). Cross-module work must be a Contracts API call or an integration event, never a direct project reference.

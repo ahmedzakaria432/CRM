@@ -18,4 +18,23 @@
     <!-- would be worse than suppressing the rule. -->
     <NoWarn>$(NoWarn);CS1591;CA1716</NoWarn>
   </PropertyGroup>
+
+  <!-- "Pure" projects carry no infrastructure at all: the shared kernel, every module's Domain, and -->
+  <!-- every module's Contracts. They get the stricter banned-API list below. -->
+  <PropertyGroup>
+    <CrmIsPureProject Condition="'$(MSBuildProjectName)' == 'Crm.SharedKernel' or $(MSBuildProjectName.EndsWith('.Domain')) or $(MSBuildProjectName.EndsWith('.Contracts'))">true</CrmIsPureProject>
+  </PropertyGroup>
+
+  <!-- The banned-API analyzer and its lists are wired here once, for every project, so a new -->
+  <!-- module project cannot forget them. BannedApiAnalyzers reads every BannedSymbols.*.txt it is given. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)build/BannedSymbols.Clock.txt" />
+    <!-- SystemDateTime, the one IDateTime implementation, lives in Crm.BuildingBlocks.Infrastructure. -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)build/BannedSymbols.TimeProvider.txt" Condition="'$(MSBuildProjectName)' != 'Crm.BuildingBlocks.Infrastructure'" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)build/BannedSymbols.Pure.txt" Condition="'$(CrmIsPureProject)' == 'true'" />
+  </ItemGroup>
 </Project>

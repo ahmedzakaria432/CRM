@@ -3,6 +3,8 @@
 Entry point for the **Agent Workspace** feature. This is **feature 6 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Workspace` (whichever of 28–31 is implemented first). See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

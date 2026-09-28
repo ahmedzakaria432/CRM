@@ -1,5 +1,9 @@
 # Story 02 — Persistence baseline with auditing and soft delete
 
+> **Architecture update (2026-09-28):** implemented before the backend became a modular monolith. Paths below
+> (`Crm.Domain`, `Crm.Application`, `Crm.Infrastructure`, `CrmDbContext`) are historical; see
+> [`00-overview.md`](00-overview.md), "Architecture change — modular monolith", for where each piece lives now.
+
 ## Prerequisites
 
 - **Story 01 is implemented and present in the working tree, uncommitted** (`git status` shows `?? backend/`).

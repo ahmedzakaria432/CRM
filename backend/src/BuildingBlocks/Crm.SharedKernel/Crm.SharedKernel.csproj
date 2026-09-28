@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The shared kernel: DDD building blocks (Entity, AggregateRoot, ValueObject, StronglyTypedId, -->
+  <!-- domain events) and Result/Error. References nothing - Directory.Build.targets enforces it, and -->
+  <!-- BannedSymbols.Pure.txt bans EF Core, MediatR, ASP.NET and DI here. Grow it only with concepts -->
+  <!-- every module genuinely shares; a type one module owns belongs in that module's Domain. -->
+
+</Project>

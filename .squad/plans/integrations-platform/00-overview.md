@@ -3,6 +3,8 @@
 Entry point for the **Integrations and Platform** feature. This is **feature 12 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Integrations` (55–57); 58 extends `Organisation`. See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

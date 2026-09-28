@@ -1,19 +1,32 @@
-using System.Reflection;
-using Crm.Api.Areas;
-using Crm.Application;
-using Crm.Infrastructure;
-using Crm.Infrastructure.Persistence;
+using Crm.Api.Modules;
+using Crm.BuildingBlocks.Application;
+using Crm.BuildingBlocks.Infrastructure;
+using Crm.BuildingBlocks.Infrastructure.Modules;
+using Crm.BuildingBlocks.Presentation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
-builder.Services.AddControllers();
+// Shared building blocks first, then every module. MediatR is registered once, over every module's
+// Application assembly - a module never registers it itself.
+builder.Services.AddBuildingBlocksApplication([.. ModuleCatalog.All.Select(m => m.Module.ApplicationAssembly)]);
+builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration, builder.Environment);
+
+foreach (ModuleEntry entry in ModuleCatalog.All)
+{
+    entry.Module.AddServices(builder.Services, builder.Configuration);
+}
+
+IMvcBuilder mvc = builder.Services.AddControllers();
+
+foreach (ModuleEntry entry in ModuleCatalog.All)
+{
+    mvc.AddApplicationPart(entry.PresentationAssembly);
+}
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -26,14 +39,17 @@ builder.Services.AddSwaggerGen(options =>
         });
     }
 
-    // Routes each action into the document for its Area. An action on a controller that forgot
-    // [Area(...)] carries no "area" route value and appears in no document at all.
+    // Routes each action into the document for its Area, whichever module declares it. An action on
+    // a controller that forgot [Area(...)] carries no "area" route value and appears in no document.
     options.DocInclusionPredicate((docName, apiDescription) =>
         apiDescription.ActionDescriptor.RouteValues.TryGetValue("area", out string? area)
         && string.Equals(area, docName, StringComparison.OrdinalIgnoreCase));
 
-    options.IncludeXmlComments(Path.Combine(
-        AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
+    // Controllers live in the module Presentation assemblies, so their XML doc files are read too.
+    foreach (string xmlDoc in Directory.EnumerateFiles(AppContext.BaseDirectory, "Crm.*.xml"))
+    {
+        options.IncludeXmlComments(xmlDoc);
+    }
 });
 
 var app = builder.Build();
@@ -49,16 +65,9 @@ if (app.Environment.IsDevelopment())
         }
     });
 
-    // Migrate and seed only in Development - deployment applies migrations as an explicit step,
-    // not as a side effect of the process starting.
-    await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
-    {
-        var dbContext = scope.ServiceProvider.GetRequiredService<CrmDbContext>();
-        await dbContext.Database.MigrateAsync();
-
-        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-        await seeder.SeedAsync();
-    }
+    // Migrate every module (each into its own schema) and seed only in Development - deployment
+    // applies migrations as an explicit step, not as a side effect of the process starting.
+    await app.Services.MigrateAndSeedModulesAsync();
 }
 
 app.UseExceptionHandler(); // Story 03 replaces this with the global exception handler.

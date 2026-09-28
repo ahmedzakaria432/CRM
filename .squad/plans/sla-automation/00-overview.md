@@ -3,6 +3,8 @@
 Entry point for the **SLA and Automation** feature. This is **feature 7 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Sla` (32, 33), `Automation` (34, 35), and `Notifications` (36). The `SlaClock` stays inside the `Ticket` aggregate in `Tickets`. See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

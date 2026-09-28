@@ -1,0 +1,6 @@
+N:Microsoft.EntityFrameworkCore;Domain, Contracts and SharedKernel projects must not know about persistence. Move this to the module's Infrastructure project.
+N:MediatR;Domain, Contracts and SharedKernel projects must not know about the mediator. Raise a domain event instead.
+N:Microsoft.AspNetCore;Domain, Contracts and SharedKernel projects must not know about HTTP. Move this to the module's Presentation project.
+N:Microsoft.Extensions.DependencyInjection;Domain, Contracts and SharedKernel projects must not resolve services. Pass the dependency in.
+N:System.Data.Common;Domain, Contracts and SharedKernel projects must not open connections.
+N:System.Net.Http;Domain, Contracts and SharedKernel projects must not make network calls. Use an abstraction in the module's Application project.

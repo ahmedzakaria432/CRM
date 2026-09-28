@@ -9,6 +9,7 @@ Plan it with `/squad-plan .squad/stories/ai-features/ai-service-abstraction-prom
 
 - **Feature name (display):** AI Features
 - **Feature slug (folder under `plans/`):** `ai-features`
+- **Module (backend):** `Ai` (new module)
 
 ## Tracker (metadata only)
 
@@ -34,7 +35,7 @@ AI service abstraction prompt infrastructure and guardrails
 One AI seam every later AI story plugs into, so model choice, cost control, safety, and observability are solved
 once. This is the anti-corruption layer for the model provider: no provider SDK type reaches the application layer.
 
-- `IAiCompletionService` and `IAiEmbeddingService` in `Crm.Application`, implemented in `Crm.Infrastructure`
+- `IAiCompletionService` and `IAiEmbeddingService` in `Crm.Modules.Ai.Application`, implemented in `Crm.Modules.Ai.Infrastructure`, and exposed to other modules through `Crm.Modules.Ai.Contracts`
   against the Claude API, with the model id, temperature, and token limits bound through the options pattern per
   use case rather than hard-coded at the call site.
 - A prompt registry: versioned, named prompt templates held as files with typed parameters, so a prompt change is
@@ -55,7 +56,7 @@ once. This is the anti-corruption layer for the model provider: no provider SDK 
 
 ## Acceptance criteria
 
-- [ ] No provider SDK type appears in `Crm.Domain` or `Crm.Application`; the model is reachable only through the
+- [ ] No provider SDK type appears in any Domain, Application, or Contracts project; the model is reachable only through the
       two interfaces.
 - [ ] Swapping the configured model id changes behaviour with no code change outside configuration.
 - [ ] Every AI call records use case, prompt version, model, token counts, latency, cost, and outcome.
@@ -106,8 +107,9 @@ None.
 
 ## Stack and conventions (applies to every story)
 
-- **Backend:** .NET 10. Domain-Driven Design inside Clean Architecture (`Crm.Domain` <- `Crm.Application` <- `Crm.Infrastructure` / `Crm.Api`), CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server, minimal APIs, `Result<T>` returns, RFC 9457 problem details.
-- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
+- **Backend:** .NET 10 modular monolith. One module per bounded context under `backend/src/Modules/<Module>/` (`Domain` <- `Application` <- `Infrastructure` / `Presentation`, plus a public `Contracts` project), Domain-Driven Design with Clean Architecture inside each module, one host (`Crm.Api`). CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server with one DbContext and schema per module, MVC controllers in per-persona Areas, `Result<T>` returns, RFC 9457 problem details. The clock is read only through `IDateTime`; `System.DateTime` is banned.
+- **Module boundaries:** a module reaches another only through that module's `Contracts` - a synchronous API interface for a read, an integration event (via the outbox) for "this happened". No cross-module project references, foreign keys, joins, or shared entities; one command, one module, one transaction. The build fails with `CRM0001` on a forbidden reference. The module catalogue in `CLAUDE.md` names the module each story belongs to.
+- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events inside the module, and as integration events across modules; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
 - **Frontend:** Nuxt 4 with Vue 3 script-setup, TypeScript strict, Tailwind utilities only, Pinia for cross-route state, `@nuxtjs/i18n` for `en` and `ar`.
 - **Bilingual and RTL:** every user-visible string is an i18n key in both `en` and `ar`; layouts use logical Tailwind utilities (`ms-`, `me-`, `ps-`, `pe-`, `text-start`), never `ml-`, `mr-`, or `text-left`.
 - **Scoping:** every read and write is scoped by tenant, department, and branch through `ICurrentUserService`. Admin-only endpoints are the sole exception and must be explicitly authorised.

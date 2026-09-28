@@ -9,6 +9,7 @@ Plan it with `/squad-plan .squad/stories/customer-management/customer-aggregate-
 
 - **Feature name (display):** Customer Management
 - **Feature slug (folder under `plans/`):** `customer-management`
+- **Module (backend):** `Customers` (new module); deletes the `Sample` template module
 
 ## Tracker (metadata only)
 
@@ -34,7 +35,7 @@ Customer aggregate profiles and contact details
 The Customer bounded context and its aggregate. Everything in the CRM eventually hangs off a customer, so the
 model has to be right before tickets are built on top of it.
 
-- `Customer` as an aggregate root in `Crm.Domain/Customers`: an account that may be an individual or an
+- `Customer` as an aggregate root in `Crm.Modules.Customers.Domain` (the new `Customers` module, with its own `customers` schema): an account that may be an individual or an
   organisation, with `CustomerNumber`, `LocalizedText` display name, type, tier or segment, status, preferred
   language, preferred contact channel, tax or commercial registration number, and an owning branch and department.
 - `Contact` as a child entity inside the customer aggregate: a named person with a job title, one or more
@@ -46,10 +47,15 @@ model has to be right before tickets are built on top of it.
   deactivated while it has open tickets.
 - Use cases: create, update, deactivate and reactivate, add, update and remove contact, set primary contact,
   change owning department, and merge duplicates. Merge moves tickets, interactions, notes, and attachments onto
-  the surviving customer and leaves a redirect record so old links resolve.
+  the surviving customer and leaves a redirect record so old links resolve. Only Customers-owned data moves inside
+  the merge transaction; tickets and interactions owned by other modules move when those modules handle the
+  `CustomerMerged` integration event published from `Customers.Contracts`.
 - Duplicate detection on create and on demand: match on email, phone, tax number, and fuzzy name.
 - Queries: get by id, search with paging, and a lookup projection for the customer picker used across the app.
 - `backend/requests/customers.http` covering every use case, including merge and every rejected invariant.
+- Delete the `Sample` template module (`backend/src/Modules/Sample/`, its `ModuleCatalog` line and host
+  references, and its `sample` schema via a final migration or a documented drop) now that `Customers` is the first
+  real module to copy from.
 
 ## Acceptance criteria
 
@@ -102,8 +108,9 @@ None.
 
 ## Stack and conventions (applies to every story)
 
-- **Backend:** .NET 10. Domain-Driven Design inside Clean Architecture (`Crm.Domain` <- `Crm.Application` <- `Crm.Infrastructure` / `Crm.Api`), CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server, minimal APIs, `Result<T>` returns, RFC 9457 problem details.
-- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
+- **Backend:** .NET 10 modular monolith. One module per bounded context under `backend/src/Modules/<Module>/` (`Domain` <- `Application` <- `Infrastructure` / `Presentation`, plus a public `Contracts` project), Domain-Driven Design with Clean Architecture inside each module, one host (`Crm.Api`). CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server with one DbContext and schema per module, MVC controllers in per-persona Areas, `Result<T>` returns, RFC 9457 problem details. The clock is read only through `IDateTime`; `System.DateTime` is banned.
+- **Module boundaries:** a module reaches another only through that module's `Contracts` - a synchronous API interface for a read, an integration event (via the outbox) for "this happened". No cross-module project references, foreign keys, joins, or shared entities; one command, one module, one transaction. The build fails with `CRM0001` on a forbidden reference. The module catalogue in `CLAUDE.md` names the module each story belongs to.
+- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events inside the module, and as integration events across modules; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
 - **Frontend:** Nuxt 4 with Vue 3 script-setup, TypeScript strict, Tailwind utilities only, Pinia for cross-route state, `@nuxtjs/i18n` for `en` and `ar`.
 - **Bilingual and RTL:** every user-visible string is an i18n key in both `en` and `ar`; layouts use logical Tailwind utilities (`ms-`, `me-`, `ps-`, `pe-`, `text-start`), never `ml-`, `mr-`, or `text-left`.
 - **Scoping:** every read and write is scoped by tenant, department, and branch through `ICurrentUserService`. Admin-only endpoints are the sole exception and must be explicitly authorised.

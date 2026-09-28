@@ -9,6 +9,7 @@ Plan it with `/squad-plan .squad/stories/platform-foundation/cross-cutting-conce
 
 - **Feature name (display):** Platform Foundation
 - **Feature slug (folder under `plans/`):** `platform-foundation`
+- **Module (backend):** BuildingBlocks (cross-cutting; also delivers the in-process integration-event bus and outbox every module uses)
 
 ## Tracker (metadata only)
 
@@ -46,6 +47,14 @@ primary diagnostic surface, so this story matters more than it usually would.
   queries marked `ICacheableQuery`, and a convention for invalidating them from commands.
 - Rate limiting on public endpoints, and a resilience pipeline of retry, circuit breaker, and timeout for
   outbound HTTP applied through a delegating handler.
+- Integration events between modules: an `IIntegrationEvent` base in `Crm.SharedKernel`, an `IEventBus` in
+  `Crm.BuildingBlocks.Application`, and a transactional outbox per module (an `outbox_messages` table in each module's
+  own schema, written by `ModuleDbContext` in the same transaction as the change). A background dispatcher delivers
+  each message in-process to every subscribing module's `IIntegrationEventHandler<T>`, each in the subscriber's own
+  transaction, with retry and an idempotency record per handler so a redelivered event is not applied twice.
+  Integration-event records live in the publishing module's `Contracts` project. This is the only cross-module
+  write path in the modular monolith (see `CLAUDE.md`), so every later story that reacts to another module's change
+  depends on it.
 - A `backend/requests/diagnostics.http` file with a request per failure mode, so every error shape can be
   re-verified by hand in one pass.
 
@@ -65,12 +74,17 @@ primary diagnostic surface, so this story matters more than it usually would.
 - [ ] No `Console.WriteLine` and no interpolated log strings remain; every log call uses a message template.
 - [ ] A destructuring policy redacts password, token, apikey, and secret values from all log output, confirmed by
       posting a credential payload and inspecting the log.
+- [ ] An integration event published by a command is written to that module's outbox in the same transaction, is
+      not delivered when the command fails or rolls back, and is delivered once to each subscriber after commit;
+      a subscriber that throws is retried, and a redelivered event is not applied twice. Confirmed on the Sample
+      template module and in the EF Core log.
 - [ ] Every failure mode above has a request in `backend/requests/diagnostics.http`.
 
 ## Dependencies
 
 - **Blocked by / related ids:** CRM-01, CRM-02.
-- **Depends on code areas or other stories:** the MediatR pipeline from story 01.
+- **Depends on code areas or other stories:** the MediatR pipeline from story 01. The outbox extends
+  `ModuleDbContext` and `TransactionBehavior` from story 02 and the modular-monolith building blocks.
 
 ## Technical hints
 
@@ -96,8 +110,9 @@ None.
 
 ## Stack and conventions (applies to every story)
 
-- **Backend:** .NET 10. Domain-Driven Design inside Clean Architecture (`Crm.Domain` <- `Crm.Application` <- `Crm.Infrastructure` / `Crm.Api`), CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server, minimal APIs, `Result<T>` returns, RFC 9457 problem details.
-- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
+- **Backend:** .NET 10 modular monolith. One module per bounded context under `backend/src/Modules/<Module>/` (`Domain` <- `Application` <- `Infrastructure` / `Presentation`, plus a public `Contracts` project), Domain-Driven Design with Clean Architecture inside each module, one host (`Crm.Api`). CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server with one DbContext and schema per module, MVC controllers in per-persona Areas, `Result<T>` returns, RFC 9457 problem details. The clock is read only through `IDateTime`; `System.DateTime` is banned.
+- **Module boundaries:** a module reaches another only through that module's `Contracts` - a synchronous API interface for a read, an integration event (via the outbox) for "this happened". No cross-module project references, foreign keys, joins, or shared entities; one command, one module, one transaction. The build fails with `CRM0001` on a forbidden reference. The module catalogue in `CLAUDE.md` names the module each story belongs to.
+- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events inside the module, and as integration events across modules; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
 - **Frontend:** Nuxt 4 with Vue 3 script-setup, TypeScript strict, Tailwind utilities only, Pinia for cross-route state, `@nuxtjs/i18n` for `en` and `ar`.
 - **Bilingual and RTL:** every user-visible string is an i18n key in both `en` and `ar`; layouts use logical Tailwind utilities (`ms-`, `me-`, `ps-`, `pe-`, `text-start`), never `ml-`, `mr-`, or `text-left`.
 - **Scoping:** every read and write is scoped by tenant, department, and branch through `ICurrentUserService`. Admin-only endpoints are the sole exception and must be explicitly authorised.

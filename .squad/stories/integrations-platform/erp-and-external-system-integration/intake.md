@@ -9,6 +9,7 @@ Plan it with `/squad-plan .squad/stories/integrations-platform/erp-and-external-
 
 - **Feature name (display):** Integrations and Platform
 - **Feature slug (folder under `plans/`):** `integrations-platform`
+- **Module (backend):** `Integrations`
 
 ## Tracker (metadata only)
 
@@ -34,8 +35,8 @@ ERP and external system integration
 Connecting the CRM to the systems of record, so an agent sees the customer's real account, orders, and invoices
 without opening another application. The anti-corruption layer is the point: the ERP's model must not leak inward.
 
-- An `IErpGateway` abstraction in `Crm.Application` with an adapter per ERP in `Crm.Infrastructure`, translating
-  the ERP's model into CRM domain types at the boundary. No ERP type appears in `Crm.Domain`.
+- An `IErpGateway` abstraction in `Crm.Modules.Integrations.Application` with an adapter per ERP in `Crm.Modules.Integrations.Infrastructure`, translating
+  the ERP's model into CRM domain types at the boundary. No ERP type appears in any Domain project; other modules receive ERP data only as integration events or Contracts DTOs.
 - Customer synchronisation: match by tax number, commercial registration, email, or phone; a configurable direction
   (ERP as master, CRM as master, or bidirectional per field); an explicit conflict policy; and a review queue for
   ambiguous matches rather than a silent merge.
@@ -56,7 +57,7 @@ without opening another application. The anti-corruption layer is the point: the
 
 ## Acceptance criteria
 
-- [ ] No ERP-specific type appears in `Crm.Domain` or `Crm.Application`; translation happens only in the adapter.
+- [ ] No ERP-specific type appears in any Domain, Application, or Contracts project; translation happens only in the adapter.
 - [ ] A second ERP adapter can be added by implementing the gateway interface, with no change to the application
       layer.
 - [ ] Customer matching links an ERP record to the correct CRM customer by tax number, and an ambiguous match lands
@@ -107,8 +108,9 @@ None.
 
 ## Stack and conventions (applies to every story)
 
-- **Backend:** .NET 10. Domain-Driven Design inside Clean Architecture (`Crm.Domain` <- `Crm.Application` <- `Crm.Infrastructure` / `Crm.Api`), CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server, minimal APIs, `Result<T>` returns, RFC 9457 problem details.
-- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
+- **Backend:** .NET 10 modular monolith. One module per bounded context under `backend/src/Modules/<Module>/` (`Domain` <- `Application` <- `Infrastructure` / `Presentation`, plus a public `Contracts` project), Domain-Driven Design with Clean Architecture inside each module, one host (`Crm.Api`). CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server with one DbContext and schema per module, MVC controllers in per-persona Areas, `Result<T>` returns, RFC 9457 problem details. The clock is read only through `IDateTime`; `System.DateTime` is banned.
+- **Module boundaries:** a module reaches another only through that module's `Contracts` - a synchronous API interface for a read, an integration event (via the outbox) for "this happened". No cross-module project references, foreign keys, joins, or shared entities; one command, one module, one transaction. The build fails with `CRM0001` on a forbidden reference. The module catalogue in `CLAUDE.md` names the module each story belongs to.
+- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events inside the module, and as integration events across modules; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
 - **Frontend:** Nuxt 4 with Vue 3 script-setup, TypeScript strict, Tailwind utilities only, Pinia for cross-route state, `@nuxtjs/i18n` for `en` and `ar`.
 - **Bilingual and RTL:** every user-visible string is an i18n key in both `en` and `ar`; layouts use logical Tailwind utilities (`ms-`, `me-`, `ps-`, `pe-`, `text-start`), never `ml-`, `mr-`, or `text-left`.
 - **Scoping:** every read and write is scoped by tenant, department, and branch through `ICurrentUserService`. Admin-only endpoints are the sole exception and must be explicitly authorised.

@@ -1,0 +1,67 @@
+<Project>
+  <!--
+    Module boundary rules for the modular monolith (CLAUDE.md, "Backend - modular monolith").
+
+    There is no test suite and no architecture-test project on this repository, so the build is what
+    enforces the module boundaries: a forbidden ProjectReference fails `dotnet build` with CRM0001
+    before anything compiles. Project names are the contract - every module project is named
+    Crm.Modules.<Module>.<Layer>, where <Layer> is Domain, Application, Contracts, Infrastructure or
+    Presentation.
+
+    Do not weaken or bypass a rule here to make a reference compile. A reference this target rejects
+    is a design problem: talk to the other module through its Contracts project instead.
+  -->
+  <PropertyGroup>
+    <CrmIsModuleProject>$(MSBuildProjectName.StartsWith('Crm.Modules.'))</CrmIsModuleProject>
+    <CrmModuleName Condition="'$(CrmIsModuleProject)' == 'true'">$([System.Text.RegularExpressions.Regex]::Replace($(MSBuildProjectName), '^Crm\.Modules\.([^.]+)\..+$', '$1'))</CrmModuleName>
+    <CrmModuleLayer Condition="'$(CrmIsModuleProject)' == 'true'">$([System.Text.RegularExpressions.Regex]::Replace($(MSBuildProjectName), '^Crm\.Modules\.[^.]+\.', ''))</CrmModuleLayer>
+    <CrmOwnModulePrefix>Crm.Modules.$(CrmModuleName).</CrmOwnModulePrefix>
+  </PropertyGroup>
+
+  <!-- Runs before IncludeTransitiveProjectReferences on purpose: after it, @(ProjectReference) also -->
+  <!-- holds every transitive reference (the host would "reference" each module's Domain), and the -->
+  <!-- rules below are about what a project declares, not what it inherits. -->
+  <Target Name="CrmCheckModuleBoundaries" BeforeTargets="IncludeTransitiveProjectReferences;ResolveProjectReferences;CoreCompile">
+    <Error Code="CRM0001"
+           Condition="'$(CrmIsModuleProject)' == 'true' and '$(CrmModuleLayer)' != 'Domain' and '$(CrmModuleLayer)' != 'Application' and '$(CrmModuleLayer)' != 'Contracts' and '$(CrmModuleLayer)' != 'Infrastructure' and '$(CrmModuleLayer)' != 'Presentation'"
+           Text="$(MSBuildProjectName): a module project must be named Crm.Modules.&lt;Module&gt;.&lt;Domain|Application|Contracts|Infrastructure|Presentation&gt;." />
+
+    <ItemGroup>
+      <_CrmReference Include="@(ProjectReference->'%(Filename)')" />
+
+      <!-- Rule 1: another module is reachable only through its Contracts project. -->
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (another module is reachable only through its .Contracts project)')"
+                     Condition="'$(CrmIsModuleProject)' == 'true' and $([System.String]::Copy('%(Identity)').StartsWith('Crm.Modules.')) and !$([System.String]::Copy('%(Identity)').StartsWith('$(CrmOwnModulePrefix)')) and !$([System.String]::Copy('%(Identity)').EndsWith('.Contracts'))" />
+
+      <!-- Rule 2: Domain and Contracts are pure - they reference the shared kernel and nothing else. -->
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (a $(CrmModuleLayer) project may reference only Crm.SharedKernel)')"
+                     Condition="('$(CrmModuleLayer)' == 'Domain' or '$(CrmModuleLayer)' == 'Contracts') and '%(Identity)' != 'Crm.SharedKernel'" />
+
+      <!-- Rule 3: Application points inward only - never at Infrastructure or Presentation. -->
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (Application must not depend on Infrastructure or Presentation)')"
+                     Condition="'$(CrmModuleLayer)' == 'Application' and ($([System.String]::Copy('%(Identity)').EndsWith('.Infrastructure')) or $([System.String]::Copy('%(Identity)').EndsWith('.Presentation')))" />
+
+      <!-- Rule 4: Presentation talks to Application only - no Domain types across the API boundary, no Infrastructure. -->
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (Presentation must not depend on Domain or Infrastructure)')"
+                     Condition="'$(CrmModuleLayer)' == 'Presentation' and ($([System.String]::Copy('%(Identity)').EndsWith('.Domain')) or $([System.String]::Copy('%(Identity)').EndsWith('.Infrastructure')))" />
+
+      <!-- Rule 5: Infrastructure never depends on Presentation. -->
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (Infrastructure must not depend on Presentation)')"
+                     Condition="'$(CrmModuleLayer)' == 'Infrastructure' and $([System.String]::Copy('%(Identity)').EndsWith('.Presentation'))" />
+
+      <!-- Rule 6: the shared kernel references nothing; building blocks never know about a module. -->
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (Crm.SharedKernel references nothing)')"
+                     Condition="'$(MSBuildProjectName)' == 'Crm.SharedKernel'" />
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (building blocks must not know about any module)')"
+                     Condition="$(MSBuildProjectName.StartsWith('Crm.BuildingBlocks.')) and $([System.String]::Copy('%(Identity)').StartsWith('Crm.Modules.'))" />
+
+      <!-- Rule 7: the host composes modules through their Infrastructure and Presentation projects only. -->
+      <_CrmViolation Include="@(_CrmReference->'%(Identity) (the host references a module only through its .Infrastructure and .Presentation projects)')"
+                     Condition="'$(MSBuildProjectName)' == 'Crm.Api' and $([System.String]::Copy('%(Identity)').StartsWith('Crm.Modules.')) and !$([System.String]::Copy('%(Identity)').EndsWith('.Infrastructure')) and !$([System.String]::Copy('%(Identity)').EndsWith('.Presentation'))" />
+    </ItemGroup>
+
+    <Error Code="CRM0001"
+           Condition="'@(_CrmViolation)' != ''"
+           Text="$(MSBuildProjectName) breaks the module boundary rules (CLAUDE.md, 'Backend - modular monolith'): @(_CrmViolation, '; ')" />
+  </Target>
+</Project>

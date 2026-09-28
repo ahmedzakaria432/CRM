@@ -3,6 +3,8 @@
 Entry point for the **Identity and Access** feature. This is **feature 2 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Identity` (07; also 08, 09) and `Audit` (10). See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

@@ -3,6 +3,8 @@
 Entry point for the **AI Features** feature. This is **feature 9 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Ai` (41; also 42–46). See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

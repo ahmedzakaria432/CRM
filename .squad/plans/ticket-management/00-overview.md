@@ -3,6 +3,8 @@
 Entry point for the **Ticket Management** feature. This is **feature 4 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Tickets` (15; also 16–19). 20 and 21 are frontend only. See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

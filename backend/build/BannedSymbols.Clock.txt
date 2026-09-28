@@ -1,0 +1,3 @@
+T:System.DateTime;DateTime is banned solution-wide. Use DateTimeOffset for values and inject IDateTime to read the clock.
+P:System.DateTimeOffset.UtcNow;Inject IDateTime (Crm.BuildingBlocks.Application.Abstractions) so time is controllable. Direct clock reads are banned.
+P:System.DateTimeOffset.Now;Local time is banned. Inject IDateTime and use IDateTime.UtcNow.

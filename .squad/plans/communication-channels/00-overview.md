@@ -3,6 +3,8 @@
 Entry point for the **Communication Channels** feature. This is **feature 5 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Communication` (22; also 23–27). Inbound messages reach `Tickets` as integration events. See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

@@ -3,6 +3,8 @@
 Entry point for the **Customer Portal** feature. This is **feature 10 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** no module of its own — the `Portal` Area over `Identity` (47), `Tickets` (48, 49), and a new `Feedback` module (50). See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

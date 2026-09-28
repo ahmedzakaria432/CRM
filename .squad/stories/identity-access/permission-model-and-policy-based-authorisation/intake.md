@@ -9,6 +9,7 @@ Plan it with `/squad-plan .squad/stories/identity-access/permission-model-and-po
 
 - **Feature name (display):** Identity and Access
 - **Feature slug (folder under `plans/`):** `identity-access`
+- **Module (backend):** `Identity`; the `[RequirePermission]` behaviour and permission catalogue are BuildingBlocks every module uses
 
 ## Tracker (metadata only)
 
@@ -40,7 +41,7 @@ what makes department-level delegation safe.
   caller's roles within the active scope.
 - Authorisation enforced by a MediatR behaviour driven by a `[RequirePermission]` attribute on the request, so a
   handler cannot be reached without a declared permission, plus matching endpoint filters.
-- A startup guard that enumerates every `IRequest` in `Crm.Application` and refuses to start the application if
+- A startup guard that enumerates every `IRequest` in every module's Application assembly (from the host's `ModuleCatalog`) and refuses to start the application if
   any of them lacks a permission declaration. On a project with no tests, a fail-fast startup check is the only
   way this stays complete as the backlog grows.
 - Record-level rules layered on the scope filter from story 06: an agent sees only tickets assigned to them or
@@ -92,8 +93,9 @@ None.
 
 ## Stack and conventions (applies to every story)
 
-- **Backend:** .NET 10. Domain-Driven Design inside Clean Architecture (`Crm.Domain` <- `Crm.Application` <- `Crm.Infrastructure` / `Crm.Api`), CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server, minimal APIs, `Result<T>` returns, RFC 9457 problem details.
-- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
+- **Backend:** .NET 10 modular monolith. One module per bounded context under `backend/src/Modules/<Module>/` (`Domain` <- `Application` <- `Infrastructure` / `Presentation`, plus a public `Contracts` project), Domain-Driven Design with Clean Architecture inside each module, one host (`Crm.Api`). CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server with one DbContext and schema per module, MVC controllers in per-persona Areas, `Result<T>` returns, RFC 9457 problem details. The clock is read only through `IDateTime`; `System.DateTime` is banned.
+- **Module boundaries:** a module reaches another only through that module's `Contracts` - a synchronous API interface for a read, an integration event (via the outbox) for "this happened". No cross-module project references, foreign keys, joins, or shared entities; one command, one module, one transaction. The build fails with `CRM0001` on a forbidden reference. The module catalogue in `CLAUDE.md` names the module each story belongs to.
+- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events inside the module, and as integration events across modules; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
 - **Frontend:** Nuxt 4 with Vue 3 script-setup, TypeScript strict, Tailwind utilities only, Pinia for cross-route state, `@nuxtjs/i18n` for `en` and `ar`.
 - **Bilingual and RTL:** every user-visible string is an i18n key in both `en` and `ar`; layouts use logical Tailwind utilities (`ms-`, `me-`, `ps-`, `pe-`, `text-start`), never `ml-`, `mr-`, or `text-left`.
 - **Scoping:** every read and write is scoped by tenant, department, and branch through `ICurrentUserService`. Admin-only endpoints are the sole exception and must be explicitly authorised.

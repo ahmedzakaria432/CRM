@@ -1,5 +1,9 @@
 # Story 01 — Backend solution scaffold with DDD and Clean Architecture
 
+> **Architecture update (2026-09-28):** implemented before the backend became a modular monolith. Paths below
+> (`Crm.Domain`, `Crm.Application`, `Crm.Infrastructure`, `CrmDbContext`) are historical; see
+> [`00-overview.md`](00-overview.md), "Architecture change — modular monolith", for where each piece lives now.
+
 ## Prerequisites
 
 - None. This is the first story in the global sequence (`.squad/BACKLOG.md`, line 22).

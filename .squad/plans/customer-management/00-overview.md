@@ -3,6 +3,8 @@
 Entry point for the **Customer Management** feature. This is **feature 3 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `Customers` (11; also 12, 13) and deletes the `Sample` template module. 14 is frontend only. See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

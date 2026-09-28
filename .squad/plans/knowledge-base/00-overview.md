@@ -3,6 +3,8 @@
 Entry point for the **Knowledge Base** feature. This is **feature 8 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
+**Backend modules:** creates `KnowledgeBase` (37; also 38–40). See the module catalogue in `CLAUDE.md`.
+
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |

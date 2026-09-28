@@ -9,6 +9,7 @@ Plan it with `/squad-plan .squad/stories/platform-foundation/multi-department-an
 
 - **Feature name (display):** Platform Foundation
 - **Feature slug (folder under `plans/`):** `platform-foundation`
+- **Module (backend):** `Organisation` (new module); the scope filter and scope ids are BuildingBlocks / SharedKernel so every module applies them
 
 ## Tracker (metadata only)
 
@@ -34,13 +35,17 @@ Multi department and multi branch organisation scoping
 The CRM serves multiple departments across multiple branches. Data isolation and visibility must be enforced in
 one place, at the data layer, so no handler can leak across a boundary by omission.
 
-- The Organisation bounded context in `Crm.Domain/Organisation`: `Organisation`, `Branch`, `Department`, and
+- The Organisation bounded context as the new `Organisation` module (`Crm.Modules.Organisation.*`, schema `organisation`): `Organisation`, `Branch`, `Department`, and
   `Team` as aggregate roots, with `BusinessHours`, `HolidayCalendar`, and `TimeZoneId` as value objects.
 - Membership as its own aggregate linking a user to a department, branch, and team with a role, so one user can
   belong to several departments holding a different role in each. Membership references user and department by
   strongly-typed id only.
 - `ICurrentUserService` exposing user id, roles, permissions, department ids, branch ids, and the scope the user
   has selected in the UI.
+- The scope ids (`TenantId`, `BranchId`, `DepartmentId`) and `IOrganisationScoped` live in `Crm.SharedKernel`, and the
+  scope filter is registered by `ModuleDbContext` in `Crm.BuildingBlocks.Infrastructure`, so every module's DbContext
+  applies it without opting in. `ICurrentUserService` resolves memberships through `Organisation.Contracts`, never by
+  reading the `organisation` schema from another module.
 - An `IOrganisationScoped` marker plus a global query filter restricting reads to the caller's accessible
   branches and departments, layered on the soft-delete filter from story 02.
 - A write-side guard: a pipeline behaviour rejecting a command whose target falls outside the caller's scope,
@@ -97,8 +102,9 @@ None.
 
 ## Stack and conventions (applies to every story)
 
-- **Backend:** .NET 10. Domain-Driven Design inside Clean Architecture (`Crm.Domain` <- `Crm.Application` <- `Crm.Infrastructure` / `Crm.Api`), CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server, minimal APIs, `Result<T>` returns, RFC 9457 problem details.
-- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
+- **Backend:** .NET 10 modular monolith. One module per bounded context under `backend/src/Modules/<Module>/` (`Domain` <- `Application` <- `Infrastructure` / `Presentation`, plus a public `Contracts` project), Domain-Driven Design with Clean Architecture inside each module, one host (`Crm.Api`). CQRS with MediatR, FluentValidation, EF Core 10 on SQL Server with one DbContext and schema per module, MVC controllers in per-persona Areas, `Result<T>` returns, RFC 9457 problem details. The clock is read only through `IDateTime`; `System.DateTime` is banned.
+- **Module boundaries:** a module reaches another only through that module's `Contracts` - a synchronous API interface for a read, an integration event (via the outbox) for "this happened". No cross-module project references, foreign keys, joins, or shared entities; one command, one module, one transaction. The build fails with `CRM0001` on a forbidden reference. The module catalogue in `CLAUDE.md` names the module each story belongs to.
+- **DDD rules:** aggregate roots guard their own invariants and are always valid; no public setters, state changes go through intention-revealing methods; children are reachable only through their root; other aggregates are referenced by strongly-typed id, never by navigation property; one transaction touches one aggregate and cross-aggregate effects travel as domain events inside the module, and as integration events across modules; anything without identity is an immutable value object; type and method names use this story description as the ubiquitous language.
 - **Frontend:** Nuxt 4 with Vue 3 script-setup, TypeScript strict, Tailwind utilities only, Pinia for cross-route state, `@nuxtjs/i18n` for `en` and `ar`.
 - **Bilingual and RTL:** every user-visible string is an i18n key in both `en` and `ar`; layouts use logical Tailwind utilities (`ms-`, `me-`, `ps-`, `pe-`, `text-start`), never `ml-`, `mr-`, or `text-left`.
 - **Scoping:** every read and write is scoped by tenant, department, and branch through `ICurrentUserService`. Admin-only endpoints are the sole exception and must be explicitly authorised.

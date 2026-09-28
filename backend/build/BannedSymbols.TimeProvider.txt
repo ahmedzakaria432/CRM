@@ -1,0 +1,1 @@
+T:System.TimeProvider;Inject IDateTime (Crm.BuildingBlocks.Application.Abstractions) instead. Only SystemDateTime in Crm.BuildingBlocks.Infrastructure may touch TimeProvider.
