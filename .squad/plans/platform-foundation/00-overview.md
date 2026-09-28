@@ -12,7 +12,7 @@ Entry point for the **Platform Foundation** feature. This is **feature 1 of 12**
 | 01 | [`backend-solution-scaffold-with-ddd-and-clean-architecture`](../../stories/platform-foundation/backend-solution-scaffold-with-ddd-and-clean-architecture/intake.md) | Backend solution scaffold with DDD and Clean Architecture | [`01-story-backend-solution-scaffold-with-ddd-and-clean-architecture.md`](01-story-backend-solution-scaffold-with-ddd-and-clean-architecture.md) | none. This is the first story |
 | 02 | [`persistence-baseline-with-auditing-and-soft-delete`](../../stories/platform-foundation/persistence-baseline-with-auditing-and-soft-delete/intake.md) | Persistence baseline with auditing and soft delete | [`02-story-persistence-baseline-with-auditing-and-soft-delete.md`](02-story-persistence-baseline-with-auditing-and-soft-delete.md) | CRM-01 |
 | 03 | [`cross-cutting-concerns-error-handling-logging-and-caching`](../../stories/platform-foundation/cross-cutting-concerns-error-handling-logging-and-caching/intake.md) | Cross cutting concerns error handling logging and caching | [`03-story-cross-cutting-concerns-error-handling-logging-and-caching.md`](03-story-cross-cutting-concerns-error-handling-logging-and-caching.md) | CRM-01, CRM-02 |
-| 04 | [`frontend-scaffold-with-nuxt-typescript-and-tailwind`](../../stories/platform-foundation/frontend-scaffold-with-nuxt-typescript-and-tailwind/intake.md) | Frontend scaffold with Nuxt TypeScript and Tailwind | _not planned yet_ | CRM-01, for the OpenAPI document |
+| 04 | [`frontend-scaffold-with-nuxt-typescript-and-tailwind`](../../stories/platform-foundation/frontend-scaffold-with-nuxt-typescript-and-tailwind/intake.md) | Frontend scaffold with Nuxt TypeScript and Tailwind | [`04-story-frontend-scaffold-with-nuxt-typescript-and-tailwind.md`](04-story-frontend-scaffold-with-nuxt-typescript-and-tailwind.md) | CRM-01, for the OpenAPI document |
 | 05 | [`bilingual-arabic-and-english-support-with-rtl-layout`](../../stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | Bilingual Arabic and English support with RTL layout | _not planned yet_ | CRM-03, CRM-04 |
 | 06 | [`multi-department-and-multi-branch-organisation-scoping`](../../stories/platform-foundation/multi-department-and-multi-branch-organisation-scoping/intake.md) | Multi department and multi branch organisation scoping | _not planned yet_ | CRM-02, CRM-04 |
 
@@ -100,3 +100,36 @@ Story 03 onward is written against this layout (full rules in `CLAUDE.md`, runbo
 - **`OpenTelemetry.Instrumentation.EntityFrameworkCore` is pinned to a beta** (1.19.1-beta.1). It has never shipped
   stable.
 - **All `.http` files use `http://localhost:5187`** (from `launchSettings.json`). The earlier `5080` was wrong.
+
+### Story 04 — decisions carried forward
+
+- **pnpm 12.6.0, enabled without admin rights** with `corepack enable pnpm --install-directory "$APPDATA/npm"`.
+  Plain `corepack enable` fails with EPERM on `C:\Program Files\nodejs`. Pinned by `packageManager` in
+  `frontend/package.json`. pnpm 12 reads its settings from `frontend/pnpm-workspace.yaml` (`allowBuilds`,
+  `overrides`), not from `package.json`.
+- **Every frontend dependency is pinned exactly (no `^`).** Nuxt 4.5.2, Vue 3.5.43, Tailwind 4.3.3 via
+  `@tailwindcss/vite` (**not** `@nuxtjs/tailwindcss`, which is v3-era), `@nuxt/eslint` 1.17.0 on ESLint 10.11.0,
+  Pinia 4.0.3, openapi-typescript 7.13.0, openapi-fetch 0.17.0.
+- **TypeScript stays on 5.9.3.** 7.x is `latest` but openapi-typescript peers `^5.x`, and vue-tsc sits on the TS 5 API.
+- **`flat-cache` is overridden to 6.1.23.** 6.1.24 depends on an unpublished `cacheable@^2.5.1`. Remove the override
+  only when a clean install without it succeeds.
+- **The npm registry on this machine is a slow mirror** (`najizportalnpm.azurewebsites.net`, user `~/.npmrc`).
+  Never commit a project `.npmrc` that overrides it.
+- **Design tokens are `--crm-*` CSS variables mapped with `@theme inline`**, and `dark:` keys off `data-theme`.
+  Plain `@theme` breaks nested theming. **Story 58 rebrands by overriding `--crm-*` only.**
+- **API types come only from `pnpm gen:api`.** It fetches the four Development Swagger documents into
+  `frontend/openapi/*.json` and generates `frontend/app/api/generated/*.ts`. Both are committed, and
+  `--offline` regenerates from the snapshots. **A backend story that changes a controller or DTO reruns it in the
+  same commit.**
+- **The browser calls `/api` on the Nuxt origin.** `nitro.devProxy` forwards to 5187 in development, so the backend
+  has **no CORS policy**. Production needs a same-origin reverse proxy (a deployment decision, not yet made).
+- **`createCrmFetch` contract (Story 07 must keep it):** one single-flight refresh per 401 burst, one retry, then
+  `AuthSession.clear()` and redirect to `/login?redirect=…`. Story 07 implements `AuthSession`
+  (`accessToken`, `refresh`, `clear`, `isRefreshRequest`) in a client-only plugin and replaces `pages/login.vue`.
+- **Validation problems are never toasted.** `toProblem` camel-cases each segment of the backend's PascalCase field
+  keys (`Name` → `name`, `Lines[0]` → `lines[0]`). `useFormErrors().apply` binds them to fields.
+- **Physical-direction utilities are lint errors from Story 04 on** (templates and script strings). The kit uses
+  `ui-hover:`/`ui-focus:` so `/_dev/ui` can force states. **Story 05 must not relax either rule.**
+- **Shell copy lives in `app/copy/en.ts`, and the UI kit has no copy.** Story 05 moves `shellCopy` into locale files.
+- **`/_dev/**` is stripped from production by `frontend/modules/dev-only-pages.ts`** (`pages:extend`). `ignore`
+  under `$production` was proven not to work.
