@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Probe 6: dark: keys off data-theme, so a subtree can be themed independently (used by /_dev/ui). */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Kit-only state variants: real hover/focus-visible, or forced by data-force="hover focus" on /_dev/ui. */
+@custom-variant ui-hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  &[data-force~='hover'] {
+    @slot;
+  }
+}
+@custom-variant ui-focus (&:focus-visible, &[data-force~='focus']);
+
+/* Probe 5: inline, so utilities emit var(--crm-*) directly and re-resolve inside a nested data-theme. */
+@theme inline {
+  --color-primary-50: var(--crm-primary-50);
+  --color-primary-100: var(--crm-primary-100);
+  --color-primary-200: var(--crm-primary-200);
+  --color-primary-300: var(--crm-primary-300);
+  --color-primary-400: var(--crm-primary-400);
+  --color-primary-500: var(--crm-primary-500);
+  --color-primary-600: var(--crm-primary-600);
+  --color-primary-700: var(--crm-primary-700);
+  --color-primary-800: var(--crm-primary-800);
+  --color-primary-900: var(--crm-primary-900);
+  --color-primary-950: var(--crm-primary-950);
+
+  --color-neutral-50: var(--crm-neutral-50);
+  --color-neutral-100: var(--crm-neutral-100);
+  --color-neutral-200: var(--crm-neutral-200);
+  --color-neutral-300: var(--crm-neutral-300);
+  --color-neutral-400: var(--crm-neutral-400);
+  --color-neutral-500: var(--crm-neutral-500);
+  --color-neutral-600: var(--crm-neutral-600);
+  --color-neutral-700: var(--crm-neutral-700);
+  --color-neutral-800: var(--crm-neutral-800);
+  --color-neutral-900: var(--crm-neutral-900);
+  --color-neutral-950: var(--crm-neutral-950);
+
+  --color-success-50: var(--crm-success-50);
+  --color-success-500: var(--crm-success-500);
+  --color-success-600: var(--crm-success-600);
+  --color-success-700: var(--crm-success-700);
+
+  --color-warning-50: var(--crm-warning-50);
+  --color-warning-500: var(--crm-warning-500);
+  --color-warning-600: var(--crm-warning-600);
+  --color-warning-700: var(--crm-warning-700);
+
+  --color-danger-50: var(--crm-danger-50);
+  --color-danger-500: var(--crm-danger-500);
+  --color-danger-600: var(--crm-danger-600);
+  --color-danger-700: var(--crm-danger-700);
+
+  --color-info-50: var(--crm-info-50);
+  --color-info-500: var(--crm-info-500);
+  --color-info-600: var(--crm-info-600);
+  --color-info-700: var(--crm-info-700);
+
+  --color-surface: var(--crm-surface);
+  --color-surface-raised: var(--crm-surface-raised);
+  --color-surface-sunken: var(--crm-surface-sunken);
+  --color-border: var(--crm-border);
+  --color-fg: var(--crm-text);
+  --color-fg-muted: var(--crm-text-muted);
+  --color-fg-inverse: var(--crm-text-inverse);
+  --color-focus: var(--crm-focus);
+  --color-overlay: var(--crm-overlay);
+
+  --radius-sm: var(--crm-radius-sm);
+  --radius-md: var(--crm-radius-md);
+  --radius-lg: var(--crm-radius-lg);
+  --radius-xl: var(--crm-radius-xl);
+  --radius-full: var(--crm-radius-full);
+
+  --spacing: var(--crm-spacing);
+
+  --font-sans: var(--crm-font-sans);
+  --font-mono: var(--crm-font-mono);
+}
+
+@utility focus-ring {
+  outline: 2px solid var(--crm-focus);
+  outline-offset: 2px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html[data-theme='dark'] {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-surface text-fg font-sans antialiased;
+  }
+}

@@ -1,0 +1,8 @@
+# pnpm 12 reads its settings here. Not a monorepo: there is one package.
+allowBuilds:
+  esbuild: true        # Vite/Nuxt native binary
+  unrs-resolver: true  # eslint-plugin-import-x resolver native binding
+overrides:
+  # flat-cache 6.1.24 depends on cacheable@^2.5.1, which was never published (npmjs tops out at 2.5.0).
+  # Remove when a flat-cache release resolves again. See Story 04 plan, Probe 2.
+  flat-cache: 6.1.23

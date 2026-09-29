@@ -201,6 +201,12 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
 - **Data:** one composable per use case in `app/composables/`. Pinia only for state shared across routes.
 - **State per view:** loading, empty, and error states are required, not polish.
 - **Responsive:** mobile-first; verify 375 / 768 / 1280.
+- API types come only from `pnpm gen:api` (`openapi/*.json` → `app/api/generated/*.ts`, both committed). Never
+  hand-write a DTO type.
+- All HTTP goes through `useApi()`. A 400 is shown with `useFormErrors()`, never a toast.
+- Styling uses the `--crm-*` token utilities only. `ui-hover:`/`ui-focus:` inside `app/components/ui/`.
+- Every new UI kit component, or new state, gets a section on `/_dev/ui`.
+- pnpm is enabled with `corepack enable pnpm --install-directory "$APPDATA/npm"` on Windows without admin.
 
 ## Testing policy — automated tests are out of scope
 

@@ -9,7 +9,8 @@ Create a frontend feature module for `$ARGUMENTS` (e.g. `tickets/inbox` or `cust
 - `app/pages/<feature>/...` - route pages, thin. Data fetching and layout only.
 - `app/components/<feature>/` - presentational components, `PascalCase.vue`, `<script setup lang="ts">`.
 - `app/composables/use<Feature>.ts` - data access and local state, one composable per use case.
-- `app/types/<feature>.ts` - DTO types mirroring the backend contract, generated where possible.
+- API DTO types come from `app/api/generated/<area>.ts` (`pnpm gen:api`). Do not write them by hand; a
+  view-model type local to the feature may live in `app/types/<feature>.ts`.
 - `app/stores/<feature>.ts` - Pinia store only when state is shared across routes.
 - `i18n/locales/{en,ar}.json` - every user-visible string, keyed `<feature>.<key>`. No hardcoded copy.
 

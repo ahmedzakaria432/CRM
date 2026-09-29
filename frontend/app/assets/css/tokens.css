@@ -1,0 +1,104 @@
+/*
+ * Brand tokens. Story 58 (branding) overrides this file only — no component or layout names a raw colour,
+ * every visual value in the app traces back to a `--crm-*` variable declared here.
+ *
+ * Colour scales use oklch() for perceptually even steps and predictable contrast across light/dark.
+ */
+
+:root,
+[data-theme='light'] {
+  /* Primary (brand blue) */
+  --crm-primary-50: oklch(0.97 0.02 250);
+  --crm-primary-100: oklch(0.93 0.045 250);
+  --crm-primary-200: oklch(0.87 0.08 250);
+  --crm-primary-300: oklch(0.79 0.11 252);
+  --crm-primary-400: oklch(0.7 0.14 254);
+  --crm-primary-500: oklch(0.6 0.17 256);
+  --crm-primary-600: oklch(0.5 0.17 258);
+  --crm-primary-700: oklch(0.42 0.15 259);
+  --crm-primary-800: oklch(0.35 0.12 260);
+  --crm-primary-900: oklch(0.28 0.09 261);
+  --crm-primary-950: oklch(0.19 0.06 262);
+
+  /* Neutral (surfaces, borders, text) */
+  --crm-neutral-50: oklch(0.985 0.002 260);
+  --crm-neutral-100: oklch(0.96 0.003 260);
+  --crm-neutral-200: oklch(0.91 0.004 260);
+  --crm-neutral-300: oklch(0.84 0.005 260);
+  --crm-neutral-400: oklch(0.7 0.006 260);
+  --crm-neutral-500: oklch(0.56 0.007 260);
+  --crm-neutral-600: oklch(0.46 0.007 260);
+  --crm-neutral-700: oklch(0.37 0.008 260);
+  --crm-neutral-800: oklch(0.27 0.008 260);
+  --crm-neutral-900: oklch(0.19 0.006 260);
+  --crm-neutral-950: oklch(0.13 0.005 260);
+
+  /* Status colours */
+  --crm-success-50: oklch(0.96 0.04 150);
+  --crm-success-500: oklch(0.6 0.14 150);
+  --crm-success-600: oklch(0.5 0.14 150);
+  --crm-success-700: oklch(0.42 0.13 150);
+
+  --crm-warning-50: oklch(0.97 0.05 85);
+  --crm-warning-500: oklch(0.72 0.16 85);
+  --crm-warning-600: oklch(0.6 0.16 70);
+  --crm-warning-700: oklch(0.48 0.15 60);
+
+  --crm-danger-50: oklch(0.96 0.03 25);
+  --crm-danger-500: oklch(0.58 0.21 25);
+  --crm-danger-600: oklch(0.5 0.21 25);
+  --crm-danger-700: oklch(0.42 0.19 25);
+
+  --crm-info-50: oklch(0.96 0.03 230);
+  --crm-info-500: oklch(0.62 0.13 230);
+  --crm-info-600: oklch(0.52 0.13 230);
+  --crm-info-700: oklch(0.44 0.12 230);
+
+  /* Semantic roles (light theme): text 7:1+ on surface, muted text 4.5:1+, inverse text 4.5:1+ on primary-600 */
+  --crm-surface: oklch(1 0 0);
+  --crm-surface-raised: var(--crm-neutral-50);
+  --crm-surface-sunken: var(--crm-neutral-100);
+  --crm-border: var(--crm-neutral-200);
+  --crm-text: var(--crm-neutral-900);
+  --crm-text-muted: var(--crm-neutral-600);
+  --crm-text-inverse: oklch(1 0 0);
+  --crm-focus: var(--crm-primary-600);
+  --crm-overlay: oklch(0.13 0.005 260 / 0.5);
+
+  --crm-radius-sm: 0.25rem;
+  --crm-radius-md: 0.5rem;
+  --crm-radius-lg: 0.75rem;
+  --crm-radius-xl: 1rem;
+  --crm-radius-full: 9999px;
+
+  --crm-spacing: 0.25rem;
+
+  --crm-font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --crm-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+[data-theme='dark'] {
+  /* Scales stay put; only the semantic roles and status 500/600 steps move to different points on them. */
+  --crm-success-500: oklch(0.68 0.15 150);
+  --crm-success-600: oklch(0.58 0.15 150);
+
+  --crm-warning-500: oklch(0.78 0.16 85);
+  --crm-warning-600: oklch(0.68 0.16 80);
+
+  --crm-danger-500: oklch(0.66 0.2 25);
+  --crm-danger-600: oklch(0.58 0.21 25);
+
+  --crm-info-500: oklch(0.7 0.12 230);
+  --crm-info-600: oklch(0.6 0.13 230);
+
+  --crm-surface: var(--crm-neutral-950);
+  --crm-surface-raised: var(--crm-neutral-900);
+  --crm-surface-sunken: oklch(0.1 0.004 260);
+  --crm-border: var(--crm-neutral-700);
+  --crm-text: var(--crm-neutral-50);
+  --crm-text-muted: var(--crm-neutral-400);
+  --crm-text-inverse: oklch(1 0 0);
+  --crm-focus: var(--crm-primary-400);
+  --crm-overlay: oklch(0 0 0 / 0.6);
+}
