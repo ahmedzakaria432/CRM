@@ -46,7 +46,7 @@ interface Props {
   label: string
 }
 const props = defineProps<Props>()
-// Automatic activation: the active tab id. Story 05 swaps ArrowLeft/ArrowRight under dir="rtl".
+// Automatic activation: the active tab id. ArrowLeft/ArrowRight follow the visual order: swapped under dir=rtl.
 const active = defineModel<string>()
 
 const tabRefs = new Map<string, HTMLButtonElement>()
@@ -81,13 +81,19 @@ function handleKeydown(event: KeyboardEvent, tab: Tab): void {
   const index = enabled.findIndex((candidate) => candidate.id === tab.id)
   if (index === -1) return
 
+  // Read the direction from the element at keypress time (works under <html dir> and under a dir="rtl"
+  // wrapper on /_dev/ui). Never read the locale right after a switch: <html dir> lags setLocale by a tick.
+  const rtl = event.currentTarget instanceof HTMLElement && getComputedStyle(event.currentTarget).direction === 'rtl'
+  const forward = (index + 1) % enabled.length
+  const backward = (index - 1 + enabled.length) % enabled.length
+
   let nextIndex: number | null = null
   switch (event.key) {
     case 'ArrowRight':
-      nextIndex = (index + 1) % enabled.length
+      nextIndex = rtl ? backward : forward
       break
     case 'ArrowLeft':
-      nextIndex = (index - 1 + enabled.length) % enabled.length
+      nextIndex = rtl ? forward : backward
       break
     case 'Home':
       nextIndex = 0

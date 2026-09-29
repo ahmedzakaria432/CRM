@@ -4,12 +4,17 @@
       href="#main"
       class="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary-600 focus:px-4 focus:py-2 focus:text-fg-inverse"
     >
-      {{ shellCopy.skipToContent }}
+      {{ t('shell.skipToContent') }}
     </a>
     <header class="border-b border-border">
-      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <span class="text-lg font-semibold">{{ shellCopy.appName }}</span>
-        <UiThemeToggle :light-label="shellCopy.theme.toLight" :dark-label="shellCopy.theme.toDark" />
+      <div
+        class="mx-auto flex max-w-5xl flex-col items-start gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <span class="text-lg font-semibold">{{ t('shell.appName') }}</span>
+        <div class="flex items-center gap-2">
+          <ShellLocaleSwitcher />
+          <UiThemeToggle :light-label="t('shell.theme.toLight')" :dark-label="t('shell.theme.toDark')" />
+        </div>
       </div>
     </header>
     <main id="main" tabindex="-1" class="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
@@ -17,22 +22,22 @@
         <slot />
         <template #error="{ error, clearError }">
           <UiErrorState
-            :title="shellCopy.error.title"
+            :title="t('shell.error.title')"
             :description="errorMessage(error)"
-            :retry-label="shellCopy.error.retry"
+            :retry-label="t('shell.error.retry')"
             @retry="clearError()"
           />
         </template>
       </NuxtErrorBoundary>
     </main>
     <footer class="border-t border-border">
-      <div class="mx-auto max-w-5xl px-4 py-4 text-sm text-fg-muted">{{ shellCopy.appName }}</div>
+      <div class="mx-auto max-w-5xl px-4 py-4 text-sm text-fg-muted">{{ t('shell.appName') }}</div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { shellCopy } from '~/copy/en'
+const { t } = useI18n()
 
 // Never render a 5xx's real message in production; import.meta.dev only, and never the stack.
 function errorMessage(error: unknown): string | undefined {

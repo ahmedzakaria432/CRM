@@ -1,12 +1,12 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-fg">{{ shellCopy.nav.home }}</h1>
-    <UiEmptyState class="mt-6" title="Nothing here yet" description="Ticket, customer, and queue screens arrive in later stories." />
+    <h1 class="text-2xl font-bold text-fg">{{ t('shell.nav.home') }}</h1>
+    <UiEmptyState class="mt-6" :title="t('shell.agentHome.emptyTitle')" :description="t('shell.agentHome.emptyDescription')" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { shellCopy } from '~/copy/en'
-
 definePageMeta({ layout: 'agent' })
+
+const { t } = useI18n()
 </script>

@@ -1,4 +1,5 @@
 using Crm.BuildingBlocks.Application.Exceptions;
+using Crm.BuildingBlocks.Application.Localization;
 using Crm.SharedKernel;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
@@ -17,7 +18,8 @@ namespace Crm.BuildingBlocks.Presentation.ErrorHandling;
 /// </summary>
 public sealed partial class GlobalExceptionHandler(
     IProblemDetailsService problemDetailsService,
-    ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
+    ILogger<GlobalExceptionHandler> logger,
+    ILocalizationService localization) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
@@ -64,8 +66,8 @@ public sealed partial class GlobalExceptionHandler(
         {
             Status = StatusCodes.Status400BadRequest,
             Type = ProblemTypes.Validation,
-            Title = ProblemTypes.TitleFor(ProblemTypes.Validation),
-            Detail = "One or more validation errors occurred.",
+            Title = ProblemTypes.TitleFor(ProblemTypes.Validation, localization),
+            Detail = localization.Get("Problem.Detail.Validation"),
         };
     }
 
@@ -75,14 +77,14 @@ public sealed partial class GlobalExceptionHandler(
         return Create(
             StatusCodes.Status409Conflict,
             ProblemTypes.Conflict,
-            "The record was modified by someone else. Reload and try again.",
+            localization.Get("Problem.Detail.Concurrency"),
             "Persistence.ConcurrencyConflict");
     }
 
     private ProblemDetails Unreadable(BadHttpRequestException exception)
     {
         LogUnreadable(exception.StatusCode);
-        return Create(exception.StatusCode, ProblemTypes.ForStatus(exception.StatusCode), "The request could not be read.", code: null);
+        return Create(exception.StatusCode, ProblemTypes.ForStatus(exception.StatusCode), localization.Get("Problem.Detail.Unreadable"), code: null);
     }
 
     private ProblemDetails DependencyUnavailable(Exception exception)
@@ -91,23 +93,23 @@ public sealed partial class GlobalExceptionHandler(
         return Create(
             StatusCodes.Status503ServiceUnavailable,
             ProblemTypes.DependencyUnavailable,
-            "A downstream service is unavailable. Try again shortly.",
+            localization.Get("Problem.Detail.DependencyUnavailable"),
             code: null);
     }
 
     private ProblemDetails Unexpected(Exception exception)
     {
         LogUnexpected(exception);
-        return Create(StatusCodes.Status500InternalServerError, ProblemTypes.Internal, "An unexpected error occurred.", code: null);
+        return Create(StatusCodes.Status500InternalServerError, ProblemTypes.Internal, localization.Get("Problem.Detail.Unexpected"), code: null);
     }
 
-    private static ProblemDetails Create(int status, string type, string detail, string? code)
+    private ProblemDetails Create(int status, string type, string detail, string? code)
     {
         var problem = new ProblemDetails
         {
             Status = status,
             Type = type,
-            Title = ProblemTypes.TitleFor(type),
+            Title = ProblemTypes.TitleFor(type, localization),
             Detail = detail,
         };
 

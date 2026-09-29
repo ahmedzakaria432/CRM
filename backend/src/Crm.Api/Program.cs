@@ -7,6 +7,7 @@ using Crm.BuildingBlocks.Infrastructure.Modules;
 using Crm.BuildingBlocks.Infrastructure.Observability;
 using Crm.BuildingBlocks.Presentation;
 using Crm.BuildingBlocks.Presentation.ErrorHandling;
+using Crm.BuildingBlocks.Presentation.Localization;
 using Crm.BuildingBlocks.Presentation.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
@@ -82,10 +83,13 @@ try
 
     // ORDER MATTERS:
     // 1. correlation first - every later middleware, log line, and problem body can read it;
-    // 2. request logging outside the exception handler - it logs the final (handled) status once;
-    // 3. exception handler, then status-code pages - bare 401/404/405 become problems too;
-    // 4. rate limiter after routing (implicit), so the endpoint's [Area] is known.
+    // 2. request culture next - the exception handler and status-code pages below write problem bodies, and a
+    //    culture set further down does not flow back up to them (Story 05, Probe 1);
+    // 3. request logging outside the exception handler - it logs the final (handled) status once;
+    // 4. exception handler, then status-code pages - bare 401/404/405 become problems too;
+    // 5. rate limiter after routing (implicit), so the endpoint's [Area] is known.
     app.UseMiddleware<CorrelationIdMiddleware>();
+    app.UseCrmRequestLocalization();
     app.UseCrmRequestLogging();
     app.UseExceptionHandler();
     app.UseStatusCodePages();

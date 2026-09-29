@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
+using Crm.BuildingBlocks.Application.Localization;
 using Crm.BuildingBlocks.Presentation.ErrorHandling;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -50,6 +51,7 @@ public static class RateLimitingServiceCollectionExtensions
                         ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
                 }
 
+                ILocalizationService localization = context.HttpContext.RequestServices.GetRequiredService<ILocalizationService>();
                 await context.HttpContext.RequestServices.GetRequiredService<IProblemDetailsService>().WriteAsync(
                     new ProblemDetailsContext
                     {
@@ -58,8 +60,8 @@ public static class RateLimitingServiceCollectionExtensions
                         {
                             Status = StatusCodes.Status429TooManyRequests,
                             Type = ProblemTypes.RateLimited,
-                            Title = ProblemTypes.TitleFor(ProblemTypes.RateLimited),
-                            Detail = "Too many requests. Retry after the time in the Retry-After header.",
+                            Title = ProblemTypes.TitleFor(ProblemTypes.RateLimited, localization),
+                            Detail = localization.Get("Problem.Detail.RateLimited"),
                         },
                     });
             };

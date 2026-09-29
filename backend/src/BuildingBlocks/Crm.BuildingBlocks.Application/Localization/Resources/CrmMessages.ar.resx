@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Problem.Title.validation" xml:space="preserve"><value>فشل التحقق من صحة البيانات</value></data>
+  <data name="Problem.Title.bad-request" xml:space="preserve"><value>طلب غير صالح</value></data>
+  <data name="Problem.Title.unauthorized" xml:space="preserve"><value>يلزم تسجيل الدخول</value></data>
+  <data name="Problem.Title.forbidden" xml:space="preserve"><value>ليست لديك صلاحية</value></data>
+  <data name="Problem.Title.not-found" xml:space="preserve"><value>غير موجود</value></data>
+  <data name="Problem.Title.method-not-allowed" xml:space="preserve"><value>الطريقة غير مسموح بها</value></data>
+  <data name="Problem.Title.conflict" xml:space="preserve"><value>تعارض في البيانات</value></data>
+  <data name="Problem.Title.unsupported-media-type" xml:space="preserve"><value>نوع المحتوى غير مدعوم</value></data>
+  <data name="Problem.Title.domain-rule" xml:space="preserve"><value>مخالفة لقاعدة عمل</value></data>
+  <data name="Problem.Title.rate-limited" xml:space="preserve"><value>طلبات كثيرة جداً</value></data>
+  <data name="Problem.Title.internal" xml:space="preserve"><value>خطأ داخلي</value></data>
+  <data name="Problem.Title.dependency-unavailable" xml:space="preserve"><value>خدمة مرتبطة غير متاحة</value></data>
+  <data name="Problem.Detail.Validation" xml:space="preserve"><value>حدث خطأ واحد أو أكثر في التحقق من صحة البيانات.</value></data>
+  <data name="Problem.Detail.Concurrency" xml:space="preserve"><value>عدّل مستخدم آخر هذا السجل. أعد التحميل وحاول مرة أخرى.</value></data>
+  <data name="Problem.Detail.Unreadable" xml:space="preserve"><value>تعذّرت قراءة الطلب.</value></data>
+  <data name="Problem.Detail.DependencyUnavailable" xml:space="preserve"><value>إحدى الخدمات المرتبطة غير متاحة. حاول مرة أخرى بعد قليل.</value></data>
+  <data name="Problem.Detail.Unexpected" xml:space="preserve"><value>حدث خطأ غير متوقع.</value></data>
+  <data name="Problem.Detail.RateLimited" xml:space="preserve"><value>طلبات كثيرة جداً. أعد المحاولة بعد المدة المحددة في الترويسة Retry-After.</value></data>
+</root>

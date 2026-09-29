@@ -157,6 +157,11 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   `Crm.BuildingBlocks.Presentation/ErrorHandling/ProblemTypes.cs` (`urn:crm:problem:*`) — never inline a type string,
   never rename one (the frontend maps them to localised messages). A `DomainException` from an aggregate becomes 422
   `domain-rule`; a validator failure 400 `validation`; an unhandled exception 500 `internal` with **no** exception text.
+- **Localisation:** `Accept-Language` (`en`, `ar`) sets the request culture (`UseCrmRequestLocalization`, before
+  the exception handler). FluentValidation built-in messages and problem titles follow it. Custom server text
+  goes through `ILocalizationService` and a `.resx` pair in the owning module's Application project, registered
+  with `AddLocalizationResource`. Cached query results are culture-neutral: return both languages
+  (`LocalizedText`) rather than caching a translated string.
 - **Pipeline behaviours:** validation -> authorisation -> logging -> transaction -> caching. "Logging" is also the
   OpenTelemetry span and the `crm.request.duration` metric per request.
 - **Logging:** Serilog, compact JSON in every environment; every line carries `CorrelationId` (from
@@ -207,6 +212,10 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
 - Styling uses the `--crm-*` token utilities only. `ui-hover:`/`ui-focus:` inside `app/components/ui/`.
 - Every new UI kit component, or new state, gets a section on `/_dev/ui`.
 - pnpm is enabled with `corepack enable pnpm --install-directory "$APPDATA/npm"` on Windows without admin.
+- Locale files are `frontend/i18n/locales/{en,ar}/<domain>.json`, one top-level key per file equal to the file
+  name; `pnpm lint` fails on diverging key sets and on bare template strings outside `/_dev`.
+- Format dates, numbers, currency, and sizes only through `useFormat()` (`Intl`, Gregorian, `Asia/Riyadh`).
+  Identifiers inside Arabic text go in `<bdi dir="ltr">`.
 
 ## Testing policy — automated tests are out of scope
 
@@ -241,6 +250,15 @@ Because there is no test net, these take its place and are non-negotiable:
 2. `/squad-plan .squad/stories/<feature>/<slug>/intake.md` — generate the executable plan.
 3. `/squad-implement .squad/plans/<feature>/NN-story-<slug>.md` — execute it in a fresh scoped session.
 4. `/squad-status` — see where the backlog stands.
+
+`/squad-story <NN|next>` runs steps 2 and 3 for one MVP story: a planning subagent on the default model, then an
+implementation subagent on Sonnet, each in its own context, handing over only the plan file.
+
+- **Planning is read-only.** A planning session (or planning subagent) reads code and docs and writes the plan —
+  no scratch builds, package installs, dev servers, API runs, or browser probes. What needs a run to prove goes
+  in the plan as a risk for the implementation session to verify first.
+- **A plan is saved with its implementation.** The plan file is not committed on its own; it lands in the same
+  commit as the story's code (`Implement Story NN — <title>`).
 
 Stories execute in `NN` order. `.squad/BACKLOG.md` is the source of truth for sequence, phase, and dependencies.
 Every plan names the module (or modules) its story touches, using the module catalogue above.

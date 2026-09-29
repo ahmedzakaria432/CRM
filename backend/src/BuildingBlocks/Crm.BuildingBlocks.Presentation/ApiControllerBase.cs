@@ -1,3 +1,4 @@
+using Crm.BuildingBlocks.Application.Localization;
 using Crm.BuildingBlocks.Presentation.ErrorHandling;
 using Crm.SharedKernel.Results;
 using MediatR;
@@ -37,6 +38,7 @@ public abstract class ApiControllerBase : ControllerBase
         ArgumentNullException.ThrowIfNull(error);
 
         ProblemDetailsFactory factory = HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+        ILocalizationService localization = HttpContext.RequestServices.GetRequiredService<ILocalizationService>();
         int status = ErrorTypeMapping.ToStatusCode(error.Type);
         string type = ErrorTypeMapping.ToProblemType(error.Type);
 
@@ -52,14 +54,14 @@ public abstract class ApiControllerBase : ControllerBase
             }
 
             ValidationProblemDetails validation = factory.CreateValidationProblemDetails(
-                HttpContext, modelState, status, ProblemTypes.TitleFor(type), type, error.Description);
+                HttpContext, modelState, status, ProblemTypes.TitleFor(type, localization), type, error.Description);
             validation.Extensions["code"] = error.Code;
 
             return new BadRequestObjectResult(validation);
         }
 
         ProblemDetails problem = factory.CreateProblemDetails(
-            HttpContext, status, ProblemTypes.TitleFor(type), type, error.Description);
+            HttpContext, status, ProblemTypes.TitleFor(type, localization), type, error.Description);
         problem.Extensions["code"] = error.Code;
 
         return new ObjectResult(problem) { StatusCode = status };

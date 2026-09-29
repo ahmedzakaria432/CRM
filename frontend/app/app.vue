@@ -3,9 +3,9 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  <UiToastRegion :dismiss-label="shellCopy.toast.dismiss" :reference-label="shellCopy.error.reference" />
+  <UiToastRegion :dismiss-label="t('shell.toast.dismiss')" :reference-label="t('shell.error.reference')" />
 </template>
 
 <script setup lang="ts">
-import { shellCopy } from '~/copy/en'
+const { t } = useI18n()
 </script>

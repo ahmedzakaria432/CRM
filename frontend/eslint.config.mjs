@@ -33,4 +33,18 @@ export default withNuxt(
       'vue/no-restricted-class': ['error', `/${physical}/`, '/(^|:)hover:/', '/(^|:)focus-visible:/'],
     },
   },
+  {
+    // Every user-visible string is a translation key (CLAUDE.md). /_dev/** is dev-only English and is exempt.
+    files: ['app/**/*.vue'],
+    ignores: ['app/pages/_dev/**', 'app/components/dev/**'],
+    rules: {
+      'vue/no-bare-strings-in-template': [
+        'error',
+        {
+          allowlist: ['(', ')', ',', '.', '&', '+', '-', '=', '*', '/', '#', '%', '!', '?', ':', '[', ']', '{', '}',
+            '<', '>', '|', '·', '•', '–', '—', '…', '☰', '✕', '‹', '›', '▾', '🌙', '☀️'],
+        },
+      ],
+    },
+  },
 ).append(prettier)

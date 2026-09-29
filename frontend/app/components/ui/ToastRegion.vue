@@ -1,5 +1,5 @@
 <template>
-  <div class="pointer-events-none fixed bottom-4 end-4 z-50 flex w-full max-w-sm flex-col gap-2">
+  <div class="pointer-events-none fixed bottom-4 end-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
     <div role="status" aria-live="polite" class="flex flex-col gap-2">
       <UiToast
         v-for="toast in nonDanger"

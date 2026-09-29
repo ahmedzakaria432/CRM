@@ -96,6 +96,36 @@ Every request goes through `useApi()`, never a raw `$fetch`/`fetch`. `useApi().c
 `backend/src/BuildingBlocks/Crm.BuildingBlocks.Presentation/ErrorHandling/ProblemTypes.cs` **verbatim**. Never
 rename a value; add one when the backend adds one.
 
+## i18n and RTL
+
+- `@nuxtjs/i18n` runs with `en` (LTR) and `ar` (RTL), `strategy: 'no_prefix'` — one URL per page, the locale
+  lives in the `crm-locale` cookie, not the path.
+- Locale files are `i18n/locales/{en,ar}/<domain>.json` (project root, not under `app/`). A file's single
+  top-level key equals its file name (`shell.json` → `{ "shell": { ... } }`), so `t('shell.x')` always lives
+  in `shell.json`. A feature story adds its own `<domain>.json` pair and never edits `shell.json`.
+  `nuxt.config.ts` loads every file under `i18n/locales/en/` for both locales automatically — add the pair,
+  nothing else.
+- **Detection order:** the `crm-locale` cookie first, then `Accept-Language`, then `en`. Switching locale
+  (`setLocale()`, wired through `app/components/shell/LocaleSwitcher.vue`) writes the cookie and never
+  reloads the page.
+- `<html lang dir>` is set by `app/plugins/locale-head.ts` (a plugin, not `app.vue`, so `error.vue` — which
+  renders outside `app.vue` — gets the right `dir` too). **`<html dir>` updates a tick after `setLocale()`
+  resolves** — never branch on `document.dir` right after a switch; read the computed direction at the
+  moment you need it instead (see `app/components/ui/Tabs.vue`'s `handleKeydown`).
+- Every API call sends `Accept-Language: <ui locale>` (`app/plugins/api.ts`), so server-side validation and
+  problem titles come back in the language the user picked, not the browser's OS language.
+- **Formatting:** dates, times, numbers, currency (SAR), and file sizes go only through `useFormat()`
+  (`app/composables/useFormat.ts`, wrapping `app/utils/format.ts`). It wraps `Intl` with a pinned BCP 47 tag
+  per locale (`intlLocale`) and a fixed `crmTimeZone` (`Asia/Riyadh`), Gregorian only — no date library, no
+  Hijri calendar. A relative time's `now` is always a parameter computed on the client, never during SSR.
+- **Mixed-direction content:** wrap a Latin identifier placed inside Arabic text in `<bdi dir="ltr">` (JSX/Vue
+  template) or `isolateLtr()` (a plain string, e.g. a `title` attribute) so it does not reorder inside the
+  surrounding RTL paragraph. E-mail, phone, and URL `<UiInput>`s take `dir="ltr"` from the feature form
+  (forwarded through `$attrs`) for the same reason. See `/_dev/ui`'s Bidi section for worked examples.
+- `pnpm lint` runs `scripts/check-locales.ts` after ESLint: it fails when an `en`/`ar` domain file or a
+  flattened key exists on only one side, when a file is not valid JSON, when its top-level key does not match
+  its file name, or when a value is empty or not a string/object.
+
 ## Lint rules and why
 
 - `@typescript-eslint/no-explicit-any`, `no-non-null-assertion`, `ban-ts-comment` (`@ts-ignore`,
@@ -107,6 +137,9 @@ rename a value; add one when the backend adds one.
   `ps-`, `pe-`, `start-`, `end-`, `text-start`, `text-end`, `border-s`, `border-e`, `rounded-s`, `rounded-e`.
 - Inside `app/components/ui/**`, bare `hover:`/`focus-visible:` are also errors — use `ui-hover:`/`ui-focus:`
   so `/_dev/ui` can force those states without a pointer (`data-force="hover"` / `data-force="focus"`).
+- A bare string in an `app/**/*.vue` template is a lint error (`vue/no-bare-strings-in-template`) — every
+  user-visible string is a translation key. `app/pages/_dev/**` and `app/components/dev/**` are exempt: they
+  are dev-only and never localised.
 
 ## The review surface: `/_dev/ui` and `/_dev/api`
 

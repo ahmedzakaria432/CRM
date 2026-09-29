@@ -1,4 +1,5 @@
 using Crm.BuildingBlocks.Application.Abstractions;
+using Crm.BuildingBlocks.Application.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,7 +25,8 @@ public static class ErrorHandlingServiceCollectionExtensions
             if (problem.Type is null || problem.Type.StartsWith("https://tools.ietf.org/", StringComparison.Ordinal))
             {
                 problem.Type = problem is ValidationProblemDetails ? ProblemTypes.Validation : ProblemTypes.ForStatus(status);
-                problem.Title = ProblemTypes.TitleFor(problem.Type);
+                problem.Title = ProblemTypes.TitleFor(problem.Type,
+                    context.HttpContext.RequestServices.GetRequiredService<ILocalizationService>());
             }
 
             problem.Instance ??= context.HttpContext.Request.Path;

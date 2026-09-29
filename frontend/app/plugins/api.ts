@@ -1,11 +1,16 @@
 import { createCrmFetch } from '~/api/crm-fetch'
 import { createCrmClients } from '~/api/clients'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
 
   const crmFetch = createCrmFetch({
-    baseFetch: (request) => globalThis.fetch(request),
+    baseFetch: (request) => {
+      // The browser's own Accept-Language is the OS language, not the language the user picked (Task F2).
+      const headers = new Headers(request.headers)
+      headers.set('Accept-Language', nuxtApp.$i18n.locale.value)
+      return globalThis.fetch(new Request(request, { headers }))
+    },
     session: () => useAuthSession().session.value,
     onUnauthenticated: async () => {
       await navigateTo({ path: '/login', query: { redirect: useRoute().fullPath } })

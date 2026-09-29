@@ -1,15 +1,15 @@
 <template>
   <NuxtLayout name="portal">
-    <UiEmptyState v-if="error.statusCode === 404" :title="shellCopy.error.title" :description="description">
+    <UiEmptyState v-if="error.statusCode === 404" :title="t('shell.error.title')" :description="description">
       <template #actions>
-        <UiButton @click="goHome">{{ shellCopy.error.home }}</UiButton>
+        <UiButton @click="goHome">{{ t('shell.error.home') }}</UiButton>
       </template>
     </UiEmptyState>
     <UiErrorState
       v-else
-      :title="shellCopy.error.title"
+      :title="t('shell.error.title')"
       :description="description"
-      :retry-label="shellCopy.error.retry"
+      :retry-label="t('shell.error.retry')"
       @retry="goHome"
     />
   </NuxtLayout>
@@ -17,7 +17,8 @@
 
 <script setup lang="ts">
 import type { NuxtError } from '#app'
-import { shellCopy } from '~/copy/en'
+
+const { t } = useI18n()
 
 const props = defineProps<{ error: NuxtError }>()
 

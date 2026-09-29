@@ -228,9 +228,11 @@ that needs a timestamp takes it as a parameter (see `SampleAggregate.Rename`) ra
 ## Error responses
 
 Every error is RFC 9457 `application/problem+json` with a stable `type` (constants in
-`Crm.BuildingBlocks.Presentation/ErrorHandling/ProblemTypes.cs`), a fixed English `title`, `instance`, `traceId`,
-`correlationId`, and — for Result failures and domain rules — the error `code`. The frontend maps `type` (and
-`code`) to localised messages. Never rename a type; add one.
+`Crm.BuildingBlocks.Presentation/ErrorHandling/ProblemTypes.cs`), a `title` in the request's language
+(`Accept-Language: en|ar`, default `en` - also echoed in the `Content-Language` response header), `instance`,
+`traceId`, `correlationId`, and — for Result failures and domain rules — the error `code`. The frontend maps
+`type` (and `code`) to localised messages. Never rename a type; add one. Worked requests, including the
+Arabic validation example, live in `backend/requests/localization.http`.
 
 | Status | `type` | When |
 |---|---|---|

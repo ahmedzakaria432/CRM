@@ -1,0 +1,20 @@
+{
+  "errors": {
+    "problem": {
+      "validation": "فشل التحقق من صحة البيانات",
+      "bad-request": "طلب غير صالح",
+      "unauthorized": "يلزم تسجيل الدخول",
+      "forbidden": "ليست لديك صلاحية",
+      "not-found": "غير موجود",
+      "method-not-allowed": "الطريقة غير مسموح بها",
+      "conflict": "تعارض في البيانات",
+      "unsupported-media-type": "نوع المحتوى غير مدعوم",
+      "domain-rule": "مخالفة لقاعدة عمل",
+      "rate-limited": "طلبات كثيرة جداً",
+      "internal": "خطأ داخلي",
+      "dependency-unavailable": "خدمة مرتبطة غير متاحة",
+      "network": "تعذّر الاتصال بالخادم"
+    },
+    "code": {}
+  }
+}

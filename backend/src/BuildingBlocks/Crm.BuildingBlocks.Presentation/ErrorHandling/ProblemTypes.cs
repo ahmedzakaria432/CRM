@@ -1,10 +1,12 @@
+using Crm.BuildingBlocks.Application.Localization;
+
 namespace Crm.BuildingBlocks.Presentation.ErrorHandling;
 
 /// <summary>
-/// The stable RFC 9457 <c>type</c> URI of every error class the API returns. The frontend maps these to
-/// localised messages (Story 05) - never rename one; add a new one instead. URNs rather than https:// URLs:
-/// they are stable identifiers, and a URN does not pretend to be dereferenceable. Listed in
-/// backend/README.md, "Error responses".
+/// The stable RFC 9457 <c>type</c> URI of every error class the API returns. Titles are localised server-side
+/// from Accept-Language; the frontend also maps these URNs to its own messages. Never rename one; add a new
+/// one instead. URNs rather than https:// URLs: they are stable identifiers, and a URN does not pretend to be
+/// dereferenceable. Listed in backend/README.md, "Error responses".
 /// </summary>
 public static class ProblemTypes
 {
@@ -54,19 +56,17 @@ public static class ProblemTypes
         _ => BadRequest,
     };
 
-    public static string TitleFor(string type) => type switch
+    /// <summary>The problem title in the request's language (Accept-Language). Resource key
+    /// "Problem.Title.&lt;urn suffix&gt;"; an unknown type gets the internal-error title.</summary>
+    public static string TitleFor(string type, ILocalizationService localization)
     {
-        Validation => "Validation failed",
-        BadRequest => "Bad request",
-        Unauthorized => "Authentication required",
-        Forbidden => "Forbidden",
-        NotFound => "Not found",
-        MethodNotAllowed => "Method not allowed",
-        Conflict => "Conflict",
-        UnsupportedMediaType => "Unsupported media type",
-        DomainRule => "Business rule violated",
-        RateLimited => "Too many requests",
-        DependencyUnavailable => "Dependency unavailable",
-        _ => "Internal error",
-    };
+        ArgumentNullException.ThrowIfNull(localization);
+        string known = type switch
+        {
+            Validation or BadRequest or Unauthorized or Forbidden or NotFound or MethodNotAllowed or Conflict
+                or UnsupportedMediaType or DomainRule or RateLimited or DependencyUnavailable => type,
+            _ => Internal,
+        };
+        return localization.Get("Problem.Title." + known["urn:crm:problem:".Length..]);
+    }
 }

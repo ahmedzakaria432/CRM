@@ -1,0 +1,20 @@
+{
+  "errors": {
+    "problem": {
+      "validation": "Validation failed",
+      "bad-request": "Bad request",
+      "unauthorized": "Authentication required",
+      "forbidden": "Forbidden",
+      "not-found": "Not found",
+      "method-not-allowed": "Method not allowed",
+      "conflict": "Conflict",
+      "unsupported-media-type": "Unsupported media type",
+      "domain-rule": "Business rule violated",
+      "rate-limited": "Too many requests",
+      "internal": "Internal error",
+      "dependency-unavailable": "Dependency unavailable",
+      "network": "Network error"
+    },
+    "code": {}
+  }
+}

@@ -1,5 +1,7 @@
 using System.Reflection;
+using System.Resources;
 using Crm.BuildingBlocks.Application.Behaviors;
+using Crm.BuildingBlocks.Application.Localization;
 using Crm.BuildingBlocks.Application.Messaging;
 using Crm.BuildingBlocks.Application.Modules;
 using FluentValidation;
@@ -32,6 +34,12 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssemblies(moduleApplicationAssemblies);
         services.AddScoped<IUnitOfWorkResolver, UnitOfWorkResolver>();
+
+        // Story 05: server-side text follows Accept-Language. FluentValidation's built-in messages localise
+        // themselves from CurrentUICulture (Probe 2); these resources cover problem titles and fixed details.
+        services.AddLocalizationResource(new ResourceManager(
+            "Crm.BuildingBlocks.Application.Localization.Resources.CrmMessages", typeof(DependencyInjection).Assembly));
+        services.AddSingleton<ILocalizationService, ResourceLocalizationService>();
 
         // Integration events (Story 03): one bus per scope; handlers discovered here, registered by their
         // concrete type so the outbox dispatcher can resolve each one in its own scope and transaction.

@@ -1,5 +1,6 @@
 import type { CrmClients } from '~/api/clients'
 import { toProblem, networkProblem, ProblemTypes, type Problem } from '~/api/problem'
+import { problemMessage } from '~/api/problem-message'
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; problem: Problem }
 
@@ -18,7 +19,7 @@ export function useApi(): {
   clients: CrmClients
   call: <T>(request: Promise<OpenApiFetchResult<T>>, options?: CallOptions) => Promise<ApiResult<T>>
 } {
-  const { $api } = useNuxtApp()
+  const { $api, $i18n } = useNuxtApp()
   const toasts = useToasts()
 
   function maybeToast(problem: Problem, options?: CallOptions): void {
@@ -26,10 +27,12 @@ export function useApi(): {
     // Validation: the form shows it. Unauthorized: crm-fetch already redirected. Nothing else to add.
     if (problem.type === ProblemTypes.Validation) return
     if (problem.type === ProblemTypes.Unauthorized) return
+    // Lambdas: $i18n.t is overloaded and does not assign to the narrow Translate type.
+    const message = problemMessage(problem, { t: (key) => $i18n.t(key), te: (key) => $i18n.te(key) })
     toasts.push({
       tone: 'danger',
-      title: problem.title,
-      description: problem.detail,
+      title: message.title,
+      description: message.description,
       correlationId: problem.correlationId,
     })
   }

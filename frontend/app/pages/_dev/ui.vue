@@ -25,6 +25,7 @@
               {{ option.label }}
             </button>
           </div>
+          <ShellLocaleSwitcher />
           <UiThemeToggle light-label="Switch page chrome to light" dark-label="Switch page chrome to dark" />
         </div>
       </div>
@@ -425,6 +426,50 @@
           <span class="text-xs text-fg-muted">n/a — ThemeToggle wraps UiButton with fixed icon content</span>
         </DevStateRow>
       </DevSection>
+
+      <!-- Formatting -->
+      <DevSection anchor-id="formatting" title="Formatting">
+        <DevStateRow label="useFormat() over Intl — en and ar side by side, regardless of the page locale">
+          <UiTable
+            caption="Formatting helpers, en vs ar"
+            :columns="formattingColumns"
+            :rows="formattingRows"
+            :row-key="(row) => row.key"
+            class="w-full"
+          >
+            <template #cell-label="{ row }">{{ row.label }}</template>
+            <template #cell-en="{ row }">{{ row.en }}</template>
+            <template #cell-ar="{ row }">
+              <span dir="rtl" lang="ar">{{ row.ar }}</span>
+            </template>
+          </UiTable>
+        </DevStateRow>
+      </DevSection>
+
+      <!-- Bidi -->
+      <DevSection anchor-id="bidi" title="Bidi">
+        <DevStateRow label="raw vs isolated (bdi dir=ltr) — ticket reference">
+          <div dir="rtl" lang="ar" class="flex flex-col gap-1">
+            <p>رقم التذكرة الخاص بك هو TCK-2026-000123 وسيتم الرد قريباً.</p>
+            <p>رقم التذكرة الخاص بك هو <bdi dir="ltr">TCK-2026-000123</bdi> وسيتم الرد قريباً.</p>
+          </div>
+        </DevStateRow>
+        <DevStateRow label="raw vs isolated (bdi dir=ltr) — e-mail">
+          <div dir="rtl" lang="ar" class="flex flex-col gap-1">
+            <p>يمكنك التواصل معنا عبر البريد الإلكتروني ahmed@example.com للاستفسار.</p>
+            <p>يمكنك التواصل معنا عبر البريد الإلكتروني <bdi dir="ltr">ahmed@example.com</bdi> للاستفسار.</p>
+          </div>
+        </DevStateRow>
+        <DevStateRow label="raw vs isolated (bdi dir=ltr) — phone number (raw visibly reorders digit groups)">
+          <div dir="rtl" lang="ar" class="flex flex-col gap-1">
+            <p>يرجى الاتصال بنا على +966 55 123 4567 خلال ساعات العمل.</p>
+            <p>يرجى الاتصال بنا على <bdi dir="ltr">+966 55 123 4567</bdi> خلال ساعات العمل.</p>
+          </div>
+        </DevStateRow>
+        <DevStateRow label="isolateLtr() in a title attribute">
+          <span :title="isolateLtrTitle" dir="rtl" lang="ar">حرّك المؤشر فوق هذا النص</span>
+        </DevStateRow>
+      </DevSection>
     </div>
 
     <UiModal v-model:open="modalOpen" title="Example modal" close-label="Close">
@@ -442,6 +487,17 @@
 </template>
 
 <script setup lang="ts">
+import {
+  formatDate,
+  formatTime,
+  formatDateTime,
+  formatRelativeTime,
+  formatNumber,
+  formatCurrency,
+  formatFileSize,
+  isolateLtr,
+} from '~/utils/format'
+
 definePageMeta({ layout: false })
 
 const loremWords =
@@ -480,6 +536,8 @@ const sections: ReadonlyArray<{ id: string; title: string }> = [
   { id: 'pagination', title: 'Pagination' },
   { id: 'spinner', title: 'Spinner' },
   { id: 'theme-toggle', title: 'ThemeToggle' },
+  { id: 'formatting', title: 'Formatting' },
+  { id: 'bidi', title: 'Bidi' },
 ]
 
 const inputDefault = ref('')
@@ -528,4 +586,91 @@ const toasts = useToasts()
 function pushToast(tone: 'info' | 'success' | 'warning' | 'danger'): void {
   toasts.push({ tone, title: `${tone} toast`, description: 'Pushed from /_dev/ui.' })
 }
+
+// Formatting: en and ar cells always call the helper with an explicit locale, regardless of the page's own
+// locale, so both render side by side in one review pass (Probe 12).
+const fixedInstant = new Date('2026-09-29T14:05:00Z')
+// A relative time must be computed on the client, never during SSR; this page is ssr: false already, but the
+// habit is kept for consistency with every other caller of formatRelativeTime.
+const nowForRelative = ref(fixedInstant)
+onMounted(() => {
+  nowForRelative.value = new Date()
+})
+
+const formattingColumns: ReadonlyArray<{ key: string; label: string }> = [
+  { key: 'label', label: 'Helper' },
+  { key: 'en', label: 'en' },
+  { key: 'ar', label: 'ar' },
+]
+
+interface FormattingRow {
+  key: string
+  label: string
+  en: string
+  ar: string
+}
+
+function relativeRow(key: string, label: string, offsetMs: number): FormattingRow {
+  const value = new Date(fixedInstant.getTime() + offsetMs)
+  return {
+    key,
+    label,
+    en: formatRelativeTime(value, 'en', nowForRelative.value),
+    ar: formatRelativeTime(value, 'ar', nowForRelative.value),
+  }
+}
+
+function fileSizeRow(key: string, bytes: number): FormattingRow {
+  return { key, label: `formatFileSize(${bytes})`, en: formatFileSize(bytes, 'en'), ar: formatFileSize(bytes, 'ar') }
+}
+
+const formattingRows = computed<ReadonlyArray<FormattingRow>>(() => [
+  {
+    key: 'date',
+    label: 'formatDate (short / medium / long)',
+    en: ['short', 'medium', 'long'].map((style) => formatDate(fixedInstant, 'en', style as 'short' | 'medium' | 'long')).join(' / '),
+    ar: ['short', 'medium', 'long'].map((style) => formatDate(fixedInstant, 'ar', style as 'short' | 'medium' | 'long')).join(' / '),
+  },
+  {
+    key: 'time',
+    label: 'formatTime',
+    en: formatTime(fixedInstant, 'en'),
+    ar: formatTime(fixedInstant, 'ar'),
+  },
+  {
+    key: 'date-time',
+    label: 'formatDateTime',
+    en: formatDateTime(fixedInstant, 'en'),
+    ar: formatDateTime(fixedInstant, 'ar'),
+  },
+  relativeRow('relative-90s', 'formatRelativeTime (−90 s)', -90_000),
+  relativeRow('relative-3h', 'formatRelativeTime (−3 h)', -3 * 3_600_000),
+  relativeRow('relative-1d', 'formatRelativeTime (−1 day)', -86_400_000),
+  relativeRow('relative+2d', 'formatRelativeTime (+2 days)', 2 * 86_400_000),
+  {
+    key: 'number',
+    label: 'formatNumber(1234567.891)',
+    en: formatNumber(1_234_567.891, 'en'),
+    ar: formatNumber(1_234_567.891, 'ar'),
+  },
+  {
+    key: 'currency',
+    label: 'formatCurrency(1234.5)',
+    en: formatCurrency(1234.5, 'en'),
+    ar: formatCurrency(1234.5, 'ar'),
+  },
+  {
+    key: 'currency-negative',
+    label: 'formatCurrency(-0.5)',
+    en: formatCurrency(-0.5, 'en'),
+    ar: formatCurrency(-0.5, 'ar'),
+  },
+  fileSizeRow('file-size-0', 0),
+  fileSizeRow('file-size-999', 999),
+  fileSizeRow('file-size-1536', 1536),
+  fileSizeRow('file-size-5m', 5_242_880),
+  fileSizeRow('file-size-3g', 3_221_225_472),
+])
+
+const isolateLtrTitle = isolateLtr('TCK-2026-000123')
 </script>

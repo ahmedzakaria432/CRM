@@ -1,0 +1,57 @@
+@host = http://localhost:5187
+
+# Story 05 - Accept-Language (en, ar) sets the request culture. Problem titles, fixed problem details, and
+# FluentValidation messages follow it; Content-Language echoes the resolved culture. Run against a Development
+# API (`docker compose up -d` first). Compare with diagnostics.http requests 4, 6, 7 (no Accept-Language: English,
+# byte-identical to before this story).
+
+### 1. Arabic validation (acceptance criterion) - 400, title "فشل التحقق من صحة البيانات",
+### errors.Name[0] "'Name' لا يجب أن يكون فارغاً.", header Content-Language: ar
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+Accept-Language: ar
+
+{ "name": "", "lines": [] }
+
+### 2. Same body, English - title "Validation failed", "'Name' must not be empty.", Content-Language: en
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+Accept-Language: en
+
+{ "name": "", "lines": [] }
+
+### 3. Parent-culture fallback - ar-SA,en;q=0.5 negotiates to ar (never ar-SA: no Hijri calendar)
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+Accept-Language: ar-SA,en;q=0.5
+
+{ "name": "", "lines": [] }
+
+### 4. Unsupported culture - fr falls back to the default, English
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+Accept-Language: fr
+
+{ "name": "", "lines": [] }
+
+### 5. No Accept-Language header - defaults to English
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+
+{ "name": "", "lines": [] }
+
+### 6. Status-code pages path - 404 title "غير موجود" (bare 404, no controller involved)
+GET {{host}}/api/Admin/Nope
+Accept-Language: ar
+
+### 7. Exception-handler path - 500 title "خطأ داخلي", detail "حدث خطأ غير متوقع." (no exception text).
+### Fails first if UseCrmRequestLocalization runs after UseExceptionHandler (Probe 1).
+GET {{host}}/api/Admin/Diagnostics/throw
+Accept-Language: ar
+
+### 8. Domain rule - 422 title "مخالفة لقاعدة عمل", detail stays the English domain message, code Sample.DuplicateLine
+POST {{host}}/api/Admin/Samples
+Content-Type: application/json
+Accept-Language: ar
+
+{ "name": "Dup", "lines": ["a", "A"] }
