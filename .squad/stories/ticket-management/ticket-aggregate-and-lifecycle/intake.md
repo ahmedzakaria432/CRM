@@ -1,4 +1,4 @@
-# Story 15 — Ticket aggregate and lifecycle
+# Story 15 — Ticket aggregate lifecycle taxonomy and assignment
 
 Story intake for the **Ticket Management** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/ticket-management/ticket-aggregate-and-lifecycle/intake.md`.
@@ -25,73 +25,78 @@ Plan it with `/squad-plan .squad/stories/ticket-management/ticket-aggregate-and-
 ## Title
 
 ```
-Ticket aggregate and lifecycle
+Ticket aggregate lifecycle taxonomy and assignment
 ```
+
+---
+
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). **Absorbs stories 16 (taxonomy) and 17
+(assignment)** in reduced form: categories and fixed priorities, manual assignment and claim, and queue queries.
+SLA, merge/link, custom fields, and bulk operations are deferred.
 
 ---
 
 ## Description
 
-The core aggregate of the whole product. Everything else in the CRM is either feeding tickets, routing them, or
-reporting on them, so the invariants here carry the most weight of any story in the backlog.
+The core aggregate of the product.
 
-- `Ticket` as an aggregate root in `Crm.Modules.Tickets.Domain` (the new `Tickets` module, schema `tickets`), with `TicketNumber`, subject, description, customer id,
-  contact id, channel of origin, category id, priority, status, owning department and branch, assigned agent and
-  team, source reference, tags, and timestamps for created, first responded, resolved, and closed.
-- Child entities inside the aggregate: `TicketMessage`, `TicketNote`, `TicketStatusChange`, `TicketAssignment`,
-  and `SlaClock`. None of them has a `DbSet`; all are reached through the root.
-- Value objects: `TicketNumber`, `Priority`, `TicketStatus`, `ResolutionCode`, and `Reopen` with its reason.
-- The status machine expressed as domain behaviour, not as an updatable field: New, Open, Pending customer,
-  Pending third party, On hold, Resolved, Closed, Cancelled, plus Reopened. Legal transitions are declared once
-  and enforced by the aggregate.
-- Intention-revealing methods only: `Open`, `AssignTo`, `Reassign`, `PutOnHold`, `AwaitCustomer`, `Escalate`,
-  `Resolve`, `Close`, `Reopen`, `Cancel`, `Merge`, `LinkAsChildOf`. There is no public status setter anywhere.
-- Domain events raised by those methods: created, assigned, status changed, escalated, resolved, closed, reopened,
-  merged, first response recorded. Stories 13, 31, 33, 36, and 51 subscribe to them.
-- Ticket relationships: merge a duplicate into another, link parent and child for a cascading incident, and mark
-  related tickets, each with its own rules about what happens to the SLA and the customer's view.
+- The new `Tickets` module (`Crm.Modules.Tickets.*`, schema `tickets`). `Ticket` aggregate root:
+  `TicketNumber` (e.g. `T-000123`), subject, description, customer id and contact id (checked through
+  `Customers.Contracts`), channel of origin (`Agent`, `Portal`), category id, `Priority` (Low, Normal, High,
+  Urgent), status, owning branch and department (`IOrganisationScoped`), assigned agent id, and timestamps for
+  created, first responded, resolved, closed.
+- The status machine as domain behaviour: New, Open, Pending customer, On hold, Resolved, Closed, Cancelled, with
+  Reopen. Legal transitions are declared once in the aggregate; there is no public status setter.
+- Intention-revealing methods: `Open`, `AssignTo`, `Claim`, `Unassign`, `TransferTo(department)`, `ChangePriority`,
+  `ChangeCategory`, `AwaitCustomer`, `PutOnHold`, `Resolve`, `Close`, `Reopen`, `Cancel`. Each raises a domain event
+  and appends a `TicketActivity` child entry (actor, kind, from, to, timestamp) that story 18 renders.
+- `Category` aggregate: `LocalizedText` name (`ar` + `en`), owning department, active flag, display order,
+  customer-visible flag (the portal in 47 shows only these). Admin CRUD in the Admin Area.
+- Claim is safe under concurrency: two agents claiming the same ticket produce one winner and a localised
+  "already claimed by" 409 for the other (rowversion).
+- Transfer to another department moves the ticket to the receiving department's scope and keeps its history.
+- Queue queries (projections, not tables): my tickets, unassigned in my departments, all in scope; plus a paged
+  search with filters (status, priority, category, assignee, department, branch, customer) and text search on
+  number and subject.
+- Integration events in `Tickets.Contracts` published through the story 03 outbox: `TicketCreated`,
+  `TicketStatusChanged`, `TicketAssigned` (no subscribers yet in the MVP; they are the contract for later stories).
+- Permissions: `tickets.read`, `tickets.write`, `tickets.assign`.
+- `backend/requests/tickets.http` covering every transition, every rejected transition, claim contention, and
+  transfer.
 
 ## Acceptance criteria
 
-- [ ] A ticket cannot be created without a customer, a subject, a category, a channel, and an owning department.
-- [ ] `TicketNumber` is unique and gap-tolerant under concurrent creation, sourced from a database sequence.
-- [ ] An illegal status transition, for example Closed straight to Pending customer, is rejected by the aggregate
-      with a domain error mapped to 422, and the ticket is unchanged.
-- [ ] There is no public setter for status, priority, or assignee anywhere on the aggregate; every change goes
-      through a named method, and the build has no analyzer suppression hiding one.
-- [ ] Resolving a ticket requires a resolution code and stamps resolved-at; closing stamps closed-at.
-- [ ] Reopening a closed ticket requires a reason, restores it to Open, records the reopen, and restarts the SLA
-      clock per policy.
-- [ ] Closing a parent ticket with open children is rejected with a domain error naming the children.
-- [ ] Merging ticket B into ticket A moves B's messages and attachments onto A, closes B with a merged
-      resolution, points B at A, and never loses a message.
-- [ ] First response is stamped exactly once, on the first outbound agent message, and is never overwritten by a
-      later reply.
-- [ ] `TicketMessage` and the other children have no `DbSet` and cannot be saved independently.
-- [ ] Every method above and every rejected transition is exercised from `backend/requests/tickets.http`.
+- [ ] Every legal transition succeeds and every illegal one is rejected by the aggregate with 422 `domain-rule`
+      and a localised message naming the current status.
+- [ ] No public status setter exists; `TicketActivity` has no `DbSet` and is reached only through `Ticket`.
+- [ ] Creating a ticket for a customer outside the caller's scope, or for a nonexistent customer, is rejected.
+- [ ] Two concurrent claims produce exactly one assignee; the loser gets a 409 naming the winner.
+- [ ] Transfer moves the ticket out of the sender's scope and into the receiver's, with the transfer in the activity.
+- [ ] Every transition appends exactly one `TicketActivity` entry and writes one outbox row.
+- [ ] Queue queries and search page, sort, and filter server-side and are scoped (predicates visible in the SQL).
+- [ ] Category names render in the active locale; a deactivated category disappears from pickers without breaking
+      existing tickets.
+- [ ] Every path exercised from `backend/requests/tickets.http`.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-02, CRM-06, CRM-09, CRM-11.
-- **Depends on code areas or other stories:** the persistence baseline from story 02, scoping from story 06,
-  permissions from story 09, and the customer aggregate from story 11.
+- **Blocked by / related ids:** CRM-06, CRM-07, CRM-11.
+- **Depends on code areas or other stories:** scoping (06), permissions (07), `ICustomersModuleApi` (11), the
+  outbox (03).
 
 ## Technical hints
 
-- Declare the legal transitions as a static map inside the aggregate and drive every method through it. Scattering
-  `if (status == ...)` across handlers is how status machines rot.
-- Raise the first-response event from inside the message-adding method so it cannot be forgotten by a caller.
-- This aggregate has no test suite behind it. Keep the invariants in the domain where they are visible, put every
-  transition in `tickets.http`, and walk the illegal ones deliberately.
+- Declare the transition table once as data inside the aggregate; derive "allowed actions" from it so story 20's UI
+  offers only legal transitions (expose them on the ticket DTO).
+- Activity entries store a template key plus parameters, never pre-rendered text, so they read correctly in both
+  languages.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- Categories, priorities, and status configuration as admin data. That is story 16.
-- Assignment strategy and queues. That is story 17.
-- Messages as a channel-facing feature. That is story 18.
-- The UI. Those are stories 20 and 21.
-- Any test project.
-
+- SLA clock (32/33), merge and parent/child links, ticket types, custom fields, tags, resolution codes, category
+  hierarchy, team assignment, workload/load balancing, bulk assign, auto-routing (34). Any test project.
 
 ---
 

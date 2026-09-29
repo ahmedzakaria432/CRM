@@ -30,67 +30,79 @@ Multi department and multi branch organisation scoping
 
 ---
 
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). Delivers **multi-department** and
+**multi-branch**. Teams, business hours, and holiday calendars are deferred (their only consumer, SLA, is out of the
+MVP).
+
+---
+
 ## Description
 
-The CRM serves multiple departments across multiple branches. Data isolation and visibility must be enforced in
-one place, at the data layer, so no handler can leak across a boundary by omission.
+The CRM serves multiple departments across multiple branches of one organisation. Data isolation must be enforced
+once, at the data layer, so no handler can leak across a boundary by omission.
 
-- The Organisation bounded context as the new `Organisation` module (`Crm.Modules.Organisation.*`, schema `organisation`): `Organisation`, `Branch`, `Department`, and
-  `Team` as aggregate roots, with `BusinessHours`, `HolidayCalendar`, and `TimeZoneId` as value objects.
-- Membership as its own aggregate linking a user to a department, branch, and team with a role, so one user can
-  belong to several departments holding a different role in each. Membership references user and department by
-  strongly-typed id only.
-- `ICurrentUserService` exposing user id, roles, permissions, department ids, branch ids, and the scope the user
-  has selected in the UI.
-- The scope ids (`TenantId`, `BranchId`, `DepartmentId`) and `IOrganisationScoped` live in `Crm.SharedKernel`, and the
-  scope filter is registered by `ModuleDbContext` in `Crm.BuildingBlocks.Infrastructure`, so every module's DbContext
-  applies it without opting in. `ICurrentUserService` resolves memberships through `Organisation.Contracts`, never by
-  reading the `organisation` schema from another module.
-- An `IOrganisationScoped` marker plus a global query filter restricting reads to the caller's accessible
-  branches and departments, layered on the soft-delete filter from story 02.
-- A write-side guard: a pipeline behaviour rejecting a command whose target falls outside the caller's scope,
-  returning 403 rather than an accidental 404.
-- A scope switcher in the agent shell; the active branch and department drive every list, dashboard, and report.
-- Admin CRUD for branches, departments, and teams, including business hours and holiday calendars per branch,
-  consumed later by the SLA clock in story 33.
+- The new `Organisation` module (`Crm.Modules.Organisation.*`, schema `organisation`), scaffolded from the `Sample`
+  template: `Organisation` (the tenant), `Branch`, and `Department` as aggregate roots with `LocalizedText` names
+  (`ar` + `en`), an active flag, and a code. A department belongs to one branch.
+- The scope ids (`TenantId`, `BranchId`, `DepartmentId`) and an `IOrganisationScoped` marker live in
+  `Crm.SharedKernel`. `ModuleDbContext` adds a second **named** query filter (`ScopeFilterName`, next to
+  `SoftDeleteFilterName`) restricting reads of `IOrganisationScoped` entities to the caller's tenant and accessible
+  branches/departments. Every module gets it without opting in.
+- `ICurrentUserService` (from story 03) gains the caller's accessible department and branch ids and the **active
+  scope** chosen in the UI (sent as an `X-Crm-Scope` header, validated against the caller's memberships — never
+  trusted on its own).
+- A write-side guard: a pipeline behaviour rejects a command targeting an entity outside the caller's scope with
+  403 `urn:crm:problem:forbidden`, never an accidental 404.
+- `Membership` as its own aggregate in this module: a user id (a plain `Guid` — users arrive in story 07), a
+  department id, and a system role (`Administrator`, `Supervisor`, `Agent`). One user can belong to several
+  departments with a different role in each. Admin endpoints add, change, and remove memberships.
+  `Organisation.Contracts` exposes `IOrganisationModuleApi.GetMembershipsAsync(userId)`; story 07 reads it at login
+  to put department ids and roles on the token.
+- **Development-only dev login:** until story 07, an authentication handler active only in Development accepts an
+  `X-Dev-User: <user id>` header for the seeded well-known users and builds the principal from their memberships.
+  Story 07 deletes it.
+- Admin endpoints and screens (Admin Area): list, create, rename, deactivate branches and departments.
+- A scope switcher in the agent shell (all my departments, or one department); the choice persists per user in a
+  cookie and drives every list.
+- Development seed: one organisation, two branches (Riyadh, Jeddah), three departments, and memberships for four
+  well-known user ids (an admin in every department, a supervisor, two agents in different departments) that story
+  07's user seed reuses.
 
 ## Acceptance criteria
 
-- [ ] An agent in department A cannot read, list, or update an entity in department B; the attempt returns 403
-      and is written to the audit log.
-- [ ] A user who belongs to two departments sees the union only when the all-my-departments scope is active, and
-      a single department's data when that department is active.
-- [ ] Removing a user's department membership removes their access immediately, with no cached-token grace period.
-- [ ] Scope filtering is automatic: a newly written naive query is still scoped, confirmed by reading the
-      EF Core generated SQL for that query and seeing the branch and department predicates.
-- [ ] Branch business hours and holiday calendars are stored per branch with an IANA timezone and are queryable.
-- [ ] `BusinessHours` rejects an invalid range at construction, so no branch can be saved with a malformed schedule.
-- [ ] Admin can create, rename, deactivate, and reparent departments and teams; deactivating removes them from
-      assignment pickers without breaking historical records.
-- [ ] Reparenting a department that would create a cycle is rejected by the aggregate, not by the UI.
-- [ ] The scope switcher persists per user and is reflected in the ticket inbox, dashboard, and reports.
-- [ ] The cross-boundary access matrix for every role is walked by hand and every request recorded in
-      `backend/requests/organisation.http`.
+- [ ] An agent in department A cannot read, list, or update an entity in department B; the attempt returns 403.
+- [ ] A user in two departments sees the union with "all my departments" active and one department's data when
+      that department is active.
+- [ ] Scope filtering is automatic: a naive new query is still scoped, confirmed by reading the EF Core SQL and
+      seeing the tenant/branch/department predicates.
+- [ ] The scope filter is a second **named** filter; soft-deleted rows stay hidden when scope is lifted in the one
+      permitted admin path.
+- [ ] Admin can create, rename, and deactivate branches and departments; deactivated ones disappear from pickers
+      without breaking existing records.
+- [ ] A forged `X-Crm-Scope` naming a department the caller does not belong to returns 403.
+- [ ] Branch and department names render in the active locale; screens walked in `en` and `ar` at 375/768/1280.
+- [ ] Every endpoint and the cross-department matrix recorded in `backend/requests/organisation.http`.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-02, CRM-04.
-- **Depends on code areas or other stories:** the query filter and interceptor from story 02. Story 09 composes
-  its permission checks with the scope check delivered here.
+- **Blocked by / related ids:** CRM-02, CRM-03, CRM-04, CRM-05.
+- **Depends on code areas or other stories:** the named soft-delete filter from story 02, `ICurrentUserService` and
+  `CrmClaimTypes` from story 03, the agent shell from story 04, i18n from story 05.
 
 ## Technical hints
 
-- Resolve scope from the token plus a per-request active-scope header. Never treat a client-supplied department
-  id as the authorisation source.
-- Store the IANA timezone id per branch, not a UTC offset, so daylight saving is handled correctly.
-- The scope filter is the single most security-relevant piece of code in the system and there is no test suite
-  behind it. Keep it in one file, keep it short, and log every rejection.
+- Resolve scope from the token claims plus the active-scope header; the header can only narrow, never widen.
+- The scope filter is the most security-relevant code in the system and has no test suite behind it. Keep it in
+  one file, keep it short, log every rejection.
+- Do not use the unnamed `HasQueryFilter` overload — it replaces the soft-delete filter (story 02 decision).
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- Role and permission definitions. Those are stories 08 and 09.
-- SLA calculation over business hours. Story 33 consumes the calendars stored here.
-- Any test project.
+- Teams, business hours, holiday calendars, IANA timezone per branch, department reparenting.
+- Audit-log entries for rejected access (story 10 is deferred; rejections are logged).
+- Real authentication and the permission catalogue — story 07. Any test project.
 
 ---
 

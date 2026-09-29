@@ -1,4 +1,4 @@
-# Story 47 — Portal authentication registration and account
+# Story 47 — Customer portal accounts ticket submission tracking and history
 
 Story intake for the **Customer Portal** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/customer-portal/portal-authentication-registration-and-account/intake.md`.
@@ -25,70 +25,74 @@ Plan it with `/squad-plan .squad/stories/customer-portal/portal-authentication-r
 ## Title
 
 ```
-Portal authentication registration and account
+Customer portal accounts ticket submission tracking and history
 ```
+
+---
+
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). **Absorbs stories 48 (submission and
+tracking) and 49 (request history)** without the knowledge base, attachments, verification codes, or realtime.
+Moved from Phase 2 into the MVP.
 
 ---
 
 ## Description
 
-The customer's own way in. It shares the identity infrastructure from story 07 but is a separate audience with
-sharply narrower permissions, because a portal user is not a staff user with fewer rights.
+The customer's own way in, and their view of what they asked for and where it stands.
 
-- Portal identity as a distinct audience on the story 07 token stack: a separate JWT audience, a separate
-  permission set, and a hard rule that a portal token can never satisfy an agent endpoint.
-- Registration paths: self-service sign-up with email or phone verification, and an invitation issued by an agent
-  from a contact on the customer aggregate in story 11.
-- Contact linking as the central invariant: a portal account is always bound to exactly one `Contact`, and
-  therefore to one customer. Registration with an email already on a contact links to it after verification rather
-  than creating a duplicate customer.
-- Multi-contact accounts: a contact flagged as an account administrator may see the whole customer's tickets, while
-  an ordinary contact sees only their own, configured per customer.
-- Verification and recovery: email and SMS verification codes, password reset, and change-email with re-verification.
-- Account self-service: profile, preferred language, preferred contact channel, notification preferences feeding
-  story 36, and password change.
-- Portal-specific protections: rate limiting per IP and per account, CAPTCHA on registration and reset, and a
-  registration flow that cannot be used to enumerate which emails are known.
-- Frontend: portal layout from story 04, sign-up, sign-in, verification, reset, and account pages, all bilingual
-  with correct RTL and working on mobile.
+- Portal identity in the `Identity` module as a separate audience on story 07's token stack: its own JWT audience
+  and permission set (`portal.tickets`); a portal token can never satisfy an Agent or Admin endpoint, and a staff
+  token never satisfies a Portal endpoint.
+- `PortalAccount` aggregate bound to exactly one contact of one customer (through `Customers.Contracts`).
+  Self-registration with email + password links to the existing contact with that email and portal access enabled;
+  an email unknown to any customer is rejected with the same generic response as success-pending, so registration
+  cannot enumerate known emails.
+- An agent can enable portal access on a contact (story 11's flag) and set an initial password for them.
+- Endpoints (Portal Area): register, login, refresh, logout, `GET me`, change password; rate limited per IP and
+  per account (story 03's limiter extended to the Portal Area).
+- Ticket submission: customer-visible categories (story 15), subject, description. The ticket is created in the
+  customer's owning department with channel `Portal`.
+- My tickets: a list scoped strictly to the customer's own tickets (all of the customer's tickets for a contact
+  flagged account admin), customer-friendly status names, status filter and search, open vs closed tabs.
+- Ticket detail: public thread only (story 18's public visibility — internal notes structurally unreachable),
+  current status, reply, request closure (resolves the ticket), and reopen a resolved ticket.
+- Frontend on the SSR `portal` layout: register, sign-in, my tickets, new ticket, ticket detail, account page (name,
+  preferred language, change password). Bilingual RTL, mobile first.
+- `backend/requests/portal.http` covering every endpoint, including cross-customer access attempts.
 
 ## Acceptance criteria
 
-- [ ] A portal token is rejected by every agent endpoint, verified by presenting one to a representative sample of
-      agent APIs.
-- [ ] An agent token is rejected by portal-only endpoints where scope demands it.
-- [ ] Self-service registration requires verification before the account becomes usable.
-- [ ] Registering with an email already present on a contact links the account to that contact after verification,
-      and never creates a second customer.
-- [ ] An agent-issued invitation creates a linked portal account bound to the intended contact.
-- [ ] An account-administrator contact sees all of the customer's tickets; an ordinary contact sees only their own.
-- [ ] A portal user cannot read, list, or infer any other customer's data through any endpoint.
-- [ ] Registration and reset responses are identical for known and unknown addresses, so neither can be used for
-      enumeration.
-- [ ] Exceeding the registration or reset rate limit returns 429 and writes an audit entry.
-- [ ] Changing the account email requires verification of the new address before it takes effect.
-- [ ] Notification preferences set here are honoured by story 36.
-- [ ] Every portal page renders correctly in Arabic RTL on a 375px viewport and is keyboard operable.
+- [ ] A portal token is rejected (403) on every Agent/Admin endpoint, and a staff token on every Portal endpoint.
+- [ ] Registering with an email on a portal-enabled contact creates an account bound to that contact; an unknown
+      email gets the identical response and creates nothing.
+- [ ] A customer sees only their own tickets; requesting another customer's ticket id returns 404.
+- [ ] Internal notes never appear in any portal response, verified from `portal.http`.
+- [ ] Submitting a ticket creates it with channel `Portal` in the customer's department, and it appears in the
+      agent inbox (story 20).
+- [ ] A customer reply appears in the agent's thread; an agent reply appears in the portal after refresh.
+- [ ] Request closure resolves the ticket; reopen works on a resolved ticket and is rejected on a closed one.
+- [ ] Portal login and registration are rate limited (429 + `Retry-After`).
+- [ ] Every portal page walked in `en` and `ar` at 375px, 768px, and 1280px; server-rendered with the portal layout.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-07, CRM-11, CRM-04, CRM-36.
-- **Depends on code areas or other stories:** the identity stack from story 07, contacts from story 11, the portal
-  layout from story 04, and notification preferences from story 36.
+- **Blocked by / related ids:** CRM-07, CRM-11, CRM-15, CRM-18.
+- **Depends on code areas or other stories:** the token stack (07), contacts and the portal-access flag (11),
+  tickets (15) and the public thread (18), the portal layout (04), i18n (05).
 
 ## Technical hints
 
-- Enforce the audience separation in the token validation configuration, not in per-endpoint checks. One
-  configuration mistake is easier to spot than forty missing checks, and there is no test suite here.
-- Bind the portal account to the contact, not to the customer. Every other rule follows cleanly from that.
-- Make the enumeration-safe responses identical down to timing where practical, and verify by hand.
+- Keep portal controllers in each owning module's `Presentation/Controllers/Portal/` (Identity for accounts,
+  Tickets for tickets), never in a separate portal module.
+- The portal ticket DTOs are separate records from the agent DTOs, so an internal field cannot leak by reuse.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- Ticket submission and tracking. Those are stories 48 and 49.
-- Social or federated sign-in.
-- Any test project.
-
+- Email/SMS verification and password reset (no channels), CAPTCHA, invitations by email, attachments, KB
+  deflection and embedded help centre (37–40), realtime updates, public tracking by code (27), announcements,
+  exports, satisfaction surveys (50). Any test project.
 
 ---
 

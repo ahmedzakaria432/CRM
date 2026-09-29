@@ -1,5 +1,7 @@
 # Story 23 — Email channel inbound and outbound
 
+> **MVP re-scope (2026-09-29): deferred post-MVP.** Not part of the 2-day MVP (customers, tickets, portal, bilingual, responsive, multi-department/branch, branding). Keep for later; do not plan it now. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Story intake for the **Communication Channels** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/communication-channels/email-channel-inbound-and-outbound/intake.md`.
 

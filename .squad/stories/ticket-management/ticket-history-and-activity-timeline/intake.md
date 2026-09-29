@@ -1,5 +1,7 @@
 # Story 19 — Ticket history and activity timeline
 
+> **MVP re-scope (2026-09-29): merged into Story 18.** Its MVP-relevant scope now lives in that story's intake; the rest is deferred post-MVP. Do not plan this intake on its own. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Story intake for the **Ticket Management** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/ticket-management/ticket-history-and-activity-timeline/intake.md`.
 

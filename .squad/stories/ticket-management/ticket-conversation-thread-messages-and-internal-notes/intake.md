@@ -1,4 +1,4 @@
-# Story 18 — Ticket conversation thread messages and internal notes
+# Story 18 — Ticket conversation thread messages internal notes and history
 
 Story intake for the **Ticket Management** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/ticket-management/ticket-conversation-thread-messages-and-internal-notes/intake.md`.
@@ -25,73 +25,62 @@ Plan it with `/squad-plan .squad/stories/ticket-management/ticket-conversation-t
 ## Title
 
 ```
-Ticket conversation thread messages and internal notes
+Ticket conversation thread messages internal notes and history
 ```
+
+---
+
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). **Absorbs story 19 (history)** as the unified
+thread + activity feed. Plain-text bodies only; attachments and channel delivery are deferred.
 
 ---
 
 ## Description
 
-The conversation itself: everything the customer said, everything the agent replied, and everything the team said
-privately. This is the model the channel adapters in stories 22 to 27 write into.
+The conversation itself: what the customer said, what the agent replied, and what the team said privately.
 
-- `TicketMessage` as a child entity of the ticket aggregate: direction (inbound or outbound), channel, author as
-  either a contact or an agent, body in both plain text and sanitised HTML, attachments referencing story 12's
-  storage, delivery status, external message id, in-reply-to, and occurred-at.
-- `TicketNote` as a child entity: internal-only, never visible on any portal or outbound channel, with mentions.
-- A visibility model with exactly three values, enforced at the query layer rather than in the UI: public
-  (customer-visible), internal (staff only), and system (generated activity entries).
-- HTML sanitisation on the way in for inbound provider content and on the way out for rendering, with a strict
-  allow-list. Quoted-reply and signature trimming so a five-deep email chain does not re-render the whole history.
-- Outbound composition: reply, reply-all, forward, and a private note, with attachment support, the agent's
-  localised signature from story 08, and a draft that survives navigation and a browser refresh.
-- Delivery state per outbound message: queued, sent, delivered, read, failed with a provider reason, and a
-  bounded retry, surfaced in the thread rather than hidden in logs.
-- Idempotent inbound handling: the same provider message id delivered twice appends one message.
-- Frontend: a threaded conversation view with public and internal turns visually distinct, collapsed quoted
-  history, attachment previews, and a composer with channel selection.
+- `TicketMessage` child entity of `Ticket`: direction (inbound from customer, outbound from agent), author (contact
+  id or agent id), plain-text body (max 10,000 chars, trimmed, no HTML), occurred-at.
+- `TicketNote` child entity: internal-only, author agent id, body.
+- Visibility enforced at the query layer: **public** (messages), **internal** (notes), **system** (the
+  `TicketActivity` entries from story 15). Portal queries (story 47) can only ever return public entries.
+- Aggregate methods: `ReplyAsAgent`, `AddInternalNote`, `ReceiveCustomerReply` (used by the portal in 47). An agent
+  reply on a New/Open ticket records first-response time; a customer reply on Pending customer moves it back to Open;
+  a reply to a Closed ticket is rejected, a reply to a Resolved ticket reopens it.
+- A thread query returning messages, notes, and activity merged in chronological order, cursor-paged, with each
+  activity entry as a template key + parameters that the frontend renders in the active locale.
+- Integration event `TicketMessageAdded` (public messages only) in `Tickets.Contracts`.
+- Endpoints in the Agent Area: get thread, reply, add note. `backend/requests/ticket-thread.http`.
 
 ## Acceptance criteria
 
-- [ ] An internal note is never returned by any portal endpoint or included in any outbound channel payload,
-      verified by requesting the thread with a portal token.
-- [ ] A public reply and an internal note are visually unmistakable in the thread, in both locales.
-- [ ] Inbound HTML containing a script tag, an inline event handler, or a javascript URL is stored and rendered
-      inert.
-- [ ] The same provider message id delivered twice produces exactly one message.
-- [ ] An outbound message shows queued, then sent, then delivered, and a failure shows the provider reason with a
-      retry action.
-- [ ] The first outbound public reply stamps the ticket's first-response timestamp exactly once.
-- [ ] Quoted history and signatures are trimmed from inbound email so the thread stays readable at ten replies.
-- [ ] A composer draft survives navigating away and a browser refresh, and is discarded on send.
-- [ ] Attachments on a message reuse story 12's storage, honour the same content-type and size checks, and are
-      downloadable only by callers with scope and permission.
-- [ ] Messages cannot be edited after sending; a correction is a new message, and the aggregate enforces it.
-- [ ] A thread with 200 messages pages without loading all of them at once.
-- [ ] Both the XSS payload case and the duplicate-delivery case are exercised from
-      `backend/requests/tickets-messages.http`.
+- [ ] An agent reply, a customer reply, and an internal note each append exactly one entry of the right visibility.
+- [ ] Internal notes never appear in the public-visibility query, verified from the `.http` file.
+- [ ] First response time is recorded on the first agent reply only.
+- [ ] Customer reply on Pending customer returns the ticket to Open; a reply on Closed is rejected with 422.
+- [ ] The thread is chronological, cursor-paged, and adding an entry mid-read never duplicates or skips one.
+- [ ] Activity entries are stored as template key + parameters and render in `en` and `ar` (keys added to the
+      locale files).
+- [ ] Bodies over the limit or empty are rejected by validation (400) with a field error.
+- [ ] Every path exercised from `backend/requests/ticket-thread.http`.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-15, CRM-12.
-- **Depends on code areas or other stories:** the ticket aggregate from story 15 and file storage from story 12.
-  Stories 22 to 27 write into this model; stories 42 and 43 read from it.
+- **Blocked by / related ids:** CRM-15.
+- **Depends on code areas or other stories:** the ticket aggregate and `TicketActivity` from story 15.
 
 ## Technical hints
 
-- Sanitise on write and on render. Provider content changes shape without warning, and there is no test suite to
-  catch a regression in the sanitiser.
-- Store both the raw provider payload and the sanitised body. Debugging a channel bug without the raw payload is
-  guesswork.
-- Make inbound handling idempotent on the provider message id with a unique index, not with a lookup-then-insert.
+- Render plain text with preserved line breaks on the frontend (`white-space: pre-wrap` via a utility), never
+  `v-html`.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- Channel transport itself. Those are stories 22 to 27.
-- Quick replies and canned responses. That is story 30.
-- AI-suggested replies. That is story 43.
-- Any test project.
-
+- HTML bodies and sanitisation, attachments (story 12), outbound delivery over email/WhatsApp/SMS (22–27), delivery
+  status, reply-all/forward, mentions, drafts that survive refresh, field-level change history for every attribute,
+  derived durations. Any test project.
 
 ---
 

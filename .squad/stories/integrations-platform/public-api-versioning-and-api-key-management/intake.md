@@ -1,5 +1,7 @@
 # Story 55 — Public API versioning and API key management
 
+> **MVP re-scope (2026-09-29): deferred post-MVP.** Not part of the 2-day MVP (customers, tickets, portal, bilingual, responsive, multi-department/branch, branding). Keep for later; do not plan it now. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Story intake for the **Integrations and Platform** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/integrations-platform/public-api-versioning-and-api-key-management/intake.md`.
 

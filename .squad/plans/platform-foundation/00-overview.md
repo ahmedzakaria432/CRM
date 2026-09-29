@@ -1,5 +1,7 @@
 # platform-foundation — plan overview
 
+> **MVP re-scope (2026-09-29):** 05 and 06 remain in the MVP with trimmed scope (05 also owns the responsive shell; 06 adds memberships and a Development-only dev login, and defers teams/business hours/calendars). See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Entry point for the **Platform Foundation** feature. This is **feature 1 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 

@@ -1,5 +1,7 @@
 # integrations-platform — plan overview
 
+> **MVP re-scope (2026-09-29):** only **58** (branding, reduced to organisation-level branding of the agent workspace and portal) is in the MVP, depending on 06 and 47. 55–57 are deferred.
+
 Entry point for the **Integrations and Platform** feature. This is **feature 12 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 

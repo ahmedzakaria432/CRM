@@ -1,5 +1,7 @@
 # identity-access — plan overview
 
+> **MVP re-scope (2026-09-29):** only **07** is planned — "Authentication users roles and permissions", absorbing 08 and 09 in reduced form. 08 and 09 are merged into 07; 10 (audit log) is deferred.
+
 Entry point for the **Identity and Access** feature. This is **feature 2 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 

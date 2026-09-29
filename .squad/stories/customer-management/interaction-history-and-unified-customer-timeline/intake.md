@@ -1,5 +1,7 @@
 # Story 13 — Interaction history and unified customer timeline
 
+> **MVP re-scope (2026-09-29): merged into Story 14.** Its MVP-relevant scope now lives in that story's intake; the rest is deferred post-MVP. Do not plan this intake on its own. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Story intake for the **Customer Management** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/customer-management/interaction-history-and-unified-customer-timeline/intake.md`.
 

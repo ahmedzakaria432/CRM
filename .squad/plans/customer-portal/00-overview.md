@@ -1,5 +1,7 @@
 # customer-portal — plan overview
 
+> **MVP re-scope (2026-09-29):** moved into the MVP. Plan **47** only ("Customer portal accounts ticket submission tracking and history", absorbing 48 and 49). 50 (surveys) is deferred.
+
 Entry point for the **Customer Portal** feature. This is **feature 10 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 

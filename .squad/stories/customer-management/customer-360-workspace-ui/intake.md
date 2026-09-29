@@ -30,58 +30,54 @@ Customer 360 workspace UI
 
 ---
 
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). **Absorbs story 13 in minimal form**: the 360
+page shows contacts, notes, and (from story 20) the customer's tickets instead of a full interaction projection.
+
+---
+
 ## Description
 
-The agent-facing screens for customers: finding one fast, and then seeing everything about them on one page.
+The agent-facing screens for customers: find one fast, then see everything about them on one page.
 
-- Customer list: server-side paged table with a debounced search box, filters for status, type, tier, department,
-  branch, and language, sortable columns, saved filter presets per user, and CSV export.
-- Customer detail as a 360 page: a header with name, customer number, tier, status, owner, and the counters from
-  story 13; a contacts panel; the interaction timeline with infinite scroll; a notes and attachments panel; an
-  open-tickets list; and a history tab reusing the audit component from story 10.
-- Create and edit as a drawer form with inline validation driven by the API's problem-details response, so
-  server-side domain errors land on the right field rather than in a toast.
-- Duplicate warning surfaced during create, with a side-by-side comparison and a merge action.
-- A reusable customer picker component with async search, used by ticket creation and anywhere else a customer
-  must be chosen.
-- Quick actions from the header: new ticket, send email, send WhatsApp, and call, each pre-filled with the
-  customer context.
-- Every panel has explicit loading, empty, and error states, and the whole page is verified in `ar` and RTL.
+- Customer list (`/agent/customers`): server-side paged table with a debounced search box, filters for status,
+  type, department, and branch, sortable columns, filters reflected in the URL.
+- Customer detail (`/agent/customers/[id]`): a header (name, customer number, type, status, owning department), a
+  contacts panel with add/edit/set-primary/remove, and a notes panel with add/pin/remove. Panels load independently.
+- A "Tickets" panel placeholder with an empty state; story 20 fills it with the customer's tickets.
+- Create and edit as a drawer form; 400 and 422 problem-details land on the right field through `useFormErrors()`.
+- The duplicate warning from story 11 shown before create, with "create anyway".
+- A reusable `CustomerPicker` component with async search, keyboard operable, used by ticket creation in story 20.
+- Every panel has loading, empty, and error states with retry. All copy is `en` + `ar` keys.
+- Mobile friendly: the list becomes stacked cards below 768px; the detail panels stack vertically.
 
 ## Acceptance criteria
 
-- [ ] The list pages, sorts, and filters entirely server-side; no client-side filtering of a partial page.
+- [ ] The list pages, sorts, and filters server-side; no client-side filtering of a partial page.
 - [ ] Search is debounced, cancels in-flight requests, and never renders results from a stale keystroke.
-- [ ] Saved filter presets persist per user across sessions and are shareable by URL.
-- [ ] The 360 page loads its panels independently: a failing timeline does not blank the page, it shows an error
-      state inside that panel with a retry.
-- [ ] The timeline scrolls infinitely with the cursor from story 13 and does not duplicate rows.
-- [ ] A domain error returned as 422 lands on the specific field that caused it, in the active locale.
-- [ ] The duplicate warning appears before the record is created and offers both proceed and merge.
-- [ ] The customer picker searches asynchronously, is keyboard operable, and is usable with a screen reader.
-- [ ] Quick actions carry the customer and contact context into the target screen with no re-selection.
-- [ ] Every panel has a loading skeleton, an empty state with a next action, and an error state with a retry.
-- [ ] The full page is walked in `ar` at 375px, 768px, and 1280px with no physical-direction utility in the diff.
+- [ ] A failing panel shows an error state with retry inside that panel; the rest of the page stays usable.
+- [ ] A 422 domain error lands on the specific field in the active locale.
+- [ ] The duplicate warning appears before the record is created and offers "create anyway".
+- [ ] `CustomerPicker` searches asynchronously and is keyboard and screen-reader operable.
+- [ ] Every panel has a loading skeleton, an empty state with a next action, and an error state with retry.
+- [ ] Walked in `en` and `ar` at 375px, 768px, and 1280px; no physical-direction utility in the diff.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-04, CRM-05, CRM-11, CRM-12, CRM-13.
-- **Depends on code areas or other stories:** the UI kit from story 04, localisation from story 05, and the
-  customer, notes, and timeline stories 11 to 13. Story 21 reuses the picker and the history tab.
+- **Blocked by / related ids:** CRM-05, CRM-07, CRM-11.
+- **Depends on code areas or other stories:** the UI kit and `useApi` from story 04, i18n from story 05, auth and
+  `useCan()` from story 07, the customer API from story 11 (regenerate with `pnpm gen:api`).
 
 ## Technical hints
 
-- Fetch each panel with its own composable so one slow panel cannot block the rest of the page.
-- Keep the filter state in the URL query string. It makes presets, sharing, and the browser back button work for
-  free.
-- Build the picker as a generic async-select in `app/components/ui/` with a customer-specific wrapper, since
-  tickets, agents, and articles all need the same behaviour.
+- One composable per use case in `app/composables/customers/`.
+- Hide write actions without `customers.write` via `useCan()`; the API still enforces it.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- The ticket inbox and ticket detail screens. Those are stories 20 and 21.
-- Portal-facing customer screens. Those are stories 47 to 50.
-- Any test project.
+- Interaction timeline and counters (story 13), attachments panel, merge UI, saved filter presets, CSV export,
+  quick actions to email/WhatsApp/call, history tab (story 10). Any test suite.
 
 ---
 

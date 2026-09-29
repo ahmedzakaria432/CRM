@@ -1,5 +1,7 @@
 # ai-features — plan overview
 
+> **MVP re-scope (2026-09-29): this whole feature is deferred post-MVP.** Do not plan its stories now. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Entry point for the **AI Features** feature. This is **feature 9 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 

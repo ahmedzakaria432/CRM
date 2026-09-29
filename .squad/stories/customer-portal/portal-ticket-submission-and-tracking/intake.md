@@ -1,5 +1,7 @@
 # Story 48 — Portal ticket submission and tracking
 
+> **MVP re-scope (2026-09-29): merged into Story 47.** Its MVP-relevant scope now lives in that story's intake; the rest is deferred post-MVP. Do not plan this intake on its own. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Story intake for the **Customer Portal** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/customer-portal/portal-ticket-submission-and-tracking/intake.md`.
 

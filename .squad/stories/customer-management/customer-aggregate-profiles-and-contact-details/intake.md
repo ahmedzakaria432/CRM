@@ -1,4 +1,4 @@
-# Story 11 — Customer aggregate profiles and contact details
+# Story 11 — Customer aggregate profiles contact details and notes
 
 Story intake for the **Customer Management** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/customer-management/customer-aggregate-profiles-and-contact-details/intake.md`.
@@ -25,78 +25,75 @@ Plan it with `/squad-plan .squad/stories/customer-management/customer-aggregate-
 ## Title
 
 ```
-Customer aggregate profiles and contact details
+Customer aggregate profiles contact details and notes
 ```
+
+---
+
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). **Absorbs the notes half of story 12**;
+attachments, merge, and fuzzy duplicate detection are deferred.
 
 ---
 
 ## Description
 
-The Customer bounded context and its aggregate. Everything in the CRM eventually hangs off a customer, so the
-model has to be right before tickets are built on top of it.
+The Customer bounded context. Everything in the CRM hangs off a customer, so the model has to be right before
+tickets are built on it.
 
-- `Customer` as an aggregate root in `Crm.Modules.Customers.Domain` (the new `Customers` module, with its own `customers` schema): an account that may be an individual or an
-  organisation, with `CustomerNumber`, `LocalizedText` display name, type, tier or segment, status, preferred
-  language, preferred contact channel, tax or commercial registration number, and an owning branch and department.
-- `Contact` as a child entity inside the customer aggregate: a named person with a job title, one or more
-  `EmailAddress` and `PhoneNumber` value objects, a primary flag, and a portal-access flag.
-- Value objects: `CustomerNumber`, `EmailAddress`, `PhoneNumber` in E.164, `Address` with country, city, district,
-  street, and postal code, and `TaxNumber`.
-- Invariants enforced in the aggregate: exactly one primary contact when any contact exists, no duplicate email
-  or phone within a customer, an organisation customer requires a legal name, and a customer cannot be
-  deactivated while it has open tickets.
-- Use cases: create, update, deactivate and reactivate, add, update and remove contact, set primary contact,
-  change owning department, and merge duplicates. Merge moves tickets, interactions, notes, and attachments onto
-  the surviving customer and leaves a redirect record so old links resolve. Only Customers-owned data moves inside
-  the merge transaction; tickets and interactions owned by other modules move when those modules handle the
-  `CustomerMerged` integration event published from `Customers.Contracts`.
-- Duplicate detection on create and on demand: match on email, phone, tax number, and fuzzy name.
-- Queries: get by id, search with paging, and a lookup projection for the customer picker used across the app.
-- `backend/requests/customers.http` covering every use case, including merge and every rejected invariant.
-- Delete the `Sample` template module (`backend/src/Modules/Sample/`, its `ModuleCatalog` line and host
-  references, and its `sample` schema via a final migration or a documented drop) now that `Customers` is the first
-  real module to copy from.
+- The new `Customers` module (`Crm.Modules.Customers.*`, schema `customers`), scaffolded from `Sample`.
+- `Customer` aggregate root: `CustomerNumber`, `LocalizedText` display name, type (individual or organisation),
+  legal name for organisations, status (active, inactive), preferred language, owning branch and department
+  (`IOrganisationScoped`, so story 06's filter applies).
+- `Contact` child entity: name, job title, `EmailAddress`, `PhoneNumber` (E.164), primary flag, portal-access flag.
+- `CustomerNote` child entity: body, pinned flag, author id, timestamps. Internal only in the MVP.
+- Value objects: `CustomerNumber` (generated, e.g. `C-000123`), `EmailAddress`, `PhoneNumber`.
+- Invariants in the aggregate: exactly one primary contact when any contact exists; no duplicate email or phone
+  within a customer; an organisation customer requires a legal name.
+- Use cases: create, update, deactivate/reactivate, add/update/remove contact, set primary contact, add/pin/remove
+  note.
+- A simple duplicate warning on create: an exact match on contact email or phone in the caller's scope returns the
+  candidates; the client can confirm through.
+- Queries: get by id, paged search (name in `ar`/`en`, customer number, email, phone), and a lookup projection
+  for the customer picker used by tickets.
+- `Customers.Contracts`: `ICustomersModuleApi` with `GetCustomerSummaryAsync` and `FindContactByEmailAsync`
+  (used by tickets in 15 and the portal in 47).
+- Permissions: `customers.read`, `customers.write` (story 07).
+- Delete the `Sample` template module (its projects, `ModuleCatalog` line, host references, and `sample` schema via a
+  documented drop), and move `diagnostics.http`'s Sample-based requests onto Customers equivalents.
+- `backend/requests/customers.http` covering every use case and every rejected invariant.
 
 ## Acceptance criteria
 
-- [ ] Creating a customer without a display name, or an organisation customer without a legal name, is rejected by
-      the aggregate with a domain error mapped to 422.
-- [ ] Adding a second primary contact demotes the previous one in the same operation; the aggregate never allows
-      two primary contacts.
-- [ ] Adding a contact whose email already exists on the same customer is rejected.
-- [ ] A malformed email or a phone number that is not valid E.164 is rejected at value-object construction.
-- [ ] `Contact` cannot be loaded or saved except through its `Customer`; there is no `DbSet<Contact>`.
-- [ ] Deactivating a customer with open tickets is rejected with a domain error naming the blocking tickets.
-- [ ] Creating a customer matching an existing email, phone, or tax number returns a duplicate warning with the
-      candidate matches, and can be confirmed through explicitly.
-- [ ] Merging two customers moves every ticket, interaction, note, and attachment to the survivor, records the
-      merge in the audit log, and leaves the merged id resolving to the survivor.
-- [ ] Customer search matches on name in both Arabic and English, customer number, email, and phone, and
-      paginates server-side.
-- [ ] Every customer read and write is scoped to the caller's branch and department.
-- [ ] Every use case and every rejected invariant is exercised from `backend/requests/customers.http`.
+- [ ] An organisation customer without a legal name is rejected by the aggregate with 422 `domain-rule`.
+- [ ] Adding a second primary contact demotes the previous one in the same operation.
+- [ ] A duplicate contact email within one customer is rejected; a malformed email or non-E.164 phone is rejected
+      at value-object construction.
+- [ ] There is no `DbSet<Contact>` or `DbSet<CustomerNote>`; both are reached only through `Customer`.
+- [ ] Creating a customer whose contact email/phone already exists in scope returns a duplicate warning with the
+      candidates, and can be confirmed through.
+- [ ] Search matches Arabic and English names, customer number, email, and phone, paged server-side.
+- [ ] Every customer read and write is scoped to the caller's branch and department (story 06 filter visible in SQL).
+- [ ] Pinned notes sort above unpinned ones.
+- [ ] `Sample` is gone: `grep -r Sample backend/src` finds nothing, and the build is clean.
+- [ ] Every use case and rejected invariant exercised from `backend/requests/customers.http`.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-02, CRM-06, CRM-09.
-- **Depends on code areas or other stories:** the persistence baseline from story 02, organisation scoping from
-  story 06, and the permission catalogue from story 09.
+- **Blocked by / related ids:** CRM-06, CRM-07.
+- **Depends on code areas or other stories:** scoping from story 06, permissions from story 07.
 
 ## Technical hints
 
-- Map `Contact` as an owned collection or as a child entity with no `DbSet`, so the aggregate boundary is
-  enforced by the model rather than by convention.
-- Generate `CustomerNumber` from a database sequence, not from a count, or concurrent creates will collide.
-- Arabic name search needs a collation that ignores diacritics and normalises alef and ya variants. Configure it
-  on the column, not in application code.
+- Keep `EmailAddress` and `PhoneNumber` in the Customers domain; other modules receive primitives via Contracts.
+- Cacheable reads (`ICacheableQuery`) for get-by-id only; invalidate on every customer command.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- Interaction history and the timeline. That is story 13.
-- Notes and attachments. That is story 12.
-- The customer 360 UI. That is story 14.
-- Any test project.
-
+- Attachments and file storage (story 12 attachments half), customer merge, fuzzy name duplicate detection,
+  addresses, tax numbers, tiers, the interaction timeline projection (story 13).
+- Customer UI — story 14. Any test project.
 
 ---
 

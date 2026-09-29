@@ -30,57 +30,66 @@ Bilingual Arabic and English support with RTL layout
 
 ---
 
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). This story also owns the **web and mobile
+friendly** requirement for the shell: every layout and the UI kit are verified at 375 / 768 / 1280.
+
+---
+
 ## Description
 
-Arabic and English are equal first-class locales, not a translation layer bolted on later. Landing this before
-feature screens exist is far cheaper than retrofitting it, and on a project without tests a lint rule is the only
-thing that will keep RTL from rotting.
+Arabic and English are equal first-class locales. Landing this before feature screens exist is far cheaper than
+retrofitting it.
 
-- `@nuxtjs/i18n` configured with `en` as LTR and `ar` as RTL, with locale files split per feature domain.
-- The `dir` and `lang` attributes set on the html element from the active locale, and Tailwind configured so
-  logical utilities resolve correctly in both directions.
-- A lint rule that fails the build on physical direction utilities: `ml-`, `mr-`, `pl-`, `pr-`, `text-left`,
-  `text-right`, `left-`, `right-`, `border-l`, and `border-r`.
-- Locale-aware formatting helpers for dates, times, relative times, numbers, currency in SAR, and file sizes,
-  with optional Hijri display alongside Gregorian.
-- Locale persistence: the user profile preference first, a cookie second, `Accept-Language` last.
-- The backend counterpart: `Accept-Language` honoured for validation messages, email and SMS templates, and
-  enum display names, behind an `ILocalizationService` over resource files.
-- A key-parity script, wired into lint, that fails when the `en` and `ar` key sets diverge or a key is unused.
-- `/_dev/ui` extended with a locale switcher so the whole kit can be reviewed in Arabic RTL in one pass.
+- `@nuxtjs/i18n` configured with `en` (LTR) and `ar` (RTL), locale files split per feature domain
+  (`i18n/locales/{en,ar}/<domain>.json`), with the shell and UI-kit copy from story 04 moved into keys.
+- The `dir` and `lang` attributes on the html element follow the active locale; logical Tailwind utilities
+  resolve correctly in both directions.
+- The physical-direction lint ban from story 04 extended to `left-`, `right-`, `border-l`, `border-r`, `rounded-l`,
+  `rounded-r` (keep every existing rule).
+- Locale-aware formatting helpers over `Intl`: date, time, relative time, number, SAR currency, file size.
+- Locale persistence: cookie first, `Accept-Language` last (the user-profile preference is wired in story 07 once
+  `GET /me` exists).
+- A language switcher in the agent topbar and the portal header.
+- Backend counterpart: `Accept-Language` (`en`, `ar`) sets the request culture; FluentValidation messages and the
+  fixed problem-details `title`s are returned in that language, through resource files behind an
+  `ILocalizationService` in `Crm.BuildingBlocks.Application`.
+- A key-parity check wired into `pnpm lint` that fails when the `en` and `ar` key sets differ.
+- `/_dev/ui` gets a locale switcher so the whole kit is reviewed in Arabic RTL in one pass.
+- Responsive pass: the agent sidebar collapses to a drawer below 768px, the portal header stacks, tables scroll
+  horizontally inside their container, and no page scrolls horizontally at 375px.
 
 ## Acceptance criteria
 
-- [ ] Switching locale flips the html `dir` between ltr and rtl without a full page reload and without layout
-      breakage.
-- [ ] `pnpm lint` fails on a physical direction utility and passes on the logical equivalent.
-- [ ] `pnpm lint` fails when the `en` and `ar` locale files have different key sets.
-- [ ] Dates, numbers, and currency render in each locale's conventions, reviewed side by side on `/_dev/ui`.
-- [ ] An API validation error is returned in Arabic when `Accept-Language: ar` is sent, verified from an `.http`
-      request.
-- [ ] The chosen locale survives a browser refresh and a new session for a signed-in user.
-- [ ] Arabic text renders with an Arabic-capable font and a tested fallback stack.
-- [ ] Mixed-direction content, such as an Arabic sentence containing a Latin product code, renders without bidi
-      artifacts.
-- [ ] The agent and portal layouts and the full UI kit are walked in `ar` at 375px, 768px, and 1280px.
+- [ ] Switching locale flips `dir` between ltr and rtl without a full reload and without layout breakage.
+- [ ] `pnpm lint` fails on a physical-direction utility and on diverging `en`/`ar` key sets.
+- [ ] Dates, numbers, and SAR currency render in each locale's conventions, shown side by side on `/_dev/ui`.
+- [ ] `POST /api/Admin/Samples` with an empty name and `Accept-Language: ar` returns the validation message in
+      Arabic, recorded in `backend/requests/localization.http`.
+- [ ] The chosen locale survives a browser refresh.
+- [ ] Arabic text renders with an Arabic-capable font (self-hosted or Google Fonts `IBM Plex Sans Arabic`) and a
+      fallback stack.
+- [ ] Mixed-direction content (an Arabic sentence with a Latin ticket number) renders without bidi artifacts.
+- [ ] Agent layout, portal layout, and the UI kit are walked in `ar` and `en` at 375px, 768px, and 1280px with no
+      horizontal page scroll.
 
 ## Dependencies
 
 - **Blocked by / related ids:** CRM-03, CRM-04.
-- **Depends on code areas or other stories:** the frontend scaffold, layouts, and UI kit from story 04.
+- **Depends on code areas or other stories:** the frontend scaffold, layouts, and UI kit from story 04; the
+  problem-details pipeline from story 03.
 
 ## Technical hints
 
-- Prefer the `Intl` APIs over a date library; pull in a library only for Hijri conversion.
-- Put the direction-utility ban in ESLint rather than in review guidance. It is the only enforcement this project
-  will get.
+- Prefer `Intl` over a date library. No Hijri calendar in the MVP.
+- Put every direction ban in ESLint, not review guidance.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- Translating feature copy that does not exist yet. Each feature story owns its own locale keys.
-- Custom branding and white-labelling. That is story 58.
-- Any test suite.
-
+- Hijri calendar display; localised email and SMS templates (no channels in the MVP).
+- Translating feature copy that does not exist yet — each feature story owns its locale keys.
+- Custom branding (story 58). Any test suite.
 
 ---
 

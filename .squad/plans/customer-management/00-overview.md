@@ -1,5 +1,7 @@
 # customer-management — plan overview
 
+> **MVP re-scope (2026-09-29):** plan **11** (now "Customer aggregate profiles contact details and notes", absorbing the notes half of 12 and deleting `Sample`) and **14** (absorbing a minimal 13). 12 and 13 are not planned on their own.
+
 Entry point for the **Customer Management** feature. This is **feature 3 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 

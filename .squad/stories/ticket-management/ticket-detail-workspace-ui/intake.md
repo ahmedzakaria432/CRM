@@ -1,5 +1,7 @@
 # Story 21 — Ticket detail workspace UI
 
+> **MVP re-scope (2026-09-29): merged into Story 20.** Its MVP-relevant scope now lives in that story's intake; the rest is deferred post-MVP. Do not plan this intake on its own. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Story intake for the **Ticket Management** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/ticket-management/ticket-detail-workspace-ui/intake.md`.
 

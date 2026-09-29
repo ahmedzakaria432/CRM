@@ -1,4 +1,4 @@
-# Story 20 — Ticket inbox UI with filters and bulk actions
+# Story 20 — Ticket inbox and ticket detail workspace UI
 
 Story intake for the **Ticket Management** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/ticket-management/ticket-inbox-ui-with-filters-and-bulk-actions/intake.md`.
@@ -25,68 +25,65 @@ Plan it with `/squad-plan .squad/stories/ticket-management/ticket-inbox-ui-with-
 ## Title
 
 ```
-Ticket inbox UI with filters and bulk actions
+Ticket inbox and ticket detail workspace UI
 ```
+
+---
+
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). **Absorbs story 21 (ticket detail)**. Bulk
+actions, realtime updates, saved views, and keyboard shortcuts are deferred.
 
 ---
 
 ## Description
 
-Where agents spend their day. Speed and information density matter more here than anywhere else in the product,
-and it must be equally usable in Arabic RTL.
+Where agents spend their day: finding tickets and working them, equally usable in Arabic RTL and on a phone.
 
-- A server-side paged, sorted, filtered ticket list with a density toggle, column chooser persisted per user, and
-  a preview pane option.
-- Filters for status, priority, category, assignee, team, department, branch, channel, tag, SLA state, date
-  ranges, and custom fields, combinable and reflected in the URL.
-- Built-in views from story 17's queues (my tickets, unassigned, my team, escalated, breaching soon, unanswered)
-  plus user-defined saved views with a name, an order, and optional sharing to a team.
-- Full-text search across subject, description, message bodies, customer name, and ticket number, with results
-  ranked and highlighted, working in both Arabic and English.
-- Bulk actions with a per-ticket result summary: assign, change status, change priority, add tag, and add a note,
-  never aborting the whole batch on one rejection.
-- Row-level SLA indicators: remaining time, at-risk, and breached, updating live without a full refresh.
-- Keyboard-first operation: navigate rows, open, assign, change status, and move between views without a mouse.
-- Real-time updates so a ticket claimed by a colleague changes state in place rather than after a manual refresh.
+- Inbox (`/agent/tickets`): server-side paged, sorted, filtered list; built-in views **My tickets**, **Unassigned**,
+  **All in scope** (story 15 queues); filters for status, priority, category, assignee, department, branch, and
+  customer; text search on number and subject; filters and view in the URL; a status and priority badge per row.
+- New ticket drawer: `CustomerPicker` (story 14) → contact → category → subject, description, priority.
+- Ticket detail (`/agent/tickets/[id]`): a sticky header (number, subject, status, priority, assignee, primary
+  actions); the thread from story 18 in the centre with public messages, internal notes, and activity entries
+  visually distinct; a properties side panel (status actions, priority, category, assignee, department transfer);
+  a customer context panel (name, contact, link to the customer 360 page). Side panels collapse into tabs below
+  1024px and mirror correctly in RTL.
+- The action bar offers only the transitions the ticket DTO says are allowed and the caller's permissions allow;
+  a 422 from the aggregate shows its localised explanation inline.
+- Composer with **Reply** and **Internal note** tabs.
+- Claim / assign-to-me, assign to another agent (picker of agents in the ticket's department), and transfer.
+- The customer 360 page (story 14) gets its **Tickets** panel filled with that customer's tickets.
+- Every view has loading, empty, and error states. All copy is `en` + `ar`.
 
 ## Acceptance criteria
 
-- [ ] Paging, sorting, and filtering all happen server-side; the client never filters a partial page.
-- [ ] Every filter combination is encoded in the URL, survives a refresh, and is shareable with a colleague who
-      has the same scope.
-- [ ] Saved views persist per user, can be reordered, and can be shared to a team where permitted.
-- [ ] Search returns ranked, highlighted matches for both an Arabic and an English query, including a match found
-      only inside a message body.
-- [ ] A bulk action on 100 tickets reports per-ticket success and failure, and one rejected ticket does not abort
-      the rest.
-- [ ] SLA countdown indicators update live and turn at-risk and then breached at the configured thresholds.
-- [ ] A ticket updated by another agent updates in place within seconds, without the user losing scroll position
-      or selection.
-- [ ] The full inbox is operable by keyboard alone, with a discoverable shortcut list.
-- [ ] The list renders 50 rows with no layout shift, and a cold load completes acceptably on a seeded set of
-      50,000 tickets.
-- [ ] The inbox is walked in `ar` RTL at 375px, 768px, and 1280px, with the preview pane on the correct side.
-- [ ] Loading, empty (per view), error, and no-results-for-filter states are all distinct and actionable.
+- [ ] The inbox pages, sorts, and filters server-side; the URL restores the exact view on refresh.
+- [ ] Only legal, permitted actions are offered; an illegal action invoked anyway shows the aggregate's localised
+      reason, not a generic error.
+- [ ] A claim lost to a colleague shows "already claimed by <name>" and refreshes the ticket.
+- [ ] Reply and internal note append to the thread without a full reload; notes are visibly internal.
+- [ ] Creating a ticket from the drawer lands on its detail page; validation errors land on the fields.
+- [ ] The customer 360 Tickets panel lists that customer's tickets with links.
+- [ ] Walked in `en` and `ar` at 375px, 768px, and 1280px; the detail layout mirrors correctly in RTL.
+- [ ] Every view has a loading skeleton, an empty state with a next action, and an error state with retry.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-04, CRM-05, CRM-15, CRM-16, CRM-17.
-- **Depends on code areas or other stories:** the UI kit from story 04, localisation from story 05, and the
-  ticket, taxonomy, and assignment stories 15 to 17. Real-time transport is shared with story 26.
+- **Blocked by / related ids:** CRM-14, CRM-15, CRM-18.
+- **Depends on code areas or other stories:** `CustomerPicker` (14), the ticket API (15) and thread API (18) —
+  regenerate the client with `pnpm gen:api`.
 
 ## Technical hints
 
-- Keep all filter state in the URL query string. Saved views, sharing, and the back button then work for free.
-- Virtualise the row list rather than raising the page size. Density is the point of this screen.
-- Seed 50,000 tickets before judging performance. Without a test suite, a bad query plan here will be found by an
-  agent on a Monday morning.
+- One composable per use case under `app/composables/tickets/`.
+- Status/priority badges map to design tokens, never literal colours.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- The ticket detail screen. That is story 21.
-- The agent dashboard and its widgets. That is story 28.
-- Any test project.
-
+- Bulk actions, realtime updates, saved and shared views, column chooser, preview pane, SLA indicators, keyboard
+  shortcuts, collision awareness, quick replies, AI suggestions, attachments, related tickets. Any test suite.
 
 ---
 

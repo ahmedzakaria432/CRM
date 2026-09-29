@@ -1,5 +1,7 @@
 # Story 34 — Automatic assignment and routing rules
 
+> **MVP re-scope (2026-09-29): deferred post-MVP.** Not part of the 2-day MVP (customers, tickets, portal, bilingual, responsive, multi-department/branch, branding). Keep for later; do not plan it now. See `.squad/BACKLOG.md`, "MVP re-scope".
+
 Story intake for the **SLA and Automation** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/sla-automation/automatic-assignment-and-routing-rules/intake.md`.
 

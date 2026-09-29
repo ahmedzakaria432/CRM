@@ -1,5 +1,7 @@
 # ticket-management — plan overview
 
+> **MVP re-scope (2026-09-29):** plan **15** ("Ticket aggregate lifecycle taxonomy and assignment", absorbing 16 and 17), **18** ("… messages internal notes and history", absorbing 19), and **20** ("Ticket inbox and ticket detail workspace UI", absorbing 21). 16, 17, 19, 21 are not planned on their own.
+
 Entry point for the **Ticket Management** feature. This is **feature 4 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 

@@ -1,4 +1,4 @@
-# Story 07 — Authentication with JWT refresh tokens and password reset
+# Story 07 — Authentication users roles and permissions
 
 Story intake for the **Identity and Access** feature of the Customer Support CRM.
 Plan it with `/squad-plan .squad/stories/identity-access/authentication-with-jwt-refresh-tokens-and-password-reset/intake.md`.
@@ -25,70 +25,87 @@ Plan it with `/squad-plan .squad/stories/identity-access/authentication-with-jwt
 ## Title
 
 ```
-Authentication with JWT refresh tokens and password reset
+Authentication users roles and permissions
 ```
+
+---
+
+## MVP scope (re-scoped 2026-09-29)
+
+Part of the 2-day MVP cut (see `.squad/BACKLOG.md`, "MVP re-scope"). **Absorbs stories 08 (user and role
+management) and 09 (permission model)** in a reduced form: fixed system roles, a code-defined permission map, and
+basic user administration.
 
 ---
 
 ## Description
 
-Sign-in for agents, supervisors, and admins, plus the token lifecycle every other endpoint depends on. The
-customer portal reuses this stack with a separate audience in story 47.
+Sign-in for staff, the token lifecycle every endpoint depends on, the users who sign in, and what each role may do.
+The portal reuses this stack with a separate audience in story 47.
 
-- ASP.NET Core Identity over EF Core, with the CRM user as an aggregate root in the Identity bounded context,
-  linked to the Organisation model from story 06 by strongly-typed id.
-- `RefreshTokenFamily` as an aggregate: a rotating chain with reuse detection, where revoking is a method on the
-  aggregate rather than a bulk update in a handler.
-- Value objects: `EmailAddress`, `HashedPassword`, `TokenFamilyId`, `PasswordResetToken` with its expiry.
-- Access token as a short-lived JWT carrying roles, permissions, department ids, and branch ids as claims, plus a
-  long-lived rotating refresh token stored hashed.
-- Endpoints: login, refresh, logout, logout-all-devices, forgot-password, reset-password, change-password, and
-  `GET /me`.
-- Password policy, lockout after repeated failures, and a generic failure message that never reveals whether an
-  account exists.
-- Optional two-factor by emailed or texted one-time code for admin roles.
-- Frontend: login page, forgot-password and reset-password pages, an auth Pinia store, route middleware for
-  authenticated and guest routes, silent refresh, and a session-expiry prompt.
-- `backend/requests/auth.http` covering every endpoint and every failure mode, including the reuse-detection path.
+- The new `Identity` module (`Crm.Modules.Identity.*`, schema `identity`). `User` as an aggregate root with
+  `EmailAddress`, display name, hashed password (ASP.NET Core `PasswordHasher<T>`, no full ASP.NET Identity UI),
+  preferred locale, active flag, and lockout state.
+- Memberships (department + role) stay in story 06's `Organisation` module; at login Identity reads them through
+  `IOrganisationModuleApi.GetMembershipsAsync`. The seeded users reuse story 06's well-known user ids.
+- Fixed system roles: **Administrator**, **Supervisor**, **Agent**. A code-defined permission catalogue
+  (`tickets.read`, `tickets.write`, `tickets.assign`, `customers.read`, `customers.write`, `admin.organisation`,
+  `admin.users`, `admin.branding`) and a static role → permission map.
+- `RefreshTokenFamily` aggregate: rotating refresh tokens stored hashed, reuse of a rotated token revokes the
+  family.
+- Access token: short-lived JWT with `sub`, display name, and the `CrmClaimTypes` from story 03 (tenant, department
+  ids) plus roles. Lifetimes from options, never literals.
+- Endpoints: `POST login`, `POST refresh`, `POST logout`, `GET me` (profile, locale, memberships, effective
+  permissions), `POST change-password`.
+- Authorisation: `[RequirePermission]` on every MediatR request, enforced by the existing `AuthorizationBehavior`
+  placeholder, plus a startup guard that refuses to start if any request in any module lacks a declaration.
+  JWT bearer authentication on every Area except Portal (story 47) and Public.
+- Deletes story 06's Development-only `X-Dev-User` authentication handler; JWT is now the only way in.
+- User administration (Admin Area, `admin.users`): list with search and paging, create with an initial password,
+  edit display name, deactivate and reactivate (deactivation revokes refresh tokens). The user screen manages
+  memberships through story 06's membership endpoints.
+- Lockout after 5 failed attempts for a configured window; one generic failure message that never reveals whether
+  an account exists.
+- Development seed: `admin@crm.local`, a supervisor, and two agents across the seeded departments.
+- Frontend: login page, auth Pinia store, route middleware for authenticated/guest routes, the story 04
+  `AuthSession` wired to the real refresh endpoint, locale preference from `GET /me` (story 05), a `useCan()`
+  composable hiding actions the user cannot perform, and the users admin screens.
+- `backend/requests/auth.http` and `backend/requests/users.http` covering every endpoint and failure mode.
 
 ## Acceptance criteria
 
-- [ ] Valid credentials return an access token and a refresh token; invalid credentials return 401 with a generic
-      message and no account-existence hint.
-- [ ] An expired access token is refreshed silently once and the original request is retried transparently.
-- [ ] Reusing an already-rotated refresh token revokes the whole family and forces re-login, and the revocation
-      is performed by a method on the token-family aggregate.
-- [ ] Logout revokes the presented refresh token; logout-all revokes every token for the user.
-- [ ] Five failed attempts lock the account for the configured window and write an audit entry.
-- [ ] A password reset token is single-use, expires after the configured window, and is invalidated by a
-      successful reset or by a password change, with expiry enforced inside the value object.
-- [ ] `EmailAddress` rejects a malformed address at construction, so no invalid address can reach the database.
-- [ ] `GET /me` returns profile, roles, permissions, departments, branches, and locale preference.
-- [ ] Every non-public endpoint returns 401 without a token and 403 with a valid token lacking the permission.
-- [ ] Tokens carry no personally identifying data beyond user id and display name.
-- [ ] The login page works in `ar` and RTL and is fully keyboard-navigable.
-- [ ] Every listed path is exercised from `backend/requests/auth.http` against a running API.
+- [ ] Valid credentials return access + refresh tokens; invalid credentials return 401 with a generic message.
+- [ ] An expired access token is refreshed once and the original request retried; reusing a rotated refresh token
+      revokes the family and forces re-login.
+- [ ] Logout revokes the presented refresh token. Deactivating a user blocks sign-in and revokes their tokens.
+- [ ] Five failed attempts lock the account for the configured window.
+- [ ] `EmailAddress` rejects a malformed address at construction.
+- [ ] Every request declares a permission; the app refuses to start if one does not.
+- [ ] A request without the permission returns 403 naming it; without a token, 401. The handler never executes.
+- [ ] A user holds different roles in different departments, and effective permissions follow the active scope.
+- [ ] `GET /me` returns profile, locale, memberships, and permissions; the frontend hides actions via `useCan()`
+      and the API still rejects them when called directly from `users.http`.
+- [ ] Login and user screens work in `ar` RTL and `en`, at 375/768/1280, fully keyboard-navigable.
+- [ ] Every path exercised from `auth.http` / `users.http` against a running API.
 
 ## Dependencies
 
-- **Blocked by / related ids:** CRM-02, CRM-04, CRM-06.
-- **Depends on code areas or other stories:** the user and membership aggregates from story 06 and the API client
-  interceptors from story 04.
+- **Blocked by / related ids:** CRM-06.
+- **Depends on code areas or other stories:** the organisation model and scope contract from story 06, the
+  `AuthSession` abstraction and API client from story 04, `CrmClaimTypes` from story 03.
 
 ## Technical hints
 
-- Store only a hash of the refresh token, and keep a family id per login so reuse detection can revoke a chain.
-- Keep token lifetimes in configuration bound through the options pattern, never as literals in code.
-- This is the highest-risk story to ship without tests. Walk every path in `auth.http` deliberately, including
-  the negative ones, before calling it done.
+- Store only a hash of the refresh token; keep a family id per login.
+- The startup guard is the highest-value safeguard here. Do not skip it.
+- This is the highest-risk story to ship without tests: walk every negative path in `auth.http` deliberately.
 
-## Out of scope
+## Out of scope (deferred post-MVP)
 
-- Roles and permission management screens. Those are stories 08 and 09.
-- Customer portal registration and self-service sign-up. That is story 47.
-- Single sign-on and external identity providers.
-- Any test project.
-
+- Forgot/reset password by email and two-factor (no email channel in the MVP; an admin resets passwords instead).
+- Invite-by-email activation, custom roles, the permission matrix screen, agent availability and load, avatars,
+  signatures (stories 08/09 full scope).
+- Audit entries for identity changes (story 10). Portal accounts (story 47). SSO. Any test project.
 
 ---
 
