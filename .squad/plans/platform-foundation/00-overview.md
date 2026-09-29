@@ -15,7 +15,7 @@ Entry point for the **Platform Foundation** feature. This is **feature 1 of 12**
 | 02 | [`persistence-baseline-with-auditing-and-soft-delete`](../../stories/platform-foundation/persistence-baseline-with-auditing-and-soft-delete/intake.md) | Persistence baseline with auditing and soft delete | [`02-story-persistence-baseline-with-auditing-and-soft-delete.md`](02-story-persistence-baseline-with-auditing-and-soft-delete.md) | CRM-01 |
 | 03 | [`cross-cutting-concerns-error-handling-logging-and-caching`](../../stories/platform-foundation/cross-cutting-concerns-error-handling-logging-and-caching/intake.md) | Cross cutting concerns error handling logging and caching | [`03-story-cross-cutting-concerns-error-handling-logging-and-caching.md`](03-story-cross-cutting-concerns-error-handling-logging-and-caching.md) | CRM-01, CRM-02 |
 | 04 | [`frontend-scaffold-with-nuxt-typescript-and-tailwind`](../../stories/platform-foundation/frontend-scaffold-with-nuxt-typescript-and-tailwind/intake.md) | Frontend scaffold with Nuxt TypeScript and Tailwind | [`04-story-frontend-scaffold-with-nuxt-typescript-and-tailwind.md`](04-story-frontend-scaffold-with-nuxt-typescript-and-tailwind.md) | CRM-01, for the OpenAPI document |
-| 05 | [`bilingual-arabic-and-english-support-with-rtl-layout`](../../stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | Bilingual Arabic and English support with RTL layout | _not planned yet_ | CRM-03, CRM-04 |
+| 05 | [`bilingual-arabic-and-english-support-with-rtl-layout`](../../stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | Bilingual Arabic and English support with RTL layout | [`05-story-bilingual-arabic-and-english-support-with-rtl-layout.md`](05-story-bilingual-arabic-and-english-support-with-rtl-layout.md) | CRM-03, CRM-04 |
 | 06 | [`multi-department-and-multi-branch-organisation-scoping`](../../stories/platform-foundation/multi-department-and-multi-branch-organisation-scoping/intake.md) | Multi department and multi branch organisation scoping | _not planned yet_ | CRM-02, CRM-04 |
 
 ## Dependency notes
@@ -135,3 +135,29 @@ Story 03 onward is written against this layout (full rules in `CLAUDE.md`, runbo
 - **Shell copy lives in `app/copy/en.ts`, and the UI kit has no copy.** Story 05 moves `shellCopy` into locale files.
 - **`/_dev/**` is stripped from production by `frontend/modules/dev-only-pages.ts`** (`pages:extend`). `ignore`
   under `$production` was proven not to work.
+
+### Story 05 — decisions carried forward
+
+- **`@nuxtjs/i18n` pinned to 10.6.0** (vue-i18n 11), `strategy: 'no_prefix'`. The locale lives in the
+  **`crm-locale` cookie**; detection is cookie, then `Accept-Language`, then `en`. **Story 07 sets the profile
+  preference with `setLocale()`**; it does not add URL prefixes or a second cookie.
+- **Locale files are `frontend/i18n/locales/{en,ar}/<domain>.json`, one top-level key equal to the file name.**
+  `nuxt.config.ts` loads every file in `en/` for both locales. `pnpm lint` runs `scripts/check-locales.ts` and fails
+  on diverging key sets. Each feature story adds its own file pair; `shell.json` is shell copy only.
+- **Bare template strings are lint errors** outside `/_dev/**` (`vue/no-bare-strings-in-template`).
+- **`<html lang dir>` is set by `app/plugins/locale-head.ts`**, not `app.vue`, so `error.vue` is RTL too.
+- **Formatting goes through `app/utils/format.ts` / `useFormat()` over `Intl`.** Pinned tags `en-GB` and
+  `ar-SA-u-ca-gregory-nu-arab` (Gregorian, Arabic-Indic digits), time zone `Asia/Riyadh` for SSR/browser agreement.
+  No date library, no Hijri.
+- **The browser sends its UI locale as `Accept-Language` on every API call** (`app/plugins/api.ts` `baseFetch`).
+- **Backend culture comes only from `Accept-Language`** (`UseCrmRequestLocalization`, supported cultures neutral
+  `en`/`ar`; never `ar-SA`, whose .NET default calendar is Hijri). **It must run before `UseExceptionHandler`** or
+  exception and status-code problem bodies stay English (proven by probe).
+- **Server text goes through `ILocalizationService` + `.resx`** (`Crm.BuildingBlocks.Application/Localization`).
+  A module adds its own `.resx` pair and `AddLocalizationResource`; it never adds keys to the building-block file.
+  `ProblemTypes.TitleFor` now takes the service; the URNs are unchanged.
+- **Cached query results are culture-neutral.** The cache key does not include the culture (Story 06 keeps the key
+  shape); a query returns both languages instead of a translated string.
+- **Domain `Error.Description` and MVC model-binding messages stay English**; the frontend shows
+  `errors.code.<Code>` when a feature defines it.
+- **The agent sidebar collapses below `md` (768px)**, not `lg` as in Story 04.
