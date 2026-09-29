@@ -17,8 +17,8 @@ Plan and implement top to bottom: `/squad-plan <intake>` → `/squad-implement <
 | 2 | 02 | Persistence baseline with auditing and soft delete | Foundation | ✅ Done | [intake](stories/platform-foundation/persistence-baseline-with-auditing-and-soft-delete/intake.md) | [plan](plans/platform-foundation/02-story-persistence-baseline-with-auditing-and-soft-delete.md) | 01 |
 | 3 | 03 | Cross cutting concerns error handling logging and caching | Foundation | ✅ Done | [intake](stories/platform-foundation/cross-cutting-concerns-error-handling-logging-and-caching/intake.md) | [plan](plans/platform-foundation/03-story-cross-cutting-concerns-error-handling-logging-and-caching.md) | 01, 02 |
 | 4 | 04 | Frontend scaffold with Nuxt TypeScript and Tailwind | Foundation, web & mobile | ✅ Done | [intake](stories/platform-foundation/frontend-scaffold-with-nuxt-typescript-and-tailwind/intake.md) | [plan](plans/platform-foundation/04-story-frontend-scaffold-with-nuxt-typescript-and-tailwind.md) | 01 |
-| 5 | 05 | Bilingual Arabic and English support with RTL layout | **Arabic & English**, **web & mobile** | ⬜ Next | [intake](stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | — | 03, 04 |
-| 6 | 06 | Multi department and multi branch organisation scoping | **Multi-department**, **multi-branch** | ⬜ | [intake](stories/platform-foundation/multi-department-and-multi-branch-organisation-scoping/intake.md) | — | 02–05 |
+| 5 | 05 | Bilingual Arabic and English support with RTL layout | **Arabic & English**, **web & mobile** | ✅ Done | [intake](stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | [plan](plans/platform-foundation/05-story-bilingual-arabic-and-english-support-with-rtl-layout.md) | 03, 04 |
+| 6 | 06 | Multi department and multi branch organisation scoping | **Multi-department**, **multi-branch** | ⬜ Next | [intake](stories/platform-foundation/multi-department-and-multi-branch-organisation-scoping/intake.md) | — | 02–05 |
 | 7 | 07 | Authentication users roles and permissions | Sign-in (needed by everything) | ⬜ | [intake](stories/identity-access/authentication-with-jwt-refresh-tokens-and-password-reset/intake.md) | — | 06 |
 | 8 | 11 | Customer aggregate profiles contact details and notes | **Customer Management** | ⬜ | [intake](stories/customer-management/customer-aggregate-profiles-and-contact-details/intake.md) | — | 06, 07 |
 | 9 | 14 | Customer 360 workspace UI | **Customer Management** | ⬜ | [intake](stories/customer-management/customer-360-workspace-ui/intake.md) | — | 05, 07, 11 |
@@ -28,7 +28,7 @@ Plan and implement top to bottom: `/squad-plan <intake>` → `/squad-implement <
 | 13 | 47 | Customer portal accounts ticket submission tracking and history | **Customer Portal** | ⬜ | [intake](stories/customer-portal/portal-authentication-registration-and-account/intake.md) | — | 07, 11, 15, 18 |
 | 14 | 58 | Custom branding theming and tenant configuration | **Custom branding** | ⬜ | [intake](stories/integrations-platform/custom-branding-theming-and-tenant-configuration/intake.md) | — | 06, 47 |
 
-**Remaining: 10 stories** (05, 06, 07, 11, 14, 15, 18, 20, 47, 58). Folder names keep the original slugs, so a
+**Remaining: 9 stories** (06, 07, 11, 14, 15, 18, 20, 47, 58). Folder names keep the original slugs, so a
 merged story's intake folder name can be narrower than its new title (e.g. story 20's folder is
 `ticket-inbox-ui-…` but it now also covers the ticket detail page).
 

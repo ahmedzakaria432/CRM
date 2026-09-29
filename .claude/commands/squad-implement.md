@@ -30,5 +30,10 @@ Implement the story plan at `$ARGUMENTS` (a file under `.squad/plans/<feature>/N
 - Enforce invariants in the aggregate, not in the handler. That is where a unit test's assertions would have gone.
 - Stay inside the plan's scope. Anything the plan did not ask for goes in a **Follow-ups** list at the end,
   not into the diff.
+- Run the plan's named risks' verification steps first, before building on them.
+- **Commit the plan with its implementation.** One commit per story holds the plan file, the `00-overview.md` /
+  `00-index.md` updates, and the code: `git add .squad/plans/<feature-slug>/ <changed paths>` then
+  `git commit -m "Implement Story NN — <title>"`. If the plan was already committed on its own, still commit the
+  implementation — never rewrite history to merge them.
 - Finish with: files changed, commands run and their results, what you verified by hand, and acceptance criteria
   met vs not met.

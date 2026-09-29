@@ -67,7 +67,7 @@ public sealed partial class GlobalExceptionHandler(
             Status = StatusCodes.Status400BadRequest,
             Type = ProblemTypes.Validation,
             Title = ProblemTypes.TitleFor(ProblemTypes.Validation, localization),
-            Detail = localization.Get("Problem.Detail.Validation"),
+            Detail = localization.Get(CrmMessageKeys.ProblemDetail.Validation),
         };
     }
 
@@ -77,14 +77,14 @@ public sealed partial class GlobalExceptionHandler(
         return Create(
             StatusCodes.Status409Conflict,
             ProblemTypes.Conflict,
-            localization.Get("Problem.Detail.Concurrency"),
+            localization.Get(CrmMessageKeys.ProblemDetail.Concurrency),
             "Persistence.ConcurrencyConflict");
     }
 
     private ProblemDetails Unreadable(BadHttpRequestException exception)
     {
         LogUnreadable(exception.StatusCode);
-        return Create(exception.StatusCode, ProblemTypes.ForStatus(exception.StatusCode), localization.Get("Problem.Detail.Unreadable"), code: null);
+        return Create(exception.StatusCode, ProblemTypes.ForStatus(exception.StatusCode), localization.Get(CrmMessageKeys.ProblemDetail.Unreadable), code: null);
     }
 
     private ProblemDetails DependencyUnavailable(Exception exception)
@@ -93,14 +93,14 @@ public sealed partial class GlobalExceptionHandler(
         return Create(
             StatusCodes.Status503ServiceUnavailable,
             ProblemTypes.DependencyUnavailable,
-            localization.Get("Problem.Detail.DependencyUnavailable"),
+            localization.Get(CrmMessageKeys.ProblemDetail.DependencyUnavailable),
             code: null);
     }
 
     private ProblemDetails Unexpected(Exception exception)
     {
         LogUnexpected(exception);
-        return Create(StatusCodes.Status500InternalServerError, ProblemTypes.Internal, localization.Get("Problem.Detail.Unexpected"), code: null);
+        return Create(StatusCodes.Status500InternalServerError, ProblemTypes.Internal, localization.Get(CrmMessageKeys.ProblemDetail.Unexpected), code: null);
     }
 
     private ProblemDetails Create(int status, string type, string detail, string? code)

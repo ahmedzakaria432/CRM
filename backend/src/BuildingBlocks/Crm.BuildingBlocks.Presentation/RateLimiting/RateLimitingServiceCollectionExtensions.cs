@@ -61,7 +61,7 @@ public static class RateLimitingServiceCollectionExtensions
                             Status = StatusCodes.Status429TooManyRequests,
                             Type = ProblemTypes.RateLimited,
                             Title = ProblemTypes.TitleFor(ProblemTypes.RateLimited, localization),
-                            Detail = localization.Get("Problem.Detail.RateLimited"),
+                            Detail = localization.Get(CrmMessageKeys.ProblemDetail.RateLimited),
                         },
                     });
             };

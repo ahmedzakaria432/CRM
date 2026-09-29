@@ -176,6 +176,11 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   to uncached reads.
 - **Outbound HTTP:** every `HttpClient` is registered with `.AddCrmResilience(configuration)` (correlation id +
   retry, circuit breaker, timeouts from `Resilience:Outbound`). No hand-rolled retry loops.
+- **Localization keys:** a C# resource key is never a string literal at a call site. Every key is a `const` in a
+  static keys class next to its `.resx` (`CrmMessageKeys` in `Crm.BuildingBlocks.Application/Localization`; a
+  module that adds its own resources gets `<Module>MessageKeys`), nested by area (`CrmMessageKeys.ProblemDetail.X`),
+  and callers pass the constant: `localization.Get(CrmMessageKeys.ProblemDetail.Validation)`. No key built by
+  concatenation.
 - **Time:** the clock is read only through `IDateTime` (`Crm.BuildingBlocks.Application.Abstractions`), whose
   one implementation is `SystemDateTime`. `System.DateTime` is banned outright, and `DateTimeOffset.UtcNow`/`Now`
   and `System.TimeProvider` are banned everywhere else (`backend/build/BannedSymbols.*.txt`). Values are

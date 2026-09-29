@@ -56,17 +56,26 @@ public static class ProblemTypes
         _ => BadRequest,
     };
 
-    /// <summary>The problem title in the request's language (Accept-Language). Resource key
-    /// "Problem.Title.&lt;urn suffix&gt;"; an unknown type gets the internal-error title.</summary>
+    /// <summary>The problem title in the request's language (Accept-Language), from
+    /// <see cref="CrmMessageKeys.ProblemTitle"/>; an unknown type gets the internal-error title.</summary>
     public static string TitleFor(string type, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(localization);
-        string known = type switch
+        string key = type switch
         {
-            Validation or BadRequest or Unauthorized or Forbidden or NotFound or MethodNotAllowed or Conflict
-                or UnsupportedMediaType or DomainRule or RateLimited or DependencyUnavailable => type,
-            _ => Internal,
+            Validation => CrmMessageKeys.ProblemTitle.Validation,
+            BadRequest => CrmMessageKeys.ProblemTitle.BadRequest,
+            Unauthorized => CrmMessageKeys.ProblemTitle.Unauthorized,
+            Forbidden => CrmMessageKeys.ProblemTitle.Forbidden,
+            NotFound => CrmMessageKeys.ProblemTitle.NotFound,
+            MethodNotAllowed => CrmMessageKeys.ProblemTitle.MethodNotAllowed,
+            Conflict => CrmMessageKeys.ProblemTitle.Conflict,
+            UnsupportedMediaType => CrmMessageKeys.ProblemTitle.UnsupportedMediaType,
+            DomainRule => CrmMessageKeys.ProblemTitle.DomainRule,
+            RateLimited => CrmMessageKeys.ProblemTitle.RateLimited,
+            DependencyUnavailable => CrmMessageKeys.ProblemTitle.DependencyUnavailable,
+            _ => CrmMessageKeys.ProblemTitle.Internal,
         };
-        return localization.Get("Problem.Title." + known["urn:crm:problem:".Length..]);
+        return localization.Get(key);
     }
 }
