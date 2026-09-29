@@ -12,12 +12,12 @@ Entry point for the **Ticket Management** feature. This is **feature 4 of 12** i
 | NN | Intake | Title | Plan file | Depends on |
 |----|--------|-------|-----------|------------|
 | 15 | [`ticket-aggregate-and-lifecycle`](../../stories/ticket-management/ticket-aggregate-and-lifecycle/intake.md) | Ticket aggregate and lifecycle | _not planned yet_ | CRM-02, CRM-06, CRM-09, CRM-11 |
-| 16 | [`ticket-taxonomy-categories-priorities-and-types`](../../stories/ticket-management/ticket-taxonomy-categories-priorities-and-types/intake.md) | Ticket taxonomy categories priorities and types | _not planned yet_ | CRM-15, CRM-09 |
-| 17 | [`ticket-assignment-ownership-and-queues`](../../stories/ticket-management/ticket-assignment-ownership-and-queues/intake.md) | Ticket assignment ownership and queues | _not planned yet_ | CRM-15, CRM-08, CRM-06 |
+| 16 | [`ticket-taxonomy-categories-priorities-and-types`](../../../next-steps-stories/stories/ticket-management/ticket-taxonomy-categories-priorities-and-types/intake.md) | Ticket taxonomy categories priorities and types | _not planned yet_ | CRM-15, CRM-09 |
+| 17 | [`ticket-assignment-ownership-and-queues`](../../../next-steps-stories/stories/ticket-management/ticket-assignment-ownership-and-queues/intake.md) | Ticket assignment ownership and queues | _not planned yet_ | CRM-15, CRM-08, CRM-06 |
 | 18 | [`ticket-conversation-thread-messages-and-internal-notes`](../../stories/ticket-management/ticket-conversation-thread-messages-and-internal-notes/intake.md) | Ticket conversation thread messages and internal notes | _not planned yet_ | CRM-15, CRM-12 |
-| 19 | [`ticket-history-and-activity-timeline`](../../stories/ticket-management/ticket-history-and-activity-timeline/intake.md) | Ticket history and activity timeline | _not planned yet_ | CRM-15, CRM-10, CRM-18 |
+| 19 | [`ticket-history-and-activity-timeline`](../../../next-steps-stories/stories/ticket-management/ticket-history-and-activity-timeline/intake.md) | Ticket history and activity timeline | _not planned yet_ | CRM-15, CRM-10, CRM-18 |
 | 20 | [`ticket-inbox-ui-with-filters-and-bulk-actions`](../../stories/ticket-management/ticket-inbox-ui-with-filters-and-bulk-actions/intake.md) | Ticket inbox UI with filters and bulk actions | _not planned yet_ | CRM-04, CRM-05, CRM-15, CRM-16, CRM-17 |
-| 21 | [`ticket-detail-workspace-ui`](../../stories/ticket-management/ticket-detail-workspace-ui/intake.md) | Ticket detail workspace UI | _not planned yet_ | CRM-14, CRM-18, CRM-19, CRM-20 |
+| 21 | [`ticket-detail-workspace-ui`](../../../next-steps-stories/stories/ticket-management/ticket-detail-workspace-ui/intake.md) | Ticket detail workspace UI | _not planned yet_ | CRM-14, CRM-18, CRM-19, CRM-20 |
 
 ## Dependency notes
 

@@ -7,7 +7,7 @@ One row per feature folder under `.squad/plans/`. `NN` is a **global execution s
 
 > **MVP re-scope (2026-09-29):** the 2-day MVP is customers, tickets, and the portal, plus bilingual RTL,
 > responsive, multi-department/branch, and branding. Plan and build only the MVP stories, in this order:
-> **05, 06, 07, 11, 14, 15, 18, 20, 47, 58**. Features marked **Deferred** are not planned now. Details and the
+> **05, 06, 07, 11, 14, 15, 18, 20, 47, 58** ([`MVP-STORIES.md`](../MVP-STORIES.md)). Features marked **Deferred** have moved to [`next-steps-stories/`](../../next-steps-stories/README.md). Details and the
 > merge map: [`.squad/BACKLOG.md`](../BACKLOG.md), "MVP re-scope".
 
 Plan features in this order. Do not start planning a feature until the features above it are planned, because

@@ -19,7 +19,7 @@ The MVP must ship in **2 days** and covers only:
 
 Sign-in and permissions (story 07) are included because the agent workspace and the portal cannot exist without
 them. Everything else — channels, agent workspace extras, SLA and automation, knowledge base, AI, reports,
-integrations, and the audit log — is **deferred post-MVP**. Their intakes are kept, carry a "deferred" banner, and
+integrations, and the audit log — is **deferred post-MVP**. Their intakes now live outside `.squad/`, in [`../next-steps-stories/`](../next-steps-stories/README.md), carry a "deferred" banner, and
 are not planned now.
 
 To fit two days, related stories were **merged** into the story that hosts them, each cut to an MVP scope with an
@@ -27,7 +27,8 @@ explicit "Out of scope (deferred post-MVP)" list. Story numbers were **kept**, n
 expected, and every existing link and plan filename stays valid. A merged intake carries a banner pointing at its
 host story.
 
-**Remaining MVP work: 10 stories** — 05, 06, 07, 11, 14, 15, 18, 20, 47, 58 (01–04 are done).
+**Remaining MVP work: 10 stories** — 05, 06, 07, 11, 14, 15, 18, 20, 47, 58 (01–04 are done). The build list is
+[`MVP-STORIES.md`](MVP-STORIES.md). The build list is [`MVP-STORIES.md`](MVP-STORIES.md).
 
 ## Phases
 
@@ -60,6 +61,8 @@ host story.
 API exists. 47 and 20 can run in parallel once 18 is done. 58 is last.
 
 ## Post-MVP stories (deferred)
+
+Intakes for every row below have moved to [`../next-steps-stories/`](../next-steps-stories/README.md).
 
 | NN | Feature | Module | Story | Notes |
 |----|---------|--------|-------|-------|
