@@ -101,6 +101,16 @@
         </div>
       </div>
     </section>
+
+    <!-- Panel 4: CustomerPicker -->
+    <section class="mt-8 border-t border-border pt-6">
+      <h2 class="text-lg font-semibold text-fg">4. CustomerPicker (live lookup)</h2>
+      <div class="mt-4 grid max-w-md gap-4">
+        <CustomerPicker v-model="pickedCustomer" label="Customer" hint="Active customers only" />
+        <CustomerPicker v-model="pickedCustomer" label="Customer (error state)" error="Choose a customer" />
+        <pre class="overflow-x-auto text-xs">{{ JSON.stringify(pickedCustomer, null, 2) }}</pre>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -110,12 +120,14 @@ import type { components } from '~/api/generated/agent'
 import type { AuthSession } from '~/api/auth-session'
 import { toProblem, networkProblem, type Problem } from '~/api/problem'
 import { newCorrelationId, CorrelationHeader } from '~/api/correlation'
+import type { CustomerLookupDto } from '~/composables/customers/types'
 
 definePageMeta({ layout: false })
 
 const api = useApi()
 const toasts = useToasts()
 const formErrors = useFormErrors()
+const pickedCustomer = ref<CustomerLookupDto | null>(null)
 
 // --- Panel 1: live API ---------------------------------------------------
 

@@ -99,6 +99,7 @@ interface AgentNavItem {
 // Computed so the label follows a locale switch and the admin nav items follow the signed-in user's permissions.
 const agentNav = computed<ReadonlyArray<AgentNavItem>>(() => [
   { to: '/agent', label: t('shell.nav.home') },
+  ...(can(Permissions.CustomersRead) ? [{ to: '/agent/customers', label: t('customers.nav.customers') }] : []),
   ...(can(Permissions.AdminOrganisation)
     ? [
         { to: '/admin/branches', label: t('organisation.nav.branches') },

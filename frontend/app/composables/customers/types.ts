@@ -1,0 +1,11 @@
+import type { components } from '~/api/generated/agent'
+export type CustomerDto = components['schemas']['CustomerDto']
+export type CustomerListItemDto = components['schemas']['CustomerListItemDto']
+export type CustomerLookupDto = components['schemas']['CustomerLookupDto']
+export type ContactDto = components['schemas']['ContactDto']
+export type CustomerNoteDto = components['schemas']['CustomerNoteDto']
+export type DuplicateCandidateDto = components['schemas']['DuplicateCandidateDto']
+export type CreateCustomerRequest = components['schemas']['CreateCustomerRequest']
+export type UpdateCustomerRequest = components['schemas']['UpdateCustomerRequest']
+export type AddContactRequest = components['schemas']['AddContactRequest']
+export type UpdateContactRequest = components['schemas']['UpdateContactRequest']

@@ -18,6 +18,8 @@ interface OpenApiFetchResult<T> {
 export function useApi(): {
   clients: CrmClients
   call: <T>(request: Promise<OpenApiFetchResult<T>>, options?: CallOptions) => Promise<ApiResult<T>>
+  /** Shows the standard error toast for a problem a caller handled by hand (same rules as call). */
+  toast: (problem: Problem) => void
 } {
   const { $api, $i18n } = useNuxtApp()
   const toasts = useToasts()
@@ -60,5 +62,5 @@ export function useApi(): {
     return { ok: true, data: result.data as T }
   }
 
-  return { clients: $api, call }
+  return { clients: $api, call, toast: (problem) => maybeToast(problem) }
 }

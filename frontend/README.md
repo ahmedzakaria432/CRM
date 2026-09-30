@@ -150,7 +150,8 @@ This project ships without automated tests (`CLAUDE.md`, "Testing policy"). In t
   component or a new state here in the same change that adds it.
 - **`/_dev/api`**: exercises `useApi()`/`useFormErrors()`/`createCrmFetch` against the live API (a 500, a
   403, a 401, and a validation-erroring form) and against a scripted fake transport that proves the 401
-  refresh/retry/redirect contract (scenarios A–E) without needing a backend.
+  refresh/retry/redirect contract (scenarios A–E) without needing a backend. Panel 4 exercises `CustomerPicker`
+  against the live customer lookup (sign in first).
 
 Both exist only in `pnpm dev` — `modules/dev-only-pages.ts` removes `/_dev/**` from the page tree when
 `nuxt.options.dev` is false, so neither route nor its code reaches `.output/`.

@@ -1,0 +1,84 @@
+{
+  "customers": {
+    "nav": { "customers": "Customers" },
+    "list": {
+      "title": "Customers", "caption": "Customers", "create": "New customer", "search": "Search",
+      "searchHint": "Name in Arabic or English, customer number, email, or phone",
+      "results": "{count} customers", "empty": "No customers match these filters",
+      "emptyDescription": "Try another search or clear the filters.", "emptyNone": "No customers yet",
+      "emptyNoneDescription": "Create the first customer to start.", "clearFilters": "Clear filters",
+      "loadError": "The customers could not be loaded", "retry": "Try again", "open": "Open {name}"
+    },
+    "filters": {
+      "label": "Filters", "status": "Status", "type": "Type", "branch": "Branch", "department": "Department",
+      "all": "All", "sort": "Sort by"
+    },
+    "sort": {
+      "newest": "Newest first", "oldest": "Oldest first", "number": "Customer number",
+      "nameAsc": "Name, A to Z", "nameDesc": "Name, Z to A"
+    },
+    "columns": {
+      "name": "Name", "number": "Number", "type": "Type", "status": "Status", "primaryContact": "Primary contact",
+      "createdAt": "Created"
+    },
+    "status": { "Active": "Active", "Inactive": "Inactive" },
+    "type": { "Individual": "Individual", "Organisation": "Organisation" },
+    "language": { "en": "English", "ar": "Arabic" },
+    "fields": {
+      "displayNameEn": "Name in English", "displayNameAr": "Name in Arabic",
+      "nameHint": "Enter at least one of the two names.", "type": "Customer type", "legalName": "Legal name",
+      "preferredLanguage": "Preferred language", "department": "Department", "number": "Customer number",
+      "createdAt": "Created"
+    },
+    "form": {
+      "createTitle": "New customer", "editTitle": "Edit customer", "primaryContact": "Primary contact",
+      "primaryContactHint": "Optional. You can add more contacts on the customer page.",
+      "create": "Create customer", "save": "Save", "cancel": "Cancel", "close": "Close",
+      "created": "Customer created", "saved": "Customer saved"
+    },
+    "duplicate": {
+      "title": "This may be a duplicate",
+      "description": "These customers already have one of the contact details you entered. Open one of them, or create the new customer anyway.",
+      "matched": "Matches {values}", "open": "Open", "createAnyway": "Create anyway", "back": "Back to the form"
+    },
+    "detail": {
+      "back": "Back to customers", "headerLabel": "Customer summary", "notFound": "Customer not found",
+      "notFoundDescription": "The link may be wrong, or the customer was removed.",
+      "loadError": "This section could not be loaded", "retry": "Try again", "edit": "Edit",
+      "deactivate": "Deactivate", "reactivate": "Reactivate", "deactivateTitle": "Deactivate this customer?",
+      "deactivateDescription": "An inactive customer stays readable and editable, but cannot be picked for new tickets.",
+      "confirm": "Deactivate", "cancel": "Cancel", "deactivated": "Customer deactivated",
+      "reactivated": "Customer reactivated"
+    },
+    "contacts": {
+      "title": "Contacts", "add": "Add contact", "addTitle": "Add contact", "editTitle": "Edit contact",
+      "edit": "Edit", "remove": "Remove", "setPrimary": "Make primary", "primary": "Primary",
+      "portalAccess": "Portal access", "empty": "No contacts yet",
+      "emptyDescription": "Add a contact so the team can reach this customer.",
+      "removeTitle": "Remove this contact?", "removeDescription": "{name} will be removed from this customer.",
+      "saved": "Contact saved", "removed": "Contact removed", "primarySet": "Primary contact changed",
+      "actionsFor": "Actions for {name}", "save": "Save", "cancel": "Cancel", "close": "Close",
+      "fields": {
+        "name": "Name", "jobTitle": "Job title", "email": "Email", "phone": "Phone",
+        "phoneHint": "International format with the country code", "isPrimary": "Primary contact",
+        "isPrimaryFirst": "The first contact is always the primary contact.",
+        "hasPortalAccess": "Can sign in to the customer portal"
+      }
+    },
+    "notes": {
+      "title": "Notes", "body": "New note", "bodyHint": "Internal only. Customers never see notes.",
+      "add": "Add note", "pin": "Pin", "unpin": "Unpin", "pinned": "Pinned", "remove": "Remove",
+      "removeTitle": "Remove this note?", "removeDescription": "The note will be deleted for everyone.",
+      "empty": "No notes yet", "emptyDescription": "Write the first note for the team.", "byYou": "You",
+      "byColleague": "A colleague", "added": "Note added", "removed": "Note removed", "cancel": "Cancel",
+      "close": "Close"
+    },
+    "tickets": {
+      "title": "Tickets", "empty": "No tickets yet", "emptyDescription": "This customer's tickets will appear here."
+    },
+    "picker": {
+      "placeholder": "Name, number, email, or phone", "searching": "Searching", "results": "{count} customers found",
+      "empty": "No active customer matches", "error": "The search failed", "retry": "Try again", "clear": "Clear"
+    }
+  }
+}

@@ -142,6 +142,37 @@
         </DevStateRow>
       </DevSection>
 
+      <!-- Checkbox -->
+      <DevSection anchor-id="checkbox" title="Checkbox">
+        <DevStateRow label="default">
+          <UiCheckbox v-model="checkboxOff" label="Portal access" class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="checked">
+          <UiCheckbox v-model="checkboxOn" label="Portal access" hint="Can sign in to the portal." class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="hover">
+          <UiCheckbox label="Portal access" data-force="hover" class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="focus">
+          <UiCheckbox label="Portal access" data-force="focus" class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="disabled">
+          <UiCheckbox label="Portal access" disabled class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="loading">
+          <span class="text-xs text-fg-muted">n/a — Checkbox has no loading state</span>
+        </DevStateRow>
+        <DevStateRow label="error">
+          <UiCheckbox label="Portal access" error="Portal access needs an email address." class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="long content">
+          <UiCheckbox :label="longSentence" class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="Arabic">
+          <UiCheckbox :label="arabicString" class="w-64" />
+        </DevStateRow>
+      </DevSection>
+
       <!-- Modal -->
       <DevSection anchor-id="modal" title="Modal">
         <DevStateRow label="default / long content (static preview)">
@@ -191,6 +222,22 @@
             <template #cell-name="{ row }">{{ row.name }}</template>
             <template #cell-status="{ row }">{{ row.status }}</template>
           </UiTable>
+        </DevStateRow>
+        <DevStateRow label="sortable">
+          <div class="flex w-full flex-col gap-2">
+            <UiTable
+              v-model:sort="tableSort"
+              caption="Sortable rows"
+              :columns="sortableColumns"
+              :rows="tableRows"
+              :row-key="(row) => row.id"
+              class="w-full"
+            >
+              <template #cell-name="{ row }">{{ row.name }}</template>
+              <template #cell-status="{ row }">{{ row.status }}</template>
+            </UiTable>
+            <p class="text-xs text-fg-muted">{{ JSON.stringify(tableSort) }}</p>
+          </div>
         </DevStateRow>
         <DevStateRow label="hover / focus">
           <span class="text-xs text-fg-muted">n/a — rows carry no interactive state in this scaffold</span>
@@ -487,6 +534,7 @@
 </template>
 
 <script setup lang="ts">
+import type { TableSort } from '~/utils/table'
 import {
   formatDate,
   formatTime,
@@ -523,6 +571,7 @@ const sections: ReadonlyArray<{ id: string; title: string }> = [
   { id: 'input', title: 'Input' },
   { id: 'textarea', title: 'Textarea' },
   { id: 'select', title: 'Select' },
+  { id: 'checkbox', title: 'Checkbox' },
   { id: 'modal', title: 'Modal' },
   { id: 'drawer', title: 'Drawer' },
   { id: 'table', title: 'Table' },
@@ -551,6 +600,9 @@ const selectOptions = [
 const longSelectOptions = [{ value: 'long', label: longSentence }, ...selectOptions]
 const selectDefault = ref('medium')
 
+const checkboxOff = ref(false)
+const checkboxOn = ref(true)
+
 const modalOpen = ref(false)
 const drawerOpen = ref(false)
 
@@ -567,6 +619,8 @@ const tableRows: ReadonlyArray<SampleRow> = [
   { id: '1', name: 'Ada Lovelace', status: 'Open' },
   { id: '2', name: 'Grace Hopper', status: 'Closed' },
 ]
+const sortableColumns = tableColumns.map((column) => (column.key === 'name' ? { ...column, sortable: true } : column))
+const tableSort = ref<TableSort | undefined>({ key: 'name', descending: false })
 const emptyTableRows: ReadonlyArray<SampleRow> = []
 
 const tabsList = [
