@@ -1,23 +1,27 @@
 using Crm.BuildingBlocks.Application.Paging;
 using Crm.BuildingBlocks.Presentation;
 using Crm.Modules.Tickets.Application;
+using Crm.Modules.Tickets.Application.Commands.AddInternalNote;
 using Crm.Modules.Tickets.Application.Commands.AssignTicket;
 using Crm.Modules.Tickets.Application.Commands.ChangeTicketCategory;
 using Crm.Modules.Tickets.Application.Commands.ChangeTicketPriority;
 using Crm.Modules.Tickets.Application.Commands.ClaimTicket;
 using Crm.Modules.Tickets.Application.Commands.CreateTicket;
+using Crm.Modules.Tickets.Application.Commands.ReceiveCustomerReply;
+using Crm.Modules.Tickets.Application.Commands.ReplyAsAgent;
 using Crm.Modules.Tickets.Application.Commands.TransferTicket;
 using Crm.Modules.Tickets.Application.Commands.TransitionTicket;
 using Crm.Modules.Tickets.Application.Commands.UnassignTicket;
 using Crm.Modules.Tickets.Application.Queries.GetTicketById;
 using Crm.Modules.Tickets.Application.Queries.GetTicketQueueCounts;
+using Crm.Modules.Tickets.Application.Queries.GetTicketThread;
 using Crm.Modules.Tickets.Application.Queries.SearchTickets;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Crm.Modules.Tickets.Presentation.Controllers.Agent;
 
-/// <summary>The agent's ticket surface (Story 15). tickets.read / tickets.write / tickets.assign are declared on each
+/// <summary>The agent's ticket surface (Stories 15 and 18). tickets.read / tickets.write / tickets.assign are declared on each
 /// request; every ticket is organisation-scoped. RowVersion is base64 - send back what the last response returned.</summary>
 [Area(CrmAreas.Agent)]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -126,6 +130,47 @@ public sealed class TicketsController : ApiControllerBase
     public async Task<ActionResult<TicketDto>> ChangeCategory(
         Guid id, [FromBody] ChangeTicketCategoryRequest request, CancellationToken cancellationToken) =>
         ToActionResult(await Sender.Send(new ChangeTicketCategoryCommand(id, request.CategoryId, request.RowVersion), cancellationToken));
+
+    /// <summary>The conversation, oldest first. visibility: public (messages), internal (notes), system (history);
+    /// repeat it, or omit it for all three. Pass nextCursor as `after` for the next page.</summary>
+    [HttpGet("{id:guid}/thread")]
+    [ProducesResponseType<TicketThreadPageDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TicketThreadPageDto>> Thread(
+        Guid id, [FromQuery] int? after, [FromQuery(Name = "visibility")] string[]? visibility, [FromQuery] int limit = 50,
+        CancellationToken cancellationToken = default) =>
+        ToActionResult(await Sender.Send(new GetTicketThreadQuery(id, after, limit, visibility ?? []), cancellationToken));
+
+    /// <summary>An agent reply (public). No rowVersion: replies never conflict with other edits.</summary>
+    [HttpPost("{id:guid}/replies")]
+    [ProducesResponseType<TicketDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<TicketDto>> Reply(Guid id, [FromBody] TicketBodyRequest request, CancellationToken cancellationToken) =>
+        ToActionResult(await Sender.Send(new ReplyAsAgentCommand(id, request.Body), cancellationToken));
+
+    /// <summary>Records a reply the customer sent outside the CRM (until channels exist). Public.</summary>
+    [HttpPost("{id:guid}/customer-replies")]
+    [ProducesResponseType<TicketDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<TicketDto>> RecordCustomerReply(Guid id, [FromBody] TicketBodyRequest request, CancellationToken cancellationToken) =>
+        ToActionResult(await Sender.Send(new ReceiveCustomerReplyCommand(id, request.Body), cancellationToken));
+
+    /// <summary>An internal note - staff only, never in the public thread.</summary>
+    [HttpPost("{id:guid}/notes")]
+    [ProducesResponseType<TicketDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<TicketDto>> AddNote(Guid id, [FromBody] TicketBodyRequest request, CancellationToken cancellationToken) =>
+        ToActionResult(await Sender.Send(new AddInternalNoteCommand(id, request.Body), cancellationToken));
 }
 
 public sealed record CreateTicketRequest(
@@ -143,3 +188,5 @@ public sealed record TransferTicketRequest(Guid DepartmentId, byte[] RowVersion)
 public sealed record ChangeTicketPriorityRequest(string Priority, byte[] RowVersion);
 
 public sealed record ChangeTicketCategoryRequest(Guid CategoryId, byte[] RowVersion);
+
+public sealed record TicketBodyRequest(string Body);

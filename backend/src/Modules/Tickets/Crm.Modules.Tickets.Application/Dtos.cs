@@ -47,3 +47,21 @@ public sealed record TicketListItemDto(
     DateTimeOffset? CreatedAtUtc, DateTimeOffset? ModifiedAtUtc);
 
 public sealed record TicketQueueCountsDto(int Mine, int Unassigned, int All);
+
+/// <summary>A department named by a Transferred activity.</summary>
+public sealed record TicketDepartmentRefDto(Guid Id, string Code, string NameAr, string NameEn);
+
+/// <summary>One thread entry. Type (Message | Note | Activity) and Visibility (Public | Internal | System) map 1:1.
+/// Messages and notes carry Body (plain text - render as text, never as HTML); messages carry Direction
+/// (Inbound | Outbound) and RecordedById; activities carry TemplateKey (the activity kind, e.g. "PriorityChanged")
+/// and Parameters ("from", "to": machine values the UI resolves). AuthorId: agent id, contact id, or null for the
+/// customer (inbound messages); the actor for activities.</summary>
+public sealed record TicketThreadEntryDto(
+    int Sequence, Guid Id, string Type, string Visibility, DateTimeOffset OccurredAtUtc, Guid? AuthorId,
+    string? Direction, Guid? RecordedById, string? Body, string? TemplateKey, IReadOnlyDictionary<string, string?>? Parameters);
+
+/// <summary>A page of the thread, oldest first. NextCursor: pass it as `after` for the next page; null = no more.
+/// The lookups name every staff user, category and department the page's entries refer to.</summary>
+public sealed record TicketThreadPageDto(
+    IReadOnlyList<TicketThreadEntryDto> Items, int? NextCursor, IReadOnlyList<TicketPersonDto> People,
+    IReadOnlyList<TicketCategoryRefDto> Categories, IReadOnlyList<TicketDepartmentRefDto> Departments);

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Crm.BuildingBlocks.Application.Abstractions;
 using Crm.Modules.Identity.Contracts;
+using Crm.Modules.Organisation.Contracts;
 using Crm.Modules.Tickets.Application.Abstractions;
 using Crm.Modules.Tickets.Application.Specifications;
 using Crm.Modules.Tickets.Domain;
@@ -8,9 +9,11 @@ using Crm.SharedKernel.Results;
 
 namespace Crm.Modules.Tickets.Application;
 
-/// <summary>Builds the ticket DTOs, including the nested module read (Identity display names). Every handler calls it
+/// <summary>Builds the ticket DTOs, including the nested module reads (Identity display names; Organisation department
+/// names for the thread). Every handler calls it
 /// BEFORE eventBus.Publish: a nested query after Publish throws (TransactionBehavior, R2).</summary>
-public sealed class TicketDtoAssembler(IRepository<Category, CategoryId> categories, IIdentityModuleApi identity)
+public sealed class TicketDtoAssembler(
+    IRepository<Category, CategoryId> categories, IIdentityModuleApi identity, IOrganisationModuleApi organisation)
 {
     public async Task<TicketDto> ToDtoAsync(Ticket ticket, CancellationToken cancellationToken)
     {
@@ -20,7 +23,7 @@ public sealed class TicketDtoAssembler(IRepository<Category, CategoryId> categor
             ? await categories.GetByIdAsync(categoryId, cancellationToken)
             : null;
 
-        List<TicketActivity> activities = [.. ticket.Activities.OrderBy(a => a.OccurredAtUtc)];
+        List<TicketActivity> activities = [.. ticket.Activities.OrderBy(a => a.Sequence)];
 
         HashSet<Guid> personIds = [];
         if (ticket.AssignedAgentId is { } assigned)
@@ -51,6 +54,80 @@ public sealed class TicketDtoAssembler(IRepository<Category, CategoryId> categor
             [.. activities.Select(a => new TicketActivityDto(a.Id, a.Kind.ToString(), a.ActorId, a.From, a.To, a.OccurredAtUtc))],
             [.. people.Select(p => new TicketPersonDto(p.Id, p.DisplayName))],
             ticket.RowVersion);
+    }
+
+    /// <summary>Maps a read-model page (up to limit + 1 rows) to the DTO. Nested reads - call before any Publish.
+    /// Lookup failures never fail the page: the names are simply missing.</summary>
+    public async Task<TicketThreadPageDto> ToThreadPageAsync(
+        IReadOnlyList<TicketThreadRow> rows, int limit, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+
+        List<TicketThreadRow> page = [.. rows.Take(limit)];
+        int? next = rows.Count > limit ? page[^1].Sequence : null;
+
+        HashSet<Guid> staffIds = [];
+        HashSet<Guid> categoryIds = [];
+        HashSet<Guid> departmentIds = [];
+        foreach (TicketThreadRow row in page)
+        {
+            if (row.Direction != TicketMessageDirection.Inbound && row.AuthorId is { } author)
+            {
+                staffIds.Add(author);
+            }
+
+            if (row.RecordedById is { } recorded)
+            {
+                staffIds.Add(recorded);
+            }
+
+            switch (row.Kind)
+            {
+                case TicketActivityKind.Assigned or TicketActivityKind.Claimed or TicketActivityKind.Unassigned:
+                    AddIfGuid(staffIds, row.From);
+                    AddIfGuid(staffIds, row.To);
+                    break;
+                case TicketActivityKind.CategoryChanged:
+                    AddIfGuid(categoryIds, row.From);
+                    AddIfGuid(categoryIds, row.To);
+                    break;
+                case TicketActivityKind.Transferred:
+                    AddIfGuid(departmentIds, row.From);
+                    AddIfGuid(departmentIds, row.To);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // GetStaffUsersQueryValidator rejects more than 200 ids per call.
+        IReadOnlyList<StaffUserSummary> people = await LookupAsync([.. staffIds.Take(200)], cancellationToken);
+
+        IReadOnlyList<Category> foundCategories = categoryIds.Count == 0
+            ? []
+            : await categories.ListAsync(
+                new CategoriesByIdsSpecification([.. categoryIds.Select(id => new CategoryId(id))]), cancellationToken);
+
+        List<TicketDepartmentRefDto> departments = [];
+        foreach (Guid departmentId in departmentIds)
+        {
+            Result<DepartmentReference> department = await organisation.GetDepartmentAsync(departmentId, cancellationToken);
+            if (department.IsSuccess)
+            {
+                DepartmentReference d = department.Value;
+                departments.Add(new TicketDepartmentRefDto(d.Id, d.Code, d.NameAr, d.NameEn));
+            }
+        }
+
+        return new TicketThreadPageDto(
+            [.. page.Select(r => new TicketThreadEntryDto(
+                r.Sequence, r.Id, TypeOf(r.Visibility), r.Visibility.ToString(), r.OccurredAtUtc, r.AuthorId,
+                r.Direction?.ToString(), r.RecordedById, r.Body, r.Kind?.ToString(),
+                r.Kind is null ? null : new Dictionary<string, string?> { ["from"] = r.From, ["to"] = r.To }))],
+            next,
+            [.. people.Select(p => new TicketPersonDto(p.Id, p.DisplayName))],
+            [.. foundCategories.Select(c => new TicketCategoryRefDto(c.Id.Value, TicketCategoryNameDto.FromDomain(c.Name), c.IsActive))],
+            departments);
     }
 
     public async Task<IReadOnlyList<TicketListItemDto>> ToListItemsAsync(IReadOnlyList<TicketListRow> rows, CancellationToken cancellationToken)
@@ -91,6 +168,13 @@ public sealed class TicketDtoAssembler(IRepository<Category, CategoryId> categor
 
     private static TicketCategoryRefDto? ToRef(Category? category) =>
         category is null ? null : new TicketCategoryRefDto(category.Id.Value, TicketCategoryNameDto.FromDomain(category.Name), category.IsActive);
+
+    private static string TypeOf(TicketThreadVisibility visibility) => visibility switch
+    {
+        TicketThreadVisibility.Public => "Message",
+        TicketThreadVisibility.Internal => "Note",
+        _ => "Activity",
+    };
 
     private static void AddIfGuid(HashSet<Guid> ids, string? value)
     {

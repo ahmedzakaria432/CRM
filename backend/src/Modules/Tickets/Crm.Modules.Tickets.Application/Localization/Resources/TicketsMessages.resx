@@ -9,6 +9,7 @@
   <data name="Tickets.Validation.StatusUnsupported" xml:space="preserve"><value>Unknown ticket status.</value></data>
   <data name="Tickets.Validation.PriorityUnsupported" xml:space="preserve"><value>Priority must be Low, Normal, High or Urgent.</value></data>
   <data name="Tickets.Validation.ActionUnsupported" xml:space="preserve"><value>Action must be one of Open, AwaitCustomer, PutOnHold, Resolve, Close, Reopen, Cancel.</value></data>
+  <data name="Tickets.Validation.VisibilityUnsupported" xml:space="preserve"><value>Visibility must be one of public, internal, system.</value></data>
   <data name="Tickets.Refusal.TransitionNotAllowed" xml:space="preserve"><value>The ticket is {0}; that action is not allowed in this status.</value></data>
   <data name="Tickets.Refusal.AlreadyClaimed" xml:space="preserve"><value>This ticket is already claimed by {0}.</value></data>
   <data name="Tickets.Status.New" xml:space="preserve"><value>New</value></data>

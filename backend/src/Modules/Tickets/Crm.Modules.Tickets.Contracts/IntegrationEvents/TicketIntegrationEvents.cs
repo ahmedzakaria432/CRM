@@ -8,7 +8,8 @@ public sealed record TicketCreatedIntegrationEvent(
     Guid? CategoryId, string Priority, string Status, Guid? AssignedAgentId, Guid ActorId, Guid TenantId, Guid BranchId,
     Guid DepartmentId) : IntegrationEvent(Id, OccurredOnUtc);
 
-/// <summary>Published by TransitionTicketCommandHandler. Primitives only; append-only.</summary>
+/// <summary>Published by TransitionTicketCommandHandler, and by the reply handlers when a reply reopens the ticket
+/// (Story 18). Primitives only; append-only.</summary>
 public sealed record TicketStatusChangedIntegrationEvent(
     Guid Id, DateTimeOffset OccurredOnUtc, Guid TicketId, string Number, string FromStatus, string ToStatus, Guid ActorId,
     Guid TenantId, Guid BranchId, Guid DepartmentId) : IntegrationEvent(Id, OccurredOnUtc);
@@ -33,3 +34,12 @@ public sealed record TicketPriorityChangedIntegrationEvent(
 public sealed record TicketCategoryChangedIntegrationEvent(
     Guid Id, DateTimeOffset OccurredOnUtc, Guid TicketId, string Number, Guid? FromCategoryId, Guid ToCategoryId, Guid ActorId,
     Guid TenantId, Guid BranchId, Guid DepartmentId) : IntegrationEvent(Id, OccurredOnUtc);
+
+/// <summary>Published by ReplyAsAgentCommandHandler and ReceiveCustomerReplyCommandHandler (Story 18) for every PUBLIC
+/// message - never for an internal note. Direction is "Inbound" or "Outbound"; AuthorId is the agent (outbound) or a
+/// contact id / null for the customer (inbound). No body on purpose: subscribers that need it read it through a
+/// Contracts API. Primitives only; append-only.</summary>
+public sealed record TicketMessageAddedIntegrationEvent(
+    Guid Id, DateTimeOffset OccurredOnUtc, Guid TicketId, string Number, Guid MessageId, string Direction, Guid? AuthorId,
+    Guid CustomerId, Guid? ContactId, bool IsFirstResponse, Guid ActorId, Guid TenantId, Guid BranchId,
+    Guid DepartmentId) : IntegrationEvent(Id, OccurredOnUtc);

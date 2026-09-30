@@ -180,7 +180,7 @@ Accept-Language: ar
 ###############################################################################################################################
 
 ### 12. Create a ticket for Ahmed - 200 (@t1): number T-000004 on a fresh DB, status New, one Created activity, allowedActions has
-### Open, Resolve, Cancel, Claim, Assign but not Close/Unassign. EF log: SELECT NEXT VALUE FOR [tickets].[TicketNumbers] between
+### Open, Resolve, Cancel, Claim, Assign, Reply, AddNote (Story 18) but not Close/Unassign. EF log: SELECT NEXT VALUE FOR [tickets].[TicketNumbers] between
 ### BEGIN TRANSACTION and INSERT INTO [tickets].[Tickets]; one INSERT INTO [tickets].[outbox_messages].
 # @name t1
 POST {{host}}/api/Agent/Tickets
@@ -349,7 +349,7 @@ Authorization: Bearer {{agentAToken}}
 
 { "action": "Open", "rowVersion": "{{s26.response.body.rowVersion}}" }
 
-### 28. Resolve - 200 Resolved, resolvedAtUtc set, allowedActions = Close, Reopen
+### 28. Resolve - 200 Resolved, resolvedAtUtc set, allowedActions = Close, Reopen, Reply, AddNote
 # @name s28
 POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
 Content-Type: application/json
@@ -421,7 +421,7 @@ Authorization: Bearer {{agentAToken}}
 
 { "action": "Reopen", "rowVersion": "{{s31b.response.body.rowVersion}}" }
 
-### 34. Cancel - 200 Cancelled, allowedActions empty
+### 34. Cancel - 200 Cancelled, allowedActions = AddNote only (Story 18)
 # @name s34
 POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
 Content-Type: application/json

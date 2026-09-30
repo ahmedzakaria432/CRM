@@ -9,6 +9,7 @@
   <data name="Tickets.Validation.StatusUnsupported" xml:space="preserve"><value>حالة التذكرة غير معروفة.</value></data>
   <data name="Tickets.Validation.PriorityUnsupported" xml:space="preserve"><value>يجب أن تكون الأولوية Low أو Normal أو High أو Urgent.</value></data>
   <data name="Tickets.Validation.ActionUnsupported" xml:space="preserve"><value>يجب أن يكون الإجراء أحد القيم Open أو AwaitCustomer أو PutOnHold أو Resolve أو Close أو Reopen أو Cancel.</value></data>
+  <data name="Tickets.Validation.VisibilityUnsupported" xml:space="preserve"><value>يجب أن تكون الرؤية إحدى القيم public أو internal أو system.</value></data>
   <data name="Tickets.Refusal.TransitionNotAllowed" xml:space="preserve"><value>حالة التذكرة «{0}»، ولا يُسمح بهذا الإجراء في هذه الحالة.</value></data>
   <data name="Tickets.Refusal.AlreadyClaimed" xml:space="preserve"><value>استلم {0} هذه التذكرة بالفعل.</value></data>
   <data name="Tickets.Status.New" xml:space="preserve"><value>جديدة</value></data>

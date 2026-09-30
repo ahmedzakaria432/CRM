@@ -11,7 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Crm.Modules.Tickets.Infrastructure;
 
-/// <summary>The Tickets module (Story 15): tickets, their lifecycle and assignment, and categories. It exposes no
+/// <summary>The Tickets module (Story 15): tickets, their lifecycle and assignment, the conversation thread (Story
+/// 18), and categories. It exposes no
 /// Contracts API yet - other modules learn about tickets through its integration events.</summary>
 public sealed class TicketsModule : IModule
 {
@@ -28,6 +29,7 @@ public sealed class TicketsModule : IModule
         services.AddRepository<Category, CategoryId, TicketsDbContext>();
         services.AddScoped<ITicketNumberGenerator, SqlTicketNumberGenerator>();
         services.AddScoped<ITicketReadModel, TicketReadModel>();
+        services.AddScoped<ITicketThreadReadModel, TicketThreadReadModel>();
         services.AddScoped<TicketDtoAssembler>();
         services.AddScoped<IModuleSeeder, TicketsSeeder>();
 

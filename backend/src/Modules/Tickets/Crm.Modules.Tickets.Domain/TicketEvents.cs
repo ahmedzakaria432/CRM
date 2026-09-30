@@ -14,3 +14,7 @@ public sealed record TicketTransferred(TicketId TicketId, DepartmentId From, Dep
 public sealed record TicketPriorityChanged(TicketId TicketId, TicketPriority From, TicketPriority To, DateTimeOffset OccurredOnUtc) : IDomainEvent;
 
 public sealed record TicketCategoryChanged(TicketId TicketId, CategoryId? From, CategoryId To, DateTimeOffset OccurredOnUtc) : IDomainEvent;
+
+public sealed record TicketMessageAdded(TicketId TicketId, Guid MessageId, TicketMessageDirection Direction, DateTimeOffset OccurredOnUtc) : IDomainEvent;
+
+public sealed record TicketNoteAdded(TicketId TicketId, Guid NoteId, DateTimeOffset OccurredOnUtc) : IDomainEvent;

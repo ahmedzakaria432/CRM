@@ -45,8 +45,32 @@ public sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
             activities.Property(a => a.Kind).HasConversion<string>().HasMaxLength(30);
             activities.Property(a => a.From).HasMaxLength(TicketActivity.ValueMaxLength);
             activities.Property(a => a.To).HasMaxLength(TicketActivity.ValueMaxLength);
+            activities.HasIndex("TicketId", nameof(TicketActivity.Sequence)).IsUnique();
         });
         builder.Navigation(x => x.Activities).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.OwnsMany(x => x.Messages, messages =>
+        {
+            messages.ToTable("TicketMessages");
+            messages.WithOwner().HasForeignKey("TicketId");
+            messages.HasKey(m => m.Id);
+            messages.Property(m => m.Id).ValueGeneratedNever(); // client-generated key: INSERT, not UPDATE
+            messages.Property(m => m.Direction).HasConversion<string>().HasMaxLength(10);
+            messages.Property(m => m.Body).HasMaxLength(Ticket.BodyMaxLength).IsRequired(); // nvarchar(max)
+            messages.HasIndex("TicketId", nameof(TicketMessage.Sequence)).IsUnique();
+        });
+        builder.Navigation(x => x.Messages).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.OwnsMany(x => x.Notes, notes =>
+        {
+            notes.ToTable("TicketNotes");
+            notes.WithOwner().HasForeignKey("TicketId");
+            notes.HasKey(n => n.Id);
+            notes.Property(n => n.Id).ValueGeneratedNever();
+            notes.Property(n => n.Body).HasMaxLength(Ticket.BodyMaxLength).IsRequired();
+            notes.HasIndex("TicketId", nameof(TicketNote.Sequence)).IsUnique();
+        });
+        builder.Navigation(x => x.Notes).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.Property(x => x.RowVersion).IsRowVersion();
 

@@ -103,7 +103,9 @@
         "AssigneeInactive": "الموظف غير نشط ولا يمكن إسناد تذاكر إليه.",
         "AssigneeNotInDepartment": "الموظف ليس عضواً في قسم التذكرة.",
         "TargetDepartmentInactive": "القسم المستهدف غير نشط.",
-        "CategoryDepartmentInactive": "لا يمكن إضافة تصنيفات إلى قسم غير نشط."
+        "CategoryDepartmentInactive": "لا يمكن إضافة تصنيفات إلى قسم غير نشط.",
+        "BodyRequired": "أدخل نص الرسالة أو الملاحظة.",
+        "BodyTooLong": "لا يمكن أن تزيد الرسالة أو الملاحظة على 10,000 حرف."
       },
       "Authorization": {
         "PermissionDenied": "ليست لديك صلاحية للقيام بذلك.",

@@ -25,6 +25,60 @@
       "confirm": {
         "deactivate": "تعطيل {name}؟ سيختفي من قوائم الاختيار، وتحتفظ به التذاكر التي تستخدمه."
       }
+    },
+    "status": {
+      "New": "جديدة",
+      "Open": "مفتوحة",
+      "PendingCustomer": "بانتظار العميل",
+      "OnHold": "معلّقة",
+      "Resolved": "محلولة",
+      "Closed": "مغلقة",
+      "Cancelled": "ملغاة"
+    },
+    "priority": {
+      "Low": "منخفضة",
+      "Normal": "عادية",
+      "High": "عالية",
+      "Urgent": "عاجلة"
+    },
+    "activity": {
+      "Created": "أنشأ {actor} التذكرة",
+      "Opened": "فتح {actor} التذكرة",
+      "AwaitingCustomer": "جعل {actor} التذكرة بانتظار العميل",
+      "PutOnHold": "علّق {actor} التذكرة",
+      "Resolved": "حلّ {actor} التذكرة",
+      "Closed": "أغلق {actor} التذكرة",
+      "Reopened": "أعاد {actor} فتح التذكرة",
+      "Cancelled": "ألغى {actor} التذكرة",
+      "Assigned": "أسند {actor} التذكرة إلى {to}",
+      "Claimed": "استلم {actor} التذكرة",
+      "Unassigned": "ألغى {actor} إسناد التذكرة إلى {from}",
+      "Transferred": "نقل {actor} التذكرة من {from} إلى {to}",
+      "PriorityChanged": "غيّر {actor} الأولوية من {from} إلى {to}",
+      "CategoryChanged": "غيّر {actor} التصنيف إلى {to}",
+      "unknown": "حدّث {actor} التذكرة"
+    },
+    "thread": {
+      "title": "المحادثة",
+      "empty": "لا توجد رسائل بعد",
+      "emptyDescription": "تظهر هنا الردود والملاحظات الداخلية وسجل التذكرة.",
+      "loadError": "تعذّر تحميل المحادثة.",
+      "retry": "إعادة المحاولة",
+      "loadMore": "عرض المزيد",
+      "internalNote": "ملاحظة داخلية",
+      "customer": "العميل",
+      "you": "أنت",
+      "colleague": "أحد الزملاء",
+      "otherDepartment": "قسم آخر",
+      "aCategory": "تصنيف",
+      "nobody": "لا أحد",
+      "recordedBy": "سجّله {name}"
+    },
+    "detail": {
+      "back": "رجوع",
+      "notFound": "لم يتم العثور على التذكرة",
+      "notFoundDescription": "قد يكون الرابط غير صحيح، أو أُزيلت التذكرة.",
+      "loadError": "تعذّر تحميل التذكرة."
     }
   }
 }

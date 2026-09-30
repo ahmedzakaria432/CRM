@@ -25,6 +25,60 @@
       "confirm": {
         "deactivate": "Deactivate {name}? It disappears from pickers; tickets that use it keep it."
       }
+    },
+    "status": {
+      "New": "New",
+      "Open": "Open",
+      "PendingCustomer": "Pending customer",
+      "OnHold": "On hold",
+      "Resolved": "Resolved",
+      "Closed": "Closed",
+      "Cancelled": "Cancelled"
+    },
+    "priority": {
+      "Low": "Low",
+      "Normal": "Normal",
+      "High": "High",
+      "Urgent": "Urgent"
+    },
+    "activity": {
+      "Created": "{actor} created the ticket",
+      "Opened": "{actor} opened the ticket",
+      "AwaitingCustomer": "{actor} set the ticket to pending customer",
+      "PutOnHold": "{actor} put the ticket on hold",
+      "Resolved": "{actor} resolved the ticket",
+      "Closed": "{actor} closed the ticket",
+      "Reopened": "{actor} reopened the ticket",
+      "Cancelled": "{actor} cancelled the ticket",
+      "Assigned": "{actor} assigned the ticket to {to}",
+      "Claimed": "{actor} claimed the ticket",
+      "Unassigned": "{actor} unassigned {from}",
+      "Transferred": "{actor} transferred the ticket from {from} to {to}",
+      "PriorityChanged": "{actor} changed the priority from {from} to {to}",
+      "CategoryChanged": "{actor} set the category to {to}",
+      "unknown": "{actor} updated the ticket"
+    },
+    "thread": {
+      "title": "Conversation",
+      "empty": "No messages yet",
+      "emptyDescription": "Replies, internal notes and the ticket history appear here.",
+      "loadError": "The conversation could not be loaded.",
+      "retry": "Try again",
+      "loadMore": "Show more",
+      "internalNote": "Internal note",
+      "customer": "Customer",
+      "you": "You",
+      "colleague": "A colleague",
+      "otherDepartment": "another department",
+      "aCategory": "a category",
+      "nobody": "nobody",
+      "recordedBy": "Recorded by {name}"
+    },
+    "detail": {
+      "back": "Back",
+      "notFound": "Ticket not found",
+      "notFoundDescription": "The link may be wrong, or the ticket was removed.",
+      "loadError": "The ticket could not be loaded."
     }
   }
 }

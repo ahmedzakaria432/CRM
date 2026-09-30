@@ -31,6 +31,8 @@ internal static class TicketDomainErrors
     public static readonly DomainError CategoryAlreadyActive = new("Tickets.CategoryAlreadyActive", "The category is already active.");
     public static readonly DomainError CategoryAlreadyInactive = new("Tickets.CategoryAlreadyInactive", "The category is already inactive.");
     public static readonly DomainError CategoryScopeRequired = new("Tickets.CategoryScopeRequired", "A category must belong to a tenant and a department.");
+    public static readonly DomainError BodyRequired = new("Tickets.BodyRequired", "Enter the text of the message or note.");
+    public static readonly DomainError BodyTooLong = new("Tickets.BodyTooLong", "A message or note cannot be more than 10000 characters.");
 
     public static DomainError TransitionNotAllowed(TicketAction action, TicketStatus status) =>
         new("Tickets.TransitionNotAllowed", string.Create(CultureInfo.InvariantCulture, $"'{action}' is not allowed while the ticket is {status}."));

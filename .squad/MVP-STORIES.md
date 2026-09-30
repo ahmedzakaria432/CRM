@@ -23,12 +23,12 @@ Plan and implement top to bottom: `/squad-plan <intake>` → `/squad-implement <
 | 8 | 11 | Customer aggregate profiles contact details and notes | **Customer Management** | ✅ Done | [intake](stories/customer-management/customer-aggregate-profiles-and-contact-details/intake.md) | [plan](plans/customer-management/11-story-customer-aggregate-profiles-contact-details-and-notes.md) | 06, 07 |
 | 9 | 14 | Customer 360 workspace UI | **Customer Management** | ✅ Done | [intake](stories/customer-management/customer-360-workspace-ui/intake.md) | [plan](plans/customer-management/14-story-customer-360-workspace-ui.md) | 05, 07, 11 |
 | 10 | 15 | Ticket aggregate lifecycle taxonomy and assignment | **Ticket Management** | ✅ Done | [intake](stories/ticket-management/ticket-aggregate-and-lifecycle/intake.md) | [plan](plans/ticket-management/15-story-ticket-aggregate-lifecycle-taxonomy-and-assignment.md) | 06, 07, 11 |
-| 11 | 18 | Ticket conversation thread messages internal notes and history | **Ticket Management** | ⬜ Next | [intake](stories/ticket-management/ticket-conversation-thread-messages-and-internal-notes/intake.md) | — | 15 |
-| 12 | 20 | Ticket inbox and ticket detail workspace UI | **Ticket Management** | ⬜ | [intake](stories/ticket-management/ticket-inbox-ui-with-filters-and-bulk-actions/intake.md) | — | 14, 15, 18 |
+| 11 | 18 | Ticket conversation thread messages internal notes and history | **Ticket Management** | ✅ Done | [intake](stories/ticket-management/ticket-conversation-thread-messages-and-internal-notes/intake.md) | [plan](plans/ticket-management/18-story-ticket-conversation-thread-messages-internal-notes-and-history.md) | 15 |
+| 12 | 20 | Ticket inbox and ticket detail workspace UI | **Ticket Management** | ⬜ Next | [intake](stories/ticket-management/ticket-inbox-ui-with-filters-and-bulk-actions/intake.md) | — | 14, 15, 18 |
 | 13 | 47 | Customer portal accounts ticket submission tracking and history | **Customer Portal** | ⬜ | [intake](stories/customer-portal/portal-authentication-registration-and-account/intake.md) | — | 07, 11, 15, 18 |
 | 14 | 58 | Custom branding theming and tenant configuration | **Custom branding** | ⬜ | [intake](stories/integrations-platform/custom-branding-theming-and-tenant-configuration/intake.md) | — | 06, 47 |
 
-**Remaining: 4 stories** (18, 20, 47, 58). Folder names keep the original slugs, so a
+**Remaining: 3 stories** (20, 47, 58). Folder names keep the original slugs, so a
 merged story's intake folder name can be narrower than its new title (e.g. story 20's folder is
 `ticket-inbox-ui-…` but it now also covers the ticket detail page).
 

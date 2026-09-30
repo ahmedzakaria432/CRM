@@ -1,0 +1,498 @@
+@host = http://localhost:5187
+
+# Story 18 - the ticket conversation thread: agent replies, customer replies, internal notes, the history (Story 15 activities)
+# and the cursor-paged thread. Run top to bottom against a Development API (`docker compose up -d`, then
+# `dotnet run --project backend/src/Crm.Api --launch-profile http`). The file creates its own tickets, so it runs on any
+# database state. rowVersion is needed only for the status transitions; `@after` values chain from the previous response.
+# Access tokens live 2 minutes in Development - re-run the logins when a request answers 401. Sign-in is limited to 30/min.
+# Every entry of the thread has a per-ticket `sequence` (Ticket.Revision at append); the thread is ordered by it and paged with
+# `after={last sequence}`. Visibility: public = messages, internal = notes, system = activities (history).
+# Requests 37/38 read their body from ./data/*.json (`<` file reference of the VS Code REST Client / JetBrains HTTP Client).
+# Dev seed: T-000001 Ahmed (RYD-CARE, New), T-000003 Red Sea (JED-CARE, New - invisible to agent A).
+
+@ahmed = 11000000-0000-0000-0000-000000000001
+@ahmedContact = 11000000-0000-0000-0001-000000000001
+@agentA = 06000000-0000-0000-0003-000000000003
+@ahmedNewTicket = 15000000-0000-0000-0000-000000000001
+@redSeaNewTicket = 15000000-0000-0000-0000-000000000003
+@unknown = 00000000-0000-0000-0000-00000000dead
+
+### Login as agent A (Agent in RYD-CARE)
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
+### Login as agent B (Agent in JED-CARE)
+# @name loginAgentB
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentBToken = {{loginAgentB.response.body.accessToken}}
+
+### Login as supervisor (Supervisor in RYD-CARE)
+# @name loginSupervisor
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "supervisor@crm.local", "password": "Crm_Dev_2026!" }
+
+@supervisorToken = {{loginSupervisor.response.body.accessToken}}
+
+###############################################################################################################################
+### Setup and the first entries
+###############################################################################################################################
+
+### 1. Create a ticket for Ahmed - 200 (@th): allowedActions contains Reply and AddNote
+# @name th
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{
+  "customerId": "{{ahmed}}",
+  "contactId": "{{ahmedContact}}",
+  "subject": "Conversation test",
+  "description": "A ticket that exercises the conversation thread."
+}
+
+@thId = {{th.response.body.id}}
+
+### 2. The thread of the new ticket - 200: one item { sequence 1, type Activity, visibility System, templateKey Created,
+### parameters { from: null, to: New } }, nextCursor null, people names agent A
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread
+Authorization: Bearer {{agentAToken}}
+
+### 3. Agent reply - 200; status New; firstRespondedAtUtc set. EF log: split SELECTs over TicketActivities/TicketMessages/TicketNotes,
+### INSERT INTO [tickets].[TicketMessages], UPDATE [tickets].[Tickets] ... [Revision] ... AND [RowVersion] = @..., one outbox INSERT
+# @name r3
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "  Hello Ahmed,\nwe are looking into it.  " }
+
+### 4. Entries after sequence 1 - 200: exactly one item, sequence 2, type Message, direction Outbound, body "Hello Ahmed,\nwe are
+### looking into it." (trimmed, line break kept), authorId = recordedById = agent A
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?after=1
+Authorization: Bearer {{agentAToken}}
+
+### 5. Second reply - 200; firstRespondedAtUtc EQUAL to request 3's (only the first agent reply sets it)
+# @name r5
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Second reply" }
+
+### 6. Internal note - 200; status unchanged. EF log: INSERT INTO [tickets].[TicketNotes]; no outbox INSERT
+POST {{host}}/api/Agent/Tickets/{{thId}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Internal: customer is on the VIP list." }
+
+### 7. Note with markup - 200: stored verbatim (plain text, never parsed or rendered as HTML)
+POST {{host}}/api/Agent/Tickets/{{thId}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "<b>not bold</b> <script>alert(1)</script>" }
+
+### 8. Arabic reply - 200
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "شكراً لتواصلك معنا.\nسنعود إليك قريباً." }
+
+###############################################################################################################################
+### Reading the thread: visibility and paging
+###############################################################################################################################
+
+### 9. The whole thread - 200: sequences 1..6 ascending - Activity, Message, Message, Note, Note, Message; notes have visibility Internal
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread
+Authorization: Bearer {{agentAToken}}
+
+### 10. Internal only - 200: the two notes
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?visibility=internal
+Authorization: Bearer {{agentAToken}}
+
+### 11. Public only - 200: the three messages, NO Note entry. EF log: no [TicketNotes] and no [TicketActivities] SQL
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?visibility=public
+Authorization: Bearer {{agentAToken}}
+
+### 12. System and public - 200: Created + the three messages
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?visibility=system&visibility=public
+Authorization: Bearer {{agentAToken}}
+
+### 13. First page of two - 200: sequences 1, 2; nextCursor 2
+# @name page1
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?limit=2
+Authorization: Bearer {{agentAToken}}
+
+### 14. A note is added while paging - 200 (sequence 7)
+POST {{host}}/api/Agent/Tickets/{{thId}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Added while paging" }
+
+### 15. Second page - 200: sequences 3, 4; nextCursor 4
+# @name page2
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?limit=2&after={{page1.response.body.nextCursor}}
+Authorization: Bearer {{agentAToken}}
+
+### 16. Third page - 200: sequences 5, 6, 7 (the note from 14 last), nextCursor null. Pages 13 + 15 + 16 hold 1..7 exactly once
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?limit=10&after={{page2.response.body.nextCursor}}
+Authorization: Bearer {{agentAToken}}
+
+###############################################################################################################################
+### Status rules
+###############################################################################################################################
+
+### 17. The ticket - 200: activities = one Created; rowVersion for request 18
+# @name th1
+GET {{host}}/api/Agent/Tickets/{{thId}}
+Authorization: Bearer {{agentAToken}}
+
+### 17b. Open the ticket - 200 Open (appends the Opened activity as sequence 8; AwaitCustomer is not allowed from New)
+# @name th1o
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Open", "rowVersion": "{{th1.response.body.rowVersion}}" }
+
+### 18. Await the customer - 200 PendingCustomer (appends the AwaitingCustomer activity as sequence 9)
+# @name th2
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "AwaitCustomer", "rowVersion": "{{th1o.response.body.rowVersion}}" }
+
+### 19. Customer reply on PendingCustomer - 200; status Open. Two outbox INSERTs (message + status)
+# @name r19
+POST {{host}}/api/Agent/Tickets/{{thId}}/customer-replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Here is the screenshot you asked for." }
+
+### 20. Reply on a SEEDED ticket - 200: the back-filled sequences of the Story 15 rows accept a new entry
+POST {{host}}/api/Agent/Tickets/{{ahmedNewTicket}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Reply on a seeded ticket." }
+
+### 21. Entries after sequence 9 - 200: sequence 10 Message Inbound (authorId = Ahmed contact, recordedById = agent A); sequence 11
+### Activity Opened { from: PendingCustomer, to: Open }
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?after=9
+Authorization: Bearer {{agentAToken}}
+
+### 22. Customer reply on an Open ticket - 200; status stays Open; exactly one new entry (sequence 12)
+POST {{host}}/api/Agent/Tickets/{{thId}}/customer-replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Any update?" }
+
+### 22b. Entries after sequence 11 - 200: exactly one entry, sequence 12
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?after=11
+Authorization: Bearer {{agentAToken}}
+
+### 23a. The ticket (fresh rowVersion) - 200
+# @name th3
+GET {{host}}/api/Agent/Tickets/{{thId}}
+Authorization: Bearer {{agentAToken}}
+
+### 23b. Resolve - 200 Resolved (sequence 13)
+# @name th4
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Resolve", "rowVersion": "{{th3.response.body.rowVersion}}" }
+
+### 24. allowedActions of the Resolved ticket - contains Reply, AddNote, Close, Reopen
+GET {{host}}/api/Agent/Tickets/{{thId}}
+Authorization: Bearer {{agentAToken}}
+
+### 25. Reply to a Resolved ticket - 200; status Open, resolvedAtUtc null. Entries after 13: Message 14, Activity Reopened 15
+### { from: Resolved, to: Open }. Two outbox INSERTs (message + status changed)
+# @name r25
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "One more detail before we close." }
+
+### 25b. Entries after 13 - 200: Message 14 then Activity Reopened 15
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?after=13
+Authorization: Bearer {{agentAToken}}
+
+### 26a. Resolve again (fresh rowVersion first)
+# @name th5
+GET {{host}}/api/Agent/Tickets/{{thId}}
+Authorization: Bearer {{agentAToken}}
+
+### 26b. Resolve - 200 Resolved
+# @name th6
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Resolve", "rowVersion": "{{th5.response.body.rowVersion}}" }
+
+### 26c. Customer reply on Resolved - 200; status Open via a Reopened activity
+POST {{host}}/api/Agent/Tickets/{{thId}}/customer-replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "It works now, thanks!" }
+
+### 27a. Fresh rowVersion
+# @name th7
+GET {{host}}/api/Agent/Tickets/{{thId}}
+Authorization: Bearer {{agentAToken}}
+
+### 27b. Resolve - 200
+# @name th8
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Resolve", "rowVersion": "{{th7.response.body.rowVersion}}" }
+
+### 27c. Close - 200 Closed; allowedActions has AddNote and Reopen, NOT Reply
+# @name th9
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Close", "rowVersion": "{{th8.response.body.rowVersion}}" }
+
+### 28a. Reply to a Closed ticket (en) - 422 urn:crm:problem:domain-rule, code Tickets.TransitionNotAllowed,
+### detail "The ticket is Closed; that action is not allowed in this status."
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+Accept-Language: en
+
+{ "body": "Too late" }
+
+### 28b. Same in Arabic - 422, detail names the status «مغلقة»
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+Accept-Language: ar
+
+{ "body": "Too late" }
+
+### 29. Customer reply on a Closed ticket - 422 Tickets.TransitionNotAllowed
+POST {{host}}/api/Agent/Tickets/{{thId}}/customer-replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Hello?" }
+
+### 30. Internal note on a Closed ticket - 200 (notes are allowed in every status)
+POST {{host}}/api/Agent/Tickets/{{thId}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Post-mortem note on a closed ticket." }
+
+### 31a. Fresh rowVersion
+# @name th10
+GET {{host}}/api/Agent/Tickets/{{thId}}
+Authorization: Bearer {{agentAToken}}
+
+### 31b. Reopen - 200 Open
+# @name th11
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Reopen", "rowVersion": "{{th10.response.body.rowVersion}}" }
+
+### 31c. Await the customer - 200 PendingCustomer
+# @name th12
+POST {{host}}/api/Agent/Tickets/{{thId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "AwaitCustomer", "rowVersion": "{{th11.response.body.rowVersion}}" }
+
+### 31d. Customer reply - 200 Open; two outbox INSERTs (message + status changed)
+POST {{host}}/api/Agent/Tickets/{{thId}}/customer-replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Back again." }
+
+### 32a. A second ticket, cancelled (@th5Ticket) - 200
+# @name th5Ticket
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{
+  "customerId": "{{ahmed}}",
+  "subject": "Cancelled conversation test",
+  "description": "A ticket that is cancelled to prove replies are refused."
+}
+
+@th5Id = {{th5Ticket.response.body.id}}
+
+### 32b. Cancel it - 200
+# @name th5Cancelled
+POST {{host}}/api/Agent/Tickets/{{th5Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Cancel", "rowVersion": "{{th5Ticket.response.body.rowVersion}}" }
+
+### 32c. Reply to a Cancelled ticket - 422 Tickets.TransitionNotAllowed
+POST {{host}}/api/Agent/Tickets/{{th5Id}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Reply on a cancelled ticket" }
+
+### 32d. Note on a Cancelled ticket - 200
+POST {{host}}/api/Agent/Tickets/{{th5Id}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Note on a cancelled ticket" }
+
+###############################################################################################################################
+### Validation
+###############################################################################################################################
+
+### 33a. Empty reply - 400 errors.Body
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "" }
+
+### 33b. Whitespace-only reply - 400 errors.Body
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "   \n  " }
+
+### 33c. Missing body - 400 errors.Body
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{}
+
+### 34. Empty note - 400 errors.Body
+POST {{host}}/api/Agent/Tickets/{{thId}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "" }
+
+### 35. Empty customer reply - 400 errors.Body
+POST {{host}}/api/Agent/Tickets/{{thId}}/customer-replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "" }
+
+### 36. The ticket - 200: firstRespondedAtUtc still equal to request 3's
+GET {{host}}/api/Agent/Tickets/{{thId}}
+Authorization: Bearer {{agentAToken}}
+
+### 37. A reply of exactly 10,000 characters - 200 (body read from a fixture file)
+POST {{host}}/api/Agent/Tickets/{{thId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+< ./data/ticket-thread-body-10000.json
+
+### 38. A note of 10,001 characters - 400 errors.Body
+POST {{host}}/api/Agent/Tickets/{{thId}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+< ./data/ticket-thread-body-10001.json
+
+### 39a. Unknown visibility - 400 errors.Visibility[0] (custom text)
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?visibility=secret
+Authorization: Bearer {{agentAToken}}
+
+### 39b. limit 0 - 400 errors.Limit
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?limit=0
+Authorization: Bearer {{agentAToken}}
+
+### 39c. after -1 - 400 errors.After
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?after=-1
+Authorization: Bearer {{agentAToken}}
+
+### 40a. limit 100 - 200
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?limit=100
+Authorization: Bearer {{agentAToken}}
+
+### 40b. limit 101 - 400 errors.Limit
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?limit=101
+Authorization: Bearer {{agentAToken}}
+
+###############################################################################################################################
+### Not found, scope, authentication, localisation
+###############################################################################################################################
+
+### 41a. Unknown ticket, thread - 404 Tickets.TicketNotFound
+GET {{host}}/api/Agent/Tickets/{{unknown}}/thread
+Authorization: Bearer {{agentAToken}}
+
+### 41b. Unknown ticket, reply - 404 Tickets.TicketNotFound
+POST {{host}}/api/Agent/Tickets/{{unknown}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Hello" }
+
+### 42a. Thread of a JED-CARE ticket as agent A - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Tickets/{{redSeaNewTicket}}/thread
+Authorization: Bearer {{agentAToken}}
+
+### 42b. Same, public path - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Tickets/{{redSeaNewTicket}}/thread?visibility=public
+Authorization: Bearer {{agentAToken}}
+
+### 42c. Note on a JED-CARE ticket as agent A - 403 Organisation.OutOfScope
+POST {{host}}/api/Agent/Tickets/{{redSeaNewTicket}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "Out of scope" }
+
+### 43. Agent B reads agent A's thread - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread
+Authorization: Bearer {{agentBToken}}
+
+### 44. Supervisor reads it - 200 (RYD-CARE member); people names agent A and the supervisor where they acted
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread
+Authorization: Bearer {{supervisorToken}}
+
+### 45. No token - 401
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread
+
+### 46. Arabic request language - 200, body identical to the English response: no server-rendered text (activities are template keys)
+GET {{host}}/api/Agent/Tickets/{{thId}}/thread?limit=100
+Authorization: Bearer {{agentAToken}}
+Accept-Language: ar

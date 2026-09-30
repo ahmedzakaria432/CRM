@@ -11,6 +11,7 @@ public static class TicketsMessageKeys
         public const string StatusUnsupported = "Tickets.Validation.StatusUnsupported";
         public const string PriorityUnsupported = "Tickets.Validation.PriorityUnsupported";
         public const string ActionUnsupported = "Tickets.Validation.ActionUnsupported";
+        public const string VisibilityUnsupported = "Tickets.Validation.VisibilityUnsupported";
     }
 
     public static class Refusal

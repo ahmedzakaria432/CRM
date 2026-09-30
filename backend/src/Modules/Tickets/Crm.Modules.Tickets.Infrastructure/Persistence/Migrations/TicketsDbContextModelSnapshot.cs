@@ -289,6 +289,9 @@ namespace Crm.Modules.Tickets.Infrastructure.Persistence.Migrations
                             b1.Property<DateTimeOffset>("OccurredAtUtc")
                                 .HasColumnType("datetimeoffset");
 
+                            b1.Property<int>("Sequence")
+                                .HasColumnType("int");
+
                             b1.Property<Guid>("TicketId")
                                 .HasColumnType("uniqueidentifier");
 
@@ -298,9 +301,84 @@ namespace Crm.Modules.Tickets.Infrastructure.Persistence.Migrations
 
                             b1.HasKey("Id");
 
-                            b1.HasIndex("TicketId");
+                            b1.HasIndex("TicketId", "Sequence")
+                                .IsUnique();
 
                             b1.ToTable("TicketActivities", "tickets");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketId");
+                        });
+
+                    b.OwnsMany("Crm.Modules.Tickets.Domain.TicketMessage", "Messages", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid?>("AuthorId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Body")
+                                .IsRequired()
+                                .HasMaxLength(10000)
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Direction")
+                                .IsRequired()
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)");
+
+                            b1.Property<DateTimeOffset>("OccurredAtUtc")
+                                .HasColumnType("datetimeoffset");
+
+                            b1.Property<Guid>("RecordedById")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("Sequence")
+                                .HasColumnType("int");
+
+                            b1.Property<Guid>("TicketId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("TicketId", "Sequence")
+                                .IsUnique();
+
+                            b1.ToTable("TicketMessages", "tickets");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketId");
+                        });
+
+                    b.OwnsMany("Crm.Modules.Tickets.Domain.TicketNote", "Notes", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("AuthorId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Body")
+                                .IsRequired()
+                                .HasMaxLength(10000)
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<DateTimeOffset>("OccurredAtUtc")
+                                .HasColumnType("datetimeoffset");
+
+                            b1.Property<int>("Sequence")
+                                .HasColumnType("int");
+
+                            b1.Property<Guid>("TicketId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("TicketId", "Sequence")
+                                .IsUnique();
+
+                            b1.ToTable("TicketNotes", "tickets");
 
                             b1.WithOwner()
                                 .HasForeignKey("TicketId");
@@ -329,6 +407,10 @@ namespace Crm.Modules.Tickets.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Activities");
+
+                    b.Navigation("Messages");
+
+                    b.Navigation("Notes");
 
                     b.Navigation("Number")
                         .IsRequired();

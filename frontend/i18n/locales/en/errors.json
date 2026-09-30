@@ -103,7 +103,9 @@
         "AssigneeInactive": "The agent is inactive and cannot be assigned tickets.",
         "AssigneeNotInDepartment": "The agent is not a member of the ticket department.",
         "TargetDepartmentInactive": "The target department is inactive.",
-        "CategoryDepartmentInactive": "Categories cannot be added to an inactive department."
+        "CategoryDepartmentInactive": "Categories cannot be added to an inactive department.",
+        "BodyRequired": "Enter the text of the message or note.",
+        "BodyTooLong": "A message or note cannot be more than 10,000 characters."
       },
       "Authorization": {
         "PermissionDenied": "You do not have permission to do this.",

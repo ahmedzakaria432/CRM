@@ -14,6 +14,8 @@ public static class TicketsRules
         nameof(TicketAction.Close), nameof(TicketAction.Reopen), nameof(TicketAction.Cancel),
     ];
 
+    private static readonly string[] Visibilities = ["public", "internal", "system"];
+
     /// <summary>The queue is mine, unassigned or all (or absent).</summary>
     public static IRuleBuilderOptions<T, string?> SupportedQueue<T>(this IRuleBuilder<T, string?> rule, ILocalizationService localization)
     {
@@ -65,6 +67,17 @@ public static class TicketsRules
         return rule
             .Must(p => p is null || Enum.GetNames<TicketPriority>().Contains(p, StringComparer.OrdinalIgnoreCase))
             .WithMessage(_ => localization.Get(TicketsMessageKeys.Validation.PriorityUnsupported));
+    }
+
+    /// <summary>A thread visibility: public, internal or system (case-insensitive).</summary>
+    public static IRuleBuilderOptions<T, string> SupportedVisibility<T>(this IRuleBuilder<T, string> rule, ILocalizationService localization)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(localization);
+
+        return rule
+            .Must(v => Visibilities.Contains(v, StringComparer.OrdinalIgnoreCase))
+            .WithMessage(_ => localization.Get(TicketsMessageKeys.Validation.VisibilityUnsupported));
     }
 
     /// <summary>One of the seven status actions (not Assign, Claim, ...: those have their own endpoints).</summary>
