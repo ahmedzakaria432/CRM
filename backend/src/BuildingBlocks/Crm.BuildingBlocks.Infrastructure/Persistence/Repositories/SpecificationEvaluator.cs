@@ -29,11 +29,13 @@ public static class SpecificationEvaluator
 
         if (specification.OrderBy is not null)
         {
-            query = query.OrderBy(specification.OrderBy);
+            IOrderedQueryable<T> ordered = query.OrderBy(specification.OrderBy);
+            query = specification.ThenBy is null ? ordered : ordered.ThenBy(specification.ThenBy);
         }
         else if (specification.OrderByDescending is not null)
         {
-            query = query.OrderByDescending(specification.OrderByDescending);
+            IOrderedQueryable<T> ordered = query.OrderByDescending(specification.OrderByDescending);
+            query = specification.ThenBy is null ? ordered : ordered.ThenBy(specification.ThenBy);
         }
 
         // Paging goes after ordering. Skip/Take on an unordered query returns non-deterministic

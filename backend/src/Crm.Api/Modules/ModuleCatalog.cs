@@ -17,8 +17,7 @@ internal static class ModuleCatalog
 
         new(new Crm.Modules.Identity.Infrastructure.IdentityModule(), Crm.Modules.Identity.Presentation.AssemblyReference.Assembly),
 
-        // CANONICAL SLICE - removed with the Sample module in Story 11.
-        new(new Crm.Modules.Sample.Infrastructure.SampleModule(), Crm.Modules.Sample.Presentation.AssemblyReference.Assembly),
+        new(new Crm.Modules.Customers.Infrastructure.CustomersModule(), Crm.Modules.Customers.Presentation.AssemblyReference.Assembly),
     ];
 }
 

@@ -10,7 +10,7 @@ namespace Crm.BuildingBlocks.Application.Abstractions;
 /// </summary>
 /// <remarks>
 /// There is one unit of work PER MODULE, never one for the whole application: each module declares
-/// its own interface deriving from this one (e.g. <c>ISampleUnitOfWork</c>) in its Application
+/// its own interface deriving from this one (e.g. <c>ICustomersUnitOfWork</c>) in its Application
 /// project, and its DbContext - a <c>ModuleDbContext</c> - is the only implementation. Handlers
 /// inject their module's interface, never this one. TransactionBehavior finds the right one through
 /// <see cref="Modules.IUnitOfWorkResolver"/>.

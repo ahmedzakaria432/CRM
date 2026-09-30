@@ -1,8 +1,6 @@
 namespace Crm.Modules.Organisation.Contracts.DevSeed;
 
-/// <summary>Well-known Development ids, as primitives - shared with Story 07's user seed and the Sample seed
-/// (Sample is the first organisation-scoped aggregate; Story 11 copies its shape onto Customer). Never used
-/// outside Development.</summary>
+/// <summary>Well-known Development ids, as primitives - shared with Story 07's user seed and Story 11's customer seed. Never used outside Development.</summary>
 public static class OrganisationDevSeed
 {
     public static readonly Guid TenantId = Guid.Parse("06000000-0000-0000-0000-000000000001");

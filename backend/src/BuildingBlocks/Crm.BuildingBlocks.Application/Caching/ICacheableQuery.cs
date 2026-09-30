@@ -2,7 +2,7 @@ namespace Crm.BuildingBlocks.Application.Caching;
 
 /// <summary>
 /// A query whose successful result CachingBehavior caches. Must return <c>Result&lt;T&gt;</c>. Keys and tags follow
-/// "{module}:{aggregate-plural}:{id}" (e.g. "sample:samples:{id}"), built by the module's <c>&lt;Module&gt;CacheKeys</c>
+/// "{module}:{aggregate-plural}:{id}" (e.g. "customers:customers:{id}"), built by the module's <c>&lt;Module&gt;CacheKeys</c>
 /// class; the behaviour prefixes the caller's tenant/department/branch scope.
 /// </summary>
 public interface ICacheableQuery

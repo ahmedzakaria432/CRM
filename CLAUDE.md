@@ -68,8 +68,7 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   | `Integrations` | public API versioning, API keys, outbound webhooks, ERP | 55–57 |
 
   The customer portal (47–49) is a **persona** (the `Portal` Area), not a module: its endpoints live in the modules
-  that own the data (Identity, Tickets, Customers, KnowledgeBase). The `Sample` module is the canonical template
-  and is deleted in Story 11.
+  that own the data (Identity, Tickets, Customers, KnowledgeBase). `Customers` is the reference module to copy (Story 11 deleted the `Sample` template).
 - **Five projects per module, one direction.** Inside a module the dependency direction is Clean Architecture's:
   `Presentation -> Application -> Domain`, `Infrastructure -> Application`, `Application -> Contracts`.
   `Domain` and `Contracts` reference only `Crm.SharedKernel`. `Presentation` cannot see `Domain` at all

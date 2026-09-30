@@ -40,9 +40,28 @@ unless overridden). Swagger UI is at `/swagger` in Development — see "API surf
 `ModuleDesignTimeDbContextFactory`'s design-time default both point at `localhost,14330`).
 
 **Upgrading a dev database from before the modular-monolith move:** the pre-module `Initial` migration created
-`dbo.Samples`, `dbo.SampleLines`, and `dbo.__EFMigrationsHistory`. They are no longer used — the Sample module now
-lives in the `sample` schema. Drop them, or reset the volume with `docker compose down -v`. No production data
+`dbo.Samples`, `dbo.SampleLines`, and `dbo.__EFMigrationsHistory`. They are no longer used (the old module has since been
+replaced by `Customers`). Drop them, or reset the volume with `docker compose down -v`. No production data
 exists yet, so nothing is lost.
+
+**Upgrading a dev database from before Story 11:** Story 11 deleted the `Sample` module. Its `sample` schema is no
+longer migrated or read (no migration drops another module's schema). Drop it once, from SSMS or:
+
+```sql
+-- Story 11 deleted the Sample module. Its schema is no longer migrated or read. Drop it once:
+DROP TABLE IF EXISTS [sample].[SampleLines];
+DROP TABLE IF EXISTS [sample].[Samples];
+DROP TABLE IF EXISTS [sample].[outbox_message_consumers];
+DROP TABLE IF EXISTS [sample].[outbox_messages];
+DROP TABLE IF EXISTS [sample].[__EFMigrationsHistory];
+DROP SCHEMA IF EXISTS [sample];
+```
+
+```
+docker exec -it crm-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Crm_Local_Dev_2026!" -C -I -d Crm -Q "<the statements above>"
+```
+
+Or reset everything with `docker compose down -v` and let every module re-migrate.
 
 ## Solution layout
 
@@ -55,21 +74,21 @@ src/
     Crm.BuildingBlocks.Infrastructure/     ModuleDbContext, AddModuleDbContext, AddRepository, IModule, interceptor, SystemDateTime
     Crm.BuildingBlocks.Presentation/       ApiControllerBase, CrmAreas, AREAS.md, Result -> ProblemDetails
   Modules/
-    Sample/                                canonical template module - deleted in Story 11
-      Crm.Modules.Sample.Domain/
-      Crm.Modules.Sample.Application/
-      Crm.Modules.Sample.Contracts/
-      Crm.Modules.Sample.Infrastructure/
-      Crm.Modules.Sample.Presentation/
+    Customers/                             reference module - copy this shape
+      Crm.Modules.Customers.Domain/
+      Crm.Modules.Customers.Application/
+      Crm.Modules.Customers.Contracts/
+      Crm.Modules.Customers.Infrastructure/
+      Crm.Modules.Customers.Presentation/
 ```
 
 ## Add a module
 
 A module is created by the first story that needs it (the catalogue in `CLAUDE.md` says which). Copy the shape
-of `src/Modules/Sample/`:
+of `src/Modules/Customers/`:
 
 1. Five projects named `Crm.Modules.<Module>.{Domain,Application,Contracts,Infrastructure,Presentation}` under
-   `src/Modules/<Module>/`, with the same `ProjectReference`s as the Sample projects (Presentation keeps
+   `src/Modules/<Module>/`, with the same `ProjectReference`s as the Customers projects (Presentation keeps
    `DisableTransitiveProjectReferences`). Add them to `Crm.sln` in the `src/Modules/<Module>` solution folder.
 2. `Application`: `I<Module>UnitOfWork : IUnitOfWork` and an `AssemblyReference`.
 3. `Infrastructure`: `<Module>DbContext : ModuleDbContext, I<Module>UnitOfWork` with `SchemaName = "<module>"`,
@@ -105,14 +124,14 @@ controller (`CS0234` if you try).
 Use the wrapper; it takes the module name and fixes the `--project` / `--startup-project` pair:
 
 ```bash
-./backend/scripts/ef.ps1 -Module Sample migrations add <Name>      # lands in Persistence/Migrations
-./backend/scripts/ef.ps1 -Module Sample database update
+./backend/scripts/ef.ps1 -Module Customers migrations add <Name>      # lands in Persistence/Migrations
+./backend/scripts/ef.ps1 -Module Customers database update
 ```
 
 Equivalent to, run from `backend/`:
 
 ```bash
-dotnet ef migrations add <Name> --project src/Modules/Sample/Crm.Modules.Sample.Infrastructure --startup-project src/Crm.Api --output-dir Persistence/Migrations
+dotnet ef migrations add <Name> --project src/Modules/Customers/Crm.Modules.Customers.Infrastructure --startup-project src/Crm.Api --output-dir Persistence/Migrations
 ```
 
 Each module's migrations create its tables in its own schema and record themselves in
@@ -139,8 +158,8 @@ extension, JetBrains' HTTP Client, or `curl` all work). Start with `backend/requ
 
 ## Add a new vertical slice
 
-Every use case follows the shape of the **canonical Sample module** at `src/Modules/Sample/` (deleted once Story 11
-lands the first real feature):
+Every use case follows the shape of the **reference Customers module** at `src/Modules/Customers/` (it replaced the
+Story 02 Sample template in Story 11):
 
 ```
 src/Modules/<Module>/Crm.Modules.<Module>.Application/{Commands,Queries}/<UseCase>/
@@ -162,13 +181,13 @@ See "Error responses" below.
 
 ## Talking to another module
 
-- **Read it now:** call an interface from its Contracts project (see `ISampleModuleApi`). The owning module
+- **Read it now:** call an interface from its Contracts project (see `ICustomersModuleApi`). The owning module
   implements it in its Application project by sending its own query, so validation, authorisation, and scoping
   still apply.
 - **Tell it something happened:** declare an integration event record in your Contracts and `IEventBus.Publish` it
   from the command handler; it is written to your outbox in your transaction and delivered after commit. The other
   module subscribes with an `IIntegrationEventConsumer<T>` in its Application project and handles it in its own
-  transaction. See "Integration events and the outbox" below and `SampleRenamedIntegrationEvent` for the shape.
+  transaction. See "Integration events and the outbox" below and `CustomerCreatedIntegrationEvent` for the shape.
 - **Never** reference another module's Domain/Application/Infrastructure, read its schema, or mutate its state
   inside your own transaction.
 
@@ -204,7 +223,7 @@ The clock is read only through **`IDateTime`** (`Crm.BuildingBlocks.Application.
   DI, `System.Data.Common`, `System.Net.Http`.
 
 All three lists are wired once in `Directory.Build.props`, so a new project cannot forget them. A domain method
-that needs a timestamp takes it as a parameter (see `SampleAggregate.Rename`) rather than reading the clock.
+that needs a timestamp takes it as a parameter (see `Customer.AddNote(…, createdAtUtc)`) rather than reading the clock.
 
 ## Persistence: auditing, soft delete, concurrency
 
@@ -216,13 +235,16 @@ that needs a timestamp takes it as a parameter (see `SampleAggregate.Rename`) ra
 - **Every aggregate root carries a `rowversion` column** (`IHasRowVersion`, mapped with `.IsRowVersion()`). A
   command that updates an aggregate the client already read must call
   `IRepository<T, TId>.SetOriginalRowVersion(aggregate, clientRowVersion)` before saving — see
-  `RenameSampleCommandHandler` — or a stale write silently succeeds instead of returning **409**.
+  `UpdateCustomerCommandHandler` — or a stale write silently succeeds instead of returning **409**.
+- **A child-only change must still UPDATE the root** — see `Customer.Revision`: contacts live in their own table, so
+  the aggregate bumps `Revision` in every contact method, which puts the root row (and its rowversion check) into
+  the UPDATE.
 - **The soft-delete query filter is registered with EF Core 10's _named_ `HasQueryFilter` overload**
   (`ModuleDbContext.SoftDeleteFilterName`), for every module. Story 06 adds the tenant/department/branch filter as
   a **second** named filter in `ModuleDbContext`. **Never switch to the unnamed overload** — it silently replaces a
   prior filter instead of composing with it.
 - **Value objects need a constructor whose parameter name matches the mapped property name**
-  (case-insensitive) — `SampleName`'s constructor takes `value` because the owned-type configuration maps
+  (case-insensitive) — `CustomerNumber`'s constructor takes `value` because the owned-type configuration maps
   `p.Value`. A mismatch fails at model build with `InvalidOperationException: No suitable constructor was found`.
 
 ## Error responses
@@ -276,7 +298,7 @@ Story 06 adds multi-department, multi-branch data isolation, enforced once at th
 
 - **Scope markers** in `Crm.SharedKernel.Scoping`: `ITenantScoped` (tenant only — `Branch`, `Department`,
   `Membership`) and `IOrganisationScoped : ITenantScoped` (tenant + branch + department — operational data,
-  `SampleAggregate` first). `ModuleDbContext` applies a second **named** query filter
+  `Customer` first). `ModuleDbContext` applies a second **named** query filter
   (`ModuleDbContext.ScopeFilterName`) to every such entity in every module, automatically. A write outside the
   caller's scope is refused; a read of an existing out-of-scope row returns 403 `Organisation.OutOfScope`, never
   an accidental 404.

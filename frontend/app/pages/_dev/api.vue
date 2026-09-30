@@ -19,13 +19,12 @@
         </UiButton>
       </div>
 
-      <form class="mt-6 flex max-w-md flex-col gap-3" @submit.prevent="submitSample">
-        <UiInput v-model="sampleName" label="Name" :error="formErrors.errorFor('name')" />
-        <UiTextarea v-model="sampleLines" label="Lines, one per line" :error="formErrors.errorFor('lines')" />
+      <form class="mt-6 flex max-w-md flex-col gap-3" @submit.prevent="submitCustomer">
+        <UiInput v-model="customerName" label="Customer name (English)" :error="formErrors.errorFor('displayNameEn')" />
         <p v-if="formErrors.formError.value" role="alert" class="text-xs text-danger-600">
           {{ formErrors.formError.value }}
         </p>
-        <UiButton type="submit" :loading="submitting">Create sample</UiButton>
+        <UiButton type="submit" :loading="submitting">Create customer</UiButton>
       </form>
     </section>
 
@@ -80,13 +79,13 @@
     <section class="mt-8 border-t border-border pt-6">
       <h2 class="text-lg font-semibold text-fg">3. Data states</h2>
       <div class="mt-4 flex flex-wrap gap-2">
-        <UiButton size="sm" variant="secondary" @click="loadSample">Load sample (skeleton → data)</UiButton>
+        <UiButton size="sm" variant="secondary" @click="loadCustomers">Load customers (skeleton → data)</UiButton>
         <UiButton size="sm" variant="secondary" @click="showEmpty">Simulate empty</UiButton>
         <UiButton size="sm" variant="secondary" @click="loadMissingRoute">Load missing route (404)</UiButton>
       </div>
       <div class="mt-4 max-w-md">
         <UiSkeleton v-if="dataState === 'loading'" variant="text" :lines="2" />
-        <UiEmptyState v-else-if="dataState === 'empty'" title="No sample" description="Nothing to show yet." />
+        <UiEmptyState v-else-if="dataState === 'empty'" title="No customers" description="Nothing to show yet." />
         <UiErrorState
           v-else-if="dataState === 'error'"
           title="Could not load"
@@ -96,9 +95,9 @@
           retry-label="Try again"
           @retry="loadMissingRoute"
         />
-        <div v-else-if="dataState === 'data' && sampleData" class="rounded-md border border-border p-3 text-sm">
-          <p><span class="font-medium">name:</span> {{ sampleData.name }}</p>
-          <p><span class="font-medium">serverTimeUtc:</span> {{ sampleData.serverTimeUtc }}</p>
+        <div v-else-if="dataState === 'data' && customerData" class="rounded-md border border-border p-3 text-sm">
+          <p><span class="font-medium">number:</span> {{ customerData.number }}</p>
+          <p><span class="font-medium">name (en):</span> {{ customerData.displayName?.en }}</p>
         </div>
       </div>
     </section>
@@ -107,6 +106,7 @@
 
 <script setup lang="ts">
 import { createCrmFetch } from '~/api/crm-fetch'
+import type { components } from '~/api/generated/agent'
 import type { AuthSession } from '~/api/auth-session'
 import { toProblem, networkProblem, type Problem } from '~/api/problem'
 import { newCorrelationId, CorrelationHeader } from '~/api/correlation'
@@ -130,27 +130,27 @@ async function callUnauthorized(): Promise<void> {
   await api.call(api.clients.admin.GET('/api/Admin/Diagnostics/unauthorized'))
 }
 
-const sampleName = ref('')
-const sampleLines = ref('')
+const customerName = ref('')
 const submitting = ref(false)
 
-async function submitSample(): Promise<void> {
+async function submitCustomer(): Promise<void> {
   formErrors.clear()
   submitting.value = true
-  const lines = sampleLines.value
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
 
   const result = await api.call(
-    api.clients.admin.POST('/api/Admin/Samples', { body: { name: sampleName.value, lines } }),
+    api.clients.agent.POST('/api/Agent/Customers', {
+      body: { displayNameEn: customerName.value, type: 'Individual', preferredLanguage: 'en' },
+    }),
   )
   submitting.value = false
 
   if (result.ok) {
-    toasts.push({ tone: 'success', title: 'Sample created', description: result.data.name ?? null })
-    sampleName.value = ''
-    sampleLines.value = ''
+    if (result.data.created) {
+      toasts.push({ tone: 'success', title: 'Customer created', description: result.data.customer?.number ?? null })
+    } else {
+      toasts.push({ tone: 'info', title: 'Possible duplicate', description: null })
+    }
+    customerName.value = ''
     return
   }
   // A validation (400) problem lands as field errors here, never a toast (useApi already skipped it).
@@ -289,17 +289,22 @@ async function runAllScenarios(): Promise<void> {
 
 type DataState = 'idle' | 'loading' | 'data' | 'empty' | 'error'
 const dataState = ref<DataState>('idle')
-const sampleData = ref<{ name?: string | null; serverTimeUtc?: string } | null>(null)
+const customerData = ref<components['schemas']['CustomerLookupDto'] | null>(null)
 const dataError = ref<Problem | null>(null)
 
-async function loadSample(): Promise<void> {
+async function loadCustomers(): Promise<void> {
   dataState.value = 'loading'
   const result = await api.call(
-    api.clients.agent.GET('/api/Agent/Sample', { params: { query: { name: 'dev-api-demo' } } }),
+    api.clients.agent.GET('/api/Agent/Customers/lookup', { params: { query: { search: 'a', take: 5 } } }),
     { toastOnError: false },
   )
   if (result.ok) {
-    sampleData.value = result.data
+    const first = result.data[0]
+    if (first === undefined) {
+      dataState.value = 'empty'
+      return
+    }
+    customerData.value = first
     dataState.value = 'data'
   } else {
     dataError.value = result.problem

@@ -6,7 +6,7 @@ namespace Crm.BuildingBlocks.Infrastructure.Modules;
 
 /// <summary>
 /// A module's entry point, implemented once per module in its Infrastructure project (e.g.
-/// <c>SampleModule</c>) and listed in the host's <c>ModuleCatalog</c>. The host knows a module only
+/// <c>CustomersModule</c>) and listed in the host's <c>ModuleCatalog</c>. The host knows a module only
 /// through this and through the module's Presentation assembly - never through its Domain or
 /// Application types.
 /// </summary>

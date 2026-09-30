@@ -19,6 +19,8 @@ public abstract class Specification<T>
 
     public Expression<Func<T, object>>? OrderByDescending { get; private set; }
 
+    public Expression<Func<T, object>>? ThenBy { get; private set; }
+
     public int? Skip { get; private set; }
 
     public int? Take { get; private set; }
@@ -36,6 +38,9 @@ public abstract class Specification<T>
     protected void ApplyOrderBy(Expression<Func<T, object>> orderBy) => OrderBy = orderBy;
 
     protected void ApplyOrderByDescending(Expression<Func<T, object>> orderByDescending) => OrderByDescending = orderByDescending;
+
+    /// <summary>Secondary ascending key after OrderBy/OrderByDescending - paging on a non-unique key is non-deterministic on SQL Server without one.</summary>
+    protected void ApplyThenBy(Expression<Func<T, object>> thenBy) => ThenBy = thenBy;
 
     protected void ApplyPaging(int skip, int take)
     {

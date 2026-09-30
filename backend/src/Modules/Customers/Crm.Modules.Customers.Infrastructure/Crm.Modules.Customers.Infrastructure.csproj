@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- dotnet ef runs its design-time tooling against this project (backend/scripts/ef.ps1 -Module Customers). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Crm.BuildingBlocks.Infrastructure\Crm.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\Crm.Modules.Customers.Application\Crm.Modules.Customers.Application.csproj" />
+    <!-- The dev seed places customers in the Organisation dev-seed departments. A Contracts reference is rule 1 allowed. -->
+    <ProjectReference Include="..\..\Organisation\Crm.Modules.Organisation.Contracts\Crm.Modules.Organisation.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

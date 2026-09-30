@@ -1,0 +1,424 @@
+@host = http://localhost:5187
+
+# Story 11 - the Customers module: profile, contacts, notes, duplicate warning, search, scope. Run top to bottom against a
+# Development API (`docker compose up -d`, then `dotnet run --project backend/src/Crm.Api --launch-profile http`).
+# Dev seed (Crm.Modules.Customers.Contracts.DevSeed.CustomersDevSeed): Ahmed Al-Qahtani (individual, RYD-CARE, portal access),
+# Najd Logistics (organisation, RYD-CARE, two contacts, one pinned note), Red Sea Trading (organisation, JED-CARE - invisible
+# to agent A). On a fresh database the seed takes C-000001..C-000003, so request 6 is C-000004.
+# Access tokens live 2 minutes in Development - re-run the logins when a request answers 401. Sign-in is limited to 30/min.
+# rowVersion is base64: always send the value the LAST response returned (the requests below chain it with `# @name`).
+# Every customer row is organisation-scoped (Story 06): an out-of-scope id is 403 Organisation.OutOfScope, an unknown id 404.
+
+@ryCare = 06000000-0000-0000-0002-000000000001
+@ryBill = 06000000-0000-0000-0002-000000000002
+@jeCare = 06000000-0000-0000-0002-000000000003
+@ahmed = 11000000-0000-0000-0000-000000000001
+@najd = 11000000-0000-0000-0000-000000000002
+@redSea = 11000000-0000-0000-0000-000000000003
+@unknown = 00000000-0000-0000-0000-00000000dead
+
+### Login as agent A (Agent in RYD-CARE)
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
+### Login as agent B (Agent in JED-CARE)
+# @name loginAgentB
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentBToken = {{loginAgentB.response.body.accessToken}}
+
+### Login as supervisor (Supervisor in RYD-CARE, Agent in RYD-BILL)
+# @name loginSupervisor
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "supervisor@crm.local", "password": "Crm_Dev_2026!" }
+
+@supervisorToken = {{loginSupervisor.response.body.accessToken}}
+
+### 1. List as agent A - 200: Ahmed and Najd, NOT Red Sea. EF log WHERE has [c].[IsDeleted] = CAST(0 AS bit), [c].[TenantId] = @...,
+### [c].[BranchId] = @..., [c].[DepartmentId] = @... (scope in SQL).
+GET {{host}}/api/Agent/Customers
+Authorization: Bearer {{agentAToken}}
+
+### 2. Arabic search (أحمد, percent-encoded) - 200: Ahmed Al-Qahtani
+GET {{host}}/api/Agent/Customers?search=%D8%A3%D8%AD%D9%85%D8%AF
+Authorization: Bearer {{agentAToken}}
+
+### 3a. Search by English name - 200: Najd Logistics
+GET {{host}}/api/Agent/Customers?search=Najd
+Authorization: Bearer {{agentAToken}}
+
+### 3b. Search by customer number - 200: both (C-000001, C-000002)
+GET {{host}}/api/Agent/Customers?search=C-00000
+Authorization: Bearer {{agentAToken}}
+
+### 3c. Search by email fragment - 200: Najd. EF log: EXISTS (SELECT 1 FROM [customers].[CustomerContacts] ... [Email] LIKE ...)
+GET {{host}}/api/Agent/Customers?search=najd.example
+Authorization: Bearer {{agentAToken}}
+
+### 3d. Search by phone, separators ignored (50 123 4567) - 200: Ahmed
+GET {{host}}/api/Agent/Customers?search=50%20123%204567
+Authorization: Bearer {{agentAToken}}
+
+### 4a. Filtered, sorted, paged - 200: page 1 of 1 item, total = the unpaged count. EF log: ORDER BY [c].[DisplayNameEn], [c].[Number] + OFFSET/FETCH
+GET {{host}}/api/Agent/Customers?status=Active&sort=nameEn&descending=false&page=1&pageSize=1
+Authorization: Bearer {{agentAToken}}
+
+### 4b. Page 2 - 200: a different customer
+GET {{host}}/api/Agent/Customers?status=Active&sort=nameEn&descending=false&page=2&pageSize=1
+Authorization: Bearer {{agentAToken}}
+
+### 4c. Bad paging and sort - 400 urn:crm:problem:validation: errors.PageSize, errors.Sort (custom text)
+GET {{host}}/api/Agent/Customers?pageSize=0&sort=nope
+Authorization: Bearer {{agentAToken}}
+
+### 5. Lookup for the ticket customer picker - 200: active customers only
+GET {{host}}/api/Agent/Customers/lookup?search=na&take=5
+Authorization: Bearer {{agentAToken}}
+
+### 6. Create an individual with two contacts - 200 created: true, number C-000004 on a fresh DB, contact 1 primary automatically,
+### email stored lower-case, phone +966550001111 (separators stripped), contact 2 email: null (phone-only)
+# @name layla
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{
+  "displayNameEn": "Layla Hassan",
+  "type": "Individual",
+  "preferredLanguage": "en",
+  "contacts": [
+    { "name": "Layla Hassan", "email": "Layla.Hassan@Example.com" },
+    { "name": "Layla mobile", "phone": "+966 55 000 1111" }
+  ]
+}
+
+@lay = {{layla.response.body.customer.id}}
+
+### 7. Create with a contact email that already exists in scope (ahmed@example.com), no confirmation - 200 created: false,
+### customer: null, duplicateCandidates[0] = Ahmed with matchedEmails ["ahmed@example.com"]. Nothing is written.
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Ahmed Again", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "Ahmed", "email": "ahmed@example.com" }] }
+
+### 8. Same body, confirmDuplicate: true - 200 created: true
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Ahmed Again", "type": "Individual", "preferredLanguage": "en", "confirmDuplicate": true, "contacts": [{ "name": "Ahmed", "email": "ahmed@example.com" }] }
+
+### 9. Request 7's body as agent B - 200 created: true in JED-CARE: Ahmed is outside B's scope, so there is no warning
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "displayNameEn": "Ahmed Again", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "Ahmed", "email": "ahmed@example.com" }] }
+
+### 10. Organisation without a legal name - 422 urn:crm:problem:domain-rule, code Customers.LegalNameRequired (the validator allows it; the aggregate refuses)
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "No Legal Name Co", "type": "Organisation", "preferredLanguage": "en" }
+
+### 11. Individual with a legal name - 422 Customers.LegalNameNotAllowed
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Person", "type": "Individual", "legalName": "Person Ltd", "preferredLanguage": "en" }
+
+### 12a. Malformed email - 422 Customers.EmailInvalid (rejected by the EmailAddress value object, not by a validator)
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Bad Email", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "N", "email": "not-an-email" }] }
+
+### 12b. Phone without a country code - 422 Customers.PhoneInvalid
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Bad Phone", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "N", "phone": "0501234567" }] }
+
+### 13. Two contacts whose emails differ only by case - 422 Customers.DuplicateContactEmail
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Twin Emails", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "A", "email": "a@x.example" }, { "name": "B", "email": "A@X.example" }] }
+
+### 14a. Contact with neither email nor phone - 422 Customers.ContactChannelRequired
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "No Channel", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "A" }] }
+
+### 14b. Portal access with a phone only - 422 Customers.PortalAccessRequiresEmail
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Portal Phone", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "A", "phone": "+966500000001", "hasPortalAccess": true }] }
+
+### 15a. No names - 400 urn:crm:problem:validation, errors.DisplayNameEn (custom, localised text)
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "type": "Individual", "preferredLanguage": "en" }
+
+### 15b. Unknown type - 400 errors.Type
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Robot", "type": "Robot", "preferredLanguage": "en" }
+
+### 15c. Unsupported language - 400 errors.PreferredLanguage (custom, localised text)
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "French", "type": "Individual", "preferredLanguage": "fr" }
+
+### 16. Get by id - run TWICE: 200 both times, ONE `SELECT ... FROM [customers].[Customers]` in the EF log across both (cached, culture-neutral)
+# @name cached
+GET {{host}}/api/Agent/Customers/{{lay}}
+Authorization: Bearer {{agentAToken}}
+
+### 17. Update the profile (new Arabic name) with the current rowVersion - 200, modifiedBy set, new rowVersion. EF log: INSERT INTO
+### [customers].[outbox_messages] inside the transaction. Then re-run request 16: a fresh SELECT and the new name.
+# @name updated
+PUT {{host}}/api/Agent/Customers/{{lay}}
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameAr": "ليلى حسن", "displayNameEn": "Layla Hassan", "type": "Individual", "preferredLanguage": "en", "rowVersion": "{{cached.response.body.rowVersion}}" }
+
+### 17b. Stale rowVersion - 409 Persistence.ConcurrencyConflict
+PUT {{host}}/api/Agent/Customers/{{lay}}
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "displayNameEn": "Stale", "type": "Individual", "preferredLanguage": "en", "rowVersion": "AAAAAAAAB9E=" }
+
+### 18a. Deactivate - 200 status Inactive
+# @name deactivated
+POST {{host}}/api/Agent/Customers/{{lay}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{updated.response.body.rowVersion}}" }
+
+### 18b. Deactivate again - 422 Customers.AlreadyInactive
+POST {{host}}/api/Agent/Customers/{{lay}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{deactivated.response.body.rowVersion}}" }
+
+### 18c. Reactivate - 200 status Active
+# @name reactivated
+POST {{host}}/api/Agent/Customers/{{lay}}/reactivate
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{deactivated.response.body.rowVersion}}" }
+
+### 18d. Reactivate again - 422 Customers.AlreadyActive
+POST {{host}}/api/Agent/Customers/{{lay}}/reactivate
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{reactivated.response.body.rowVersion}}" }
+
+### 19. Add a primary contact - 200: the new contact isPrimary true and the previous primary false, in ONE response. EF log: UPDATE
+### [customers].[Customers] SET ... [Revision] ... WHERE [Id] = @... AND [RowVersion] = @... and INSERT INTO [customers].[CustomerContacts]
+### in one transaction (a child-only change is concurrency-checked).
+# @name withWork
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Layla work", "email": "layla@work.example", "isPrimary": true, "hasPortalAccess": false, "rowVersion": "{{reactivated.response.body.rowVersion}}" }
+
+@workContact = {{withWork.response.body.contacts[0].id}}
+@otherContact = {{withWork.response.body.contacts[1].id}}
+
+### 20a. Add a contact with an email another contact already has - 422 Customers.DuplicateContactEmail
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Dup", "email": "layla.hassan@example.com", "isPrimary": false, "hasPortalAccess": false, "rowVersion": "{{withWork.response.body.rowVersion}}" }
+
+### 20b. Add a contact with a phone another contact already has - 422 Customers.DuplicateContactPhone
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Dup", "phone": "+966550001111", "isPrimary": false, "hasPortalAccess": false, "rowVersion": "{{withWork.response.body.rowVersion}}" }
+
+### 21a. Update a contact (rename, grant portal access) - 200
+# @name renamedContact
+PUT {{host}}/api/Agent/Customers/{{lay}}/contacts/{{otherContact}}
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Layla H.", "email": "layla.hassan@example.com", "hasPortalAccess": true, "rowVersion": "{{withWork.response.body.rowVersion}}" }
+
+### 21b. Change its email to another contact's - 422 Customers.DuplicateContactEmail
+PUT {{host}}/api/Agent/Customers/{{lay}}/contacts/{{otherContact}}
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Layla H.", "email": "layla@work.example", "hasPortalAccess": false, "rowVersion": "{{renamedContact.response.body.rowVersion}}" }
+
+### 22. Make the other contact primary - 200: primary moved, exactly one isPrimary
+# @name movedPrimary
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts/{{otherContact}}/primary
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{renamedContact.response.body.rowVersion}}" }
+
+### 23a. Remove the primary contact while others exist - 422 Customers.PrimaryContactRemoval
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts/{{otherContact}}/remove
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{movedPrimary.response.body.rowVersion}}" }
+
+### 23b. Remove a non-primary contact - 200
+# @name removedContact
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts/{{workContact}}/remove
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{movedPrimary.response.body.rowVersion}}" }
+
+### 24. Unknown contact - 404 Customers.ContactNotFound
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts/{{unknown}}/primary
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{removedContact.response.body.rowVersion}}" }
+
+### 25a. Add a note - 200 (notes take no rowVersion and never 409 between agents)
+# @name noteFirst
+POST {{host}}/api/Agent/Customers/{{lay}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "first" }
+
+@firstNote = {{noteFirst.response.body.notes[0].id}}
+
+### 25b. Add a second, newer note - 200: notes newest first ("second" above "first")
+POST {{host}}/api/Agent/Customers/{{lay}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "second" }
+
+### 25c. Pin the first note - 200: notes[0] is "first" (pinned above the newer "second")
+PUT {{host}}/api/Agent/Customers/{{lay}}/notes/{{firstNote}}/pin
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "isPinned": true }
+
+### 25d. Get - the pinned note is still first
+GET {{host}}/api/Agent/Customers/{{lay}}
+Authorization: Bearer {{agentAToken}}
+
+### 25e. Unpin - 200: "second" is first again
+PUT {{host}}/api/Agent/Customers/{{lay}}/notes/{{firstNote}}/pin
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "isPinned": false }
+
+### 25f. Remove the note - 200 (the row is deleted)
+DELETE {{host}}/api/Agent/Customers/{{lay}}/notes/{{firstNote}}
+Authorization: Bearer {{agentAToken}}
+
+### 25g. Remove an unknown note - 404 Customers.NoteNotFound
+DELETE {{host}}/api/Agent/Customers/{{lay}}/notes/{{unknown}}
+Authorization: Bearer {{agentAToken}}
+
+### 26. Add a contact with a stale rowVersion - 409 Persistence.ConcurrencyConflict (a child change is concurrency-checked too)
+POST {{host}}/api/Agent/Customers/{{lay}}/contacts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Stale", "email": "stale@x.example", "isPrimary": false, "hasPortalAccess": false, "rowVersion": "AAAAAAAAB9E=" }
+
+### 27a. As agent B, GET Ahmed (RYD-CARE) - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Customers/{{ahmed}}
+Authorization: Bearer {{agentBToken}}
+
+### 27b. As agent B, PUT Ahmed - 403
+PUT {{host}}/api/Agent/Customers/{{ahmed}}
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "displayNameEn": "Hijacked", "type": "Individual", "preferredLanguage": "en", "rowVersion": "AAAAAAAAB9E=" }
+
+### 27c. As agent B, add a note to Ahmed - 403
+POST {{host}}/api/Agent/Customers/{{ahmed}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "body": "not mine" }
+
+### 27d. As agent B, deactivate Ahmed - 403
+POST {{host}}/api/Agent/Customers/{{ahmed}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "rowVersion": "AAAAAAAAB9E=" }
+
+### 27e. As agent B, create into RYD-CARE - 403 Organisation.OutOfScope (write into a foreign department)
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "displayNameEn": "B into A", "type": "Individual", "preferredLanguage": "en", "departmentId": "{{ryCare}}" }
+
+### 28. Unknown id - 404 Customers.CustomerNotFound (never confused with the 403 above)
+GET {{host}}/api/Agent/Customers/{{unknown}}
+Authorization: Bearer {{agentAToken}}
+
+### 29a. Supervisor (two departments), no X-Crm-Scope, no departmentId - 400 Organisation.DepartmentRequired
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "displayNameEn": "Ambiguous", "type": "Individual", "preferredLanguage": "en" }
+
+### 29b. Supervisor with X-Crm-Scope: RYD-BILL - 200, the customer lands in RYD-BILL
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+X-Crm-Scope: {{ryBill}}
+
+{ "displayNameEn": "Billing customer", "type": "Individual", "preferredLanguage": "en" }
+
+### 30. No token - 401 urn:crm:problem:unauthorized
+GET {{host}}/api/Agent/Customers

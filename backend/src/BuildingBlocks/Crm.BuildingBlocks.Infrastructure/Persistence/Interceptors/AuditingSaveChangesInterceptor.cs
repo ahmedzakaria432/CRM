@@ -69,10 +69,10 @@ public sealed class AuditingSaveChangesInterceptor(
     /// get a modified stamp too.
     /// </summary>
     /// <remarks>
-    /// An owned same-table value object (e.g. SampleName via OwnsOne) is tracked as its OWN entry,
+    /// An owned same-table value object (e.g. Customer.DisplayName via OwnsOne) is tracked as its OWN entry,
     /// separate from its owner. Changing only the owned value leaves the owner's own EntityEntry at
     /// Unchanged even though EF issues one UPDATE against their shared row - confirmed by manual
-    /// verification: a Rename() that only replaced the owned SampleName left ModifiedBy/ModifiedAtUtc
+    /// verification: an UpdateProfile() that only replaced the owned name left ModifiedBy/ModifiedAtUtc
     /// unset because the root's own entry never reached Modified. The reference-navigation check
     /// below catches that: if an IAuditable root is Unchanged but one of its owned references
     /// changed, it still gets stamped, and setting a property on an Unchanged entry promotes it to

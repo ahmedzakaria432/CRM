@@ -213,85 +213,88 @@ Authorization: Bearer {{adminToken}}
 
 { "role": "Supervisor", "rowVersion": "{{supervisorMemberships.response.body.$[?(@.departmentId=='06000000-0000-0000-0002-000000000002')].rowVersion}}" }
 
-### 14. CROSS-DEPARTMENT MATRIX SETUP - as agentA, create a sample with no departmentId (resolves to ryCare,
+### 14. CROSS-DEPARTMENT MATRIX SETUP - as agentA, create a customer with no departmentId (resolves to ryCare,
 ### agentA's single department) - 200
-# @name sampleA
-POST {{host}}/api/Admin/Samples
+# @name customerA
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "A only", "lines": [] }
+{ "displayNameEn": "A only", "type": "Individual", "preferredLanguage": "en" }
 
-@sampleAId = {{sampleA.response.body.id}}
-@sampleARowVersion = {{sampleA.response.body.rowVersion}}
+@customerAId = {{customerA.response.body.customer.id}}
+@customerARowVersion = {{customerA.response.body.customer.rowVersion}}
 
 ### 15. As agentB, create with departmentId: ryCare (a foreign department) - 403 Organisation.OutOfScope
 ### (write into a foreign department)
-POST {{host}}/api/Admin/Samples
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Authorization: Bearer {{agentBToken}}
 
-{ "name": "B into A", "lines": [], "departmentId": "{{ryCare}}" }
+{ "displayNameEn": "B into A", "type": "Individual", "preferredLanguage": "en", "departmentId": "{{ryCare}}" }
 
-### 16. As agentB, GET sampleA - 403 Organisation.OutOfScope (read)
-GET {{host}}/api/Admin/Samples/{{sampleAId}}
+### 16. As agentB, GET customerA - 403 Organisation.OutOfScope (read)
+GET {{host}}/api/Agent/Customers/{{customerAId}}
 Authorization: Bearer {{agentBToken}}
 
-### 17. As agentB, PUT sampleA - 403 (update)
-PUT {{host}}/api/Admin/Samples/{{sampleAId}}
+### 17. As agentB, PUT customerA - 403 (update)
+PUT {{host}}/api/Agent/Customers/{{customerAId}}
 Content-Type: application/json
 Authorization: Bearer {{agentBToken}}
 
-{ "name": "hijacked", "rowVersion": "{{sampleARowVersion}}" }
+{ "displayNameEn": "hijacked", "type": "Individual", "preferredLanguage": "en", "rowVersion": "{{customerARowVersion}}" }
 
-### 18. As agentB, DELETE sampleA - 403 (delete)
-DELETE {{host}}/api/Admin/Samples/{{sampleAId}}
+### 18. As agentB, POST customerA/deactivate - 403 (write; Customers has no delete endpoint)
+POST {{host}}/api/Agent/Customers/{{customerAId}}/deactivate
+Content-Type: application/json
 Authorization: Bearer {{agentBToken}}
 
-### 19. As agentA, GET a random id - 404 (a real miss stays 404, never confused with the 403 above)
-GET {{host}}/api/Admin/Samples/00000000-0000-0000-0000-00000000dead
+{ "rowVersion": "{{customerARowVersion}}" }
+
+### 19. As agentA, GET a random id - 404 Customers.CustomerNotFound (a real miss stays 404, never confused with the 403 above)
+GET {{host}}/api/Agent/Customers/00000000-0000-0000-0000-00000000dead
 Authorization: Bearer {{agentAToken}}
 
-### 20. As agentA, GET Admin/Samples (THE NAIVE QUERY, no scope criteria in the spec) - contains "A only",
-### nothing from Jeddah. Read the EF log: WHERE has [s].[IsDeleted] = CAST(0 AS bit),
-### [s].[TenantId] = @..., [s].[BranchId] = @... (or IN (...) with >1 branch), [s].[DepartmentId] = @... (or
+### 20. As agentA, GET Agent/Customers (THE NAIVE QUERY: the search specification has no scope criteria) - contains "A only",
+### nothing from Jeddah. Read the EF log: WHERE has [c].[IsDeleted] = CAST(0 AS bit),
+### [c].[TenantId] = @..., [c].[BranchId] = @... (or IN (...) with >1 branch), [c].[DepartmentId] = @... (or
 ### IN (...) with >1 department) - naive-query AC; proves R1-R3.
-GET {{host}}/api/Admin/Samples
+GET {{host}}/api/Agent/Customers?pageSize=100
 Authorization: Bearer {{agentAToken}}
 
-### 21. As agentB, GET Admin/Samples - does not contain "A only" (R2: same process, different rows per user)
-GET {{host}}/api/Admin/Samples
+### 21. As agentB, GET Agent/Customers - does not contain "A only" (R2: same process, different rows per user)
+GET {{host}}/api/Agent/Customers?pageSize=100
 Authorization: Bearer {{agentBToken}}
 
-### 22a. As supervisor, create one sample with X-Crm-Scope: ryBill (lands in ryBill)
-POST {{host}}/api/Admin/Samples
+### 22a. As supervisor, create one customer with X-Crm-Scope: ryBill (lands in ryBill)
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Authorization: Bearer {{supervisorToken}}
 X-Crm-Scope: {{ryBill}}
 
-{ "name": "billing sample", "lines": [] }
+{ "displayNameEn": "billing customer", "type": "Individual", "preferredLanguage": "en" }
 
-### 22b. As supervisor, GET Admin/Samples with no header - union: "A only" AND the billing one
-GET {{host}}/api/Admin/Samples
+### 22b. As supervisor, GET Agent/Customers with no header - union: "A only" AND the billing one
+GET {{host}}/api/Agent/Customers?pageSize=100
 Authorization: Bearer {{supervisorToken}}
 
 ### 22c. As supervisor + X-Crm-Scope: ryCare - only ryCare rows ("A only", not the billing one)
-GET {{host}}/api/Admin/Samples
+GET {{host}}/api/Agent/Customers?pageSize=100
 Authorization: Bearer {{supervisorToken}}
 X-Crm-Scope: {{ryCare}}
 
 ### 22d. As supervisor + X-Crm-Scope: ryBill - only the billing row
-GET {{host}}/api/Admin/Samples
+GET {{host}}/api/Agent/Customers?pageSize=100
 Authorization: Bearer {{supervisorToken}}
 X-Crm-Scope: {{ryBill}}
 
 ### 23. As supervisor with no header (two departments, ambiguous), POST without departmentId - 400
 ### Organisation.DepartmentRequired (ambiguous target)
-POST {{host}}/api/Admin/Samples
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Authorization: Bearer {{supervisorToken}}
 
-{ "name": "ambiguous", "lines": [] }
+{ "displayNameEn": "ambiguous", "type": "Individual", "preferredLanguage": "en" }
 
 ### 24a. SOFT-DELETED ROWS STAY HIDDEN WHEN SCOPE IS LIFTED - as admin, remove the supervisor's ryBill
 ### membership - 204

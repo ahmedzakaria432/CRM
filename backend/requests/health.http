@@ -6,11 +6,4 @@ GET {{host}}/health
 ### Readiness — 200 when SQL Server is reachable, 503 when it is not
 GET {{host}}/health/ready
 
-### Canonical slice — 200
-GET {{host}}/api/Agent/Sample?name=Ahmed
-
-### Canonical slice — 400 with an RFC 9457 body listing field errors
-GET {{host}}/api/Agent/Sample?name=
-
-### Arabic input round-trips unmangled
-GET {{host}}/api/Agent/Sample?name=أحمد
+# Authenticated API checks: customers.http.

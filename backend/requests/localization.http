@@ -4,7 +4,7 @@
 # FluentValidation messages follow it; Content-Language echoes the resolved culture. Run against a Development
 # API (`docker compose up -d` first). Compare with diagnostics.http requests 4, 6, 7 (no Accept-Language: English,
 # byte-identical to before this story).
-# Story 06: Sample rows are department-scoped; every /api/Admin/Samples request runs as agentA.
+# Story 11: Customer rows are department-scoped; every POST /api/Agent/Customers request runs as agentA.
 @agentA = 06000000-0000-0000-0003-000000000003
 
 # Story 07: requests run as agent A, signed in below (access tokens expire after 2 minutes in Development -
@@ -19,44 +19,46 @@ Content-Type: application/json
 @agentAToken = {{loginAgentA.response.body.accessToken}}
 
 ### 1. Arabic validation (acceptance criterion) - 400, title "فشل التحقق من صحة البيانات",
-### errors.Name[0] "'Name' لا يجب أن يكون فارغاً.", header Content-Language: ar
-POST {{host}}/api/Admin/Samples
+### errors.Type[0] "'Type' لا يجب أن يكون فارغاً.", errors.DisplayNameEn[0] "أدخل اسم العميل بالعربية أو الإنجليزية.",
+### header Content-Language: ar
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Accept-Language: ar
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "", "lines": [] }
+{ "displayNameEn": "", "type": "", "preferredLanguage": "en" }
 
-### 2. Same body, English - title "Validation failed", "'Name' must not be empty.", Content-Language: en
-POST {{host}}/api/Admin/Samples
+### 2. Same body, English - title "Validation failed", "'Type' must not be empty.", "Enter the customer's name in Arabic or English.",
+### Content-Language: en
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Accept-Language: en
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "", "lines": [] }
+{ "displayNameEn": "", "type": "", "preferredLanguage": "en" }
 
 ### 3. Parent-culture fallback - ar-SA,en;q=0.5 negotiates to ar (never ar-SA: no Hijri calendar)
-POST {{host}}/api/Admin/Samples
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Accept-Language: ar-SA,en;q=0.5
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "", "lines": [] }
+{ "displayNameEn": "", "type": "", "preferredLanguage": "en" }
 
 ### 4. Unsupported culture - fr falls back to the default, English
-POST {{host}}/api/Admin/Samples
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Accept-Language: fr
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "", "lines": [] }
+{ "displayNameEn": "", "type": "", "preferredLanguage": "en" }
 
 ### 5. No Accept-Language header - defaults to English
-POST {{host}}/api/Admin/Samples
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "", "lines": [] }
+{ "displayNameEn": "", "type": "", "preferredLanguage": "en" }
 
 ### 6. Status-code pages path - 404 title "غير موجود" (bare 404, no controller involved)
 GET {{host}}/api/Admin/Nope

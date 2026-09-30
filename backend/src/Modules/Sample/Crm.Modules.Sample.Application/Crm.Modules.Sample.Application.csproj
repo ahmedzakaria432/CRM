@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\BuildingBlocks\Crm.BuildingBlocks.Application\Crm.BuildingBlocks.Application.csproj" />
-    <ProjectReference Include="..\Crm.Modules.Sample.Domain\Crm.Modules.Sample.Domain.csproj" />
-    <ProjectReference Include="..\Crm.Modules.Sample.Contracts\Crm.Modules.Sample.Contracts.csproj" />
-  </ItemGroup>
-
-</Project>

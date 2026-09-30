@@ -13,7 +13,7 @@ public sealed class MembershipConfiguration : IEntityTypeConfiguration<Membershi
 
         // TenantId, DepartmentId, and BranchId are converted by the ModuleDbContext-wide convention (B4) -
         // they are scope columns, mapped for every module. MembershipId is this aggregate's own identity, not
-        // one of the three scope types, so (like SampleId) it needs its own conversion here.
+        // one of the three scope types, so (like UserId) it needs its own conversion here.
         builder.Property(x => x.Id)
             .HasConversion(id => id.Value, value => new MembershipId(value))
             .ValueGeneratedNever();

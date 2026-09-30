@@ -1,7 +1,7 @@
 @host = http://localhost:5187
 
-# Story 06: Sample rows are department-scoped; requests run as agentA (Riyadh Customer Care). Expected results
-# below are otherwise unchanged from Story 02.
+# Story 11: Customer rows are department-scoped; requests run as agentA (Riyadh Customer Care). The persistence baseline
+# (Story 02: auditing, value-object round trip, optimistic concurrency) is now shown on the Customers module.
 @agentA = 06000000-0000-0000-0003-000000000003
 
 # Story 07: requests run as agent A, signed in below (access tokens expire after 2 minutes in Development -
@@ -15,51 +15,50 @@ Content-Type: application/json
 
 @agentAToken = {{loginAgentA.response.body.accessToken}}
 
-### Create a sample — 200, echoes createdBy/createdAtUtc
-POST {{host}}/api/Admin/Samples
+### Create a customer with a contact — 200, echoes createdBy/createdAtUtc
+# @name created
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "Round trip", "lines": ["first", "second"] }
+{ "displayNameEn": "Round trip", "type": "Individual", "preferredLanguage": "en", "contacts": [{ "name": "Round Trip", "email": "round.trip@example.com" }] }
 
-### Read it back — value object and child both present
-GET {{host}}/api/Admin/Samples/{{sampleId}}
+@customerId = {{created.response.body.customer.id}}
+
+### Read it back — value objects (name, email, phone) and contacts present
+# @name readBack
+GET {{host}}/api/Agent/Customers/{{customerId}}
 Authorization: Bearer {{agentAToken}}
 
 ### Update — populates modifiedBy/modifiedAtUtc, bumps rowVersion.
 ### rowVersion is a base64 byte[]; send back exactly what the GET returned.
-PUT {{host}}/api/Admin/Samples/{{sampleId}}
+PUT {{host}}/api/Agent/Customers/{{customerId}}
 Content-Type: application/json
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "Renamed", "rowVersion": "{{rowVersion}}" }
+{ "displayNameEn": "Renamed", "type": "Individual", "preferredLanguage": "en", "rowVersion": "{{readBack.response.body.rowVersion}}" }
 
 ### Stale rowVersion — 409, NOT 500
-PUT {{host}}/api/Admin/Samples/{{sampleId}}
+PUT {{host}}/api/Agent/Customers/{{customerId}}
 Content-Type: application/json
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "Conflicting", "rowVersion": "AAAAAAAAB9E=" }
+{ "displayNameEn": "Conflicting", "type": "Individual", "preferredLanguage": "en", "rowVersion": "AAAAAAAAB9E=" }
 
-### Soft delete — 204, no SQL DELETE in the EF log
-DELETE {{host}}/api/Admin/Samples/{{sampleId}}
-Authorization: Bearer {{agentAToken}}
+# Soft delete is exercised by organisation.http request 24a (membership removal) — Customers has no delete endpoint
+# (merge/delete is post-MVP).
 
-### Gone from the default query — 404
-GET {{host}}/api/Admin/Samples/{{sampleId}}
-Authorization: Bearer {{agentAToken}}
-
-### Arabic value object round-trips unmangled
-POST {{host}}/api/Admin/Samples
+### Arabic value objects round-trip unmangled (name and contact name)
+POST {{host}}/api/Agent/Customers
 Content-Type: application/json
 Authorization: Bearer {{agentAToken}}
 
-{ "name": "عميل تجريبي", "lines": ["سطر أول"] }
+{ "displayNameAr": "عميل تجريبي", "type": "Individual", "preferredLanguage": "ar", "contacts": [{ "name": "جهة اتصال", "phone": "+966500000042" }] }
 
-### Canonical query slice, now on a controller — 200 (Agent/Sample is not organisation-scoped, no header needed)
-GET {{host}}/api/Agent/Sample?name=Ahmed
+### Canonical query — 200 (Customers are organisation-scoped: agent A sees only RYD-CARE rows)
+GET {{host}}/api/Agent/Customers?search=Ahmed
 Authorization: Bearer {{agentAToken}}
 
-### Validation still returns RFC 9457 with field errors — 400
-GET {{host}}/api/Agent/Sample?name=
+### Validation still returns RFC 9457 with field errors — 400 errors.PageSize
+GET {{host}}/api/Agent/Customers?pageSize=0
 Authorization: Bearer {{agentAToken}}
