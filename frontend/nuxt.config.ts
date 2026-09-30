@@ -27,6 +27,7 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/agent/**': { ssr: false }, // agent workspace is an SPA (Probe 10)
+    '/admin/**': { ssr: false }, // Story 06: the admin screens are an SPA too, like /agent/**
     '/_dev/**': { ssr: false },
   },
   nitro: {

@@ -15,6 +15,11 @@ public static class SpecificationEvaluator
             query = query.IgnoreQueryFilters([ModuleDbContext.SoftDeleteFilterName]);
         }
 
+        if (specification.IgnoreOrganisationScopeFilter)
+        {
+            query = query.IgnoreQueryFilters([ModuleDbContext.ScopeFilterName]);
+        }
+
         if (specification.Criteria is not null)
         {
             query = query.Where(specification.Criteria);

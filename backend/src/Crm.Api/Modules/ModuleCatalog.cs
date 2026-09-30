@@ -11,6 +11,10 @@ internal static class ModuleCatalog
 {
     public static readonly IReadOnlyList<ModuleEntry> All =
     [
+        // Organisation first - its dev seed (tenant, branches, departments, memberships) is what every other
+        // module's seed points at.
+        new(new Crm.Modules.Organisation.Infrastructure.OrganisationModule(), Crm.Modules.Organisation.Presentation.AssemblyReference.Assembly),
+
         // CANONICAL SLICE - removed with the Sample module in Story 11.
         new(new Crm.Modules.Sample.Infrastructure.SampleModule(), Crm.Modules.Sample.Presentation.AssemblyReference.Assembly),
     ];

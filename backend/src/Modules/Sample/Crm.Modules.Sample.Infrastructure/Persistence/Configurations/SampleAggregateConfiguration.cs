@@ -39,5 +39,10 @@ public sealed class SampleAggregateConfiguration : IEntityTypeConfiguration<Samp
         // Every query carries WHERE IsDeleted = 0 from the global soft-delete filter; without this
         // index every read is a table scan from Story 11 onward.
         builder.HasIndex(x => x.IsDeleted);
+
+        // Story 06: the organisation-scope filter always predicates on (TenantId, BranchId, DepartmentId).
+        // TenantId/BranchId/DepartmentId themselves need no conversion configuration here - the
+        // ModuleDbContext-wide convention (ConfigureConventions) already maps them.
+        builder.HasIndex(x => new { x.TenantId, x.DepartmentId });
     }
 }

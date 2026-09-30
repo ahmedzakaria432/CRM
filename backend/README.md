@@ -270,6 +270,37 @@ traces, metrics, and the structured logs.
   exception message is **not** redacted — a connection string inside a `SqlException` reaches the log (never the
   response). EF sensitive-data logging (Development only) prints SQL parameter values.
 
+## Organisation scope and dev login
+
+Story 06 adds multi-department, multi-branch data isolation, enforced once at the data layer:
+
+- **Scope markers** in `Crm.SharedKernel.Scoping`: `ITenantScoped` (tenant only — `Branch`, `Department`,
+  `Membership`) and `IOrganisationScoped : ITenantScoped` (tenant + branch + department — operational data,
+  `SampleAggregate` first). `ModuleDbContext` applies a second **named** query filter
+  (`ModuleDbContext.ScopeFilterName`) to every such entity in every module, automatically. A write outside the
+  caller's scope is refused; a read of an existing out-of-scope row returns 403 `Organisation.OutOfScope`, never
+  an accidental 404.
+- **`X-Crm-Scope` header** narrows the caller's effective departments to one (a department id) or leaves them at
+  `all` (absent, empty, or `all`). It can never widen: a department the caller does not belong to is rejected
+  with 403 `Organisation.ActiveScopeRejected`, logged as a Warning.
+- **`X-Dev-User: <user id>` — Development only**, until Story 07 ships real sign-in. Accepts one of the four
+  seeded well-known users (`Crm.Modules.Organisation.Contracts.DevSeed.OrganisationDevSeed`) and builds the
+  principal from their memberships:
+
+  | User | Memberships |
+  |---|---|
+  | Admin (`…003-000000000001`) | Administrator in all three departments |
+  | Supervisor (`…003-000000000002`) | Supervisor in Riyadh Customer Care, Agent in Riyadh Billing |
+  | Agent A (`…003-000000000003`) | Agent in Riyadh Customer Care |
+  | Agent B (`…003-000000000004`) | Agent in Jeddah Customer Care (a different branch and department) |
+
+  The header is honoured only in Development (`DevUserAuthenticationHandler` returns `NoResult` outside it, so
+  every `[Authorize]` endpoint answers a 401 challenge, never a 500). Story 07 deletes the handler and issues
+  JWTs with the same claim shape instead.
+- **Try it:** `backend/requests/organisation.http` runs the full cross-department matrix (an agent's write/read
+  into another department, the union vs. one-department view, the forged-header rejection, and the naive query
+  that is still scoped automatically) against a running Development API.
+
 ## Caching
 
 `ICacheService` over Redis (`ConnectionStrings:Redis`); with no Redis configured, an in-process cache and a startup

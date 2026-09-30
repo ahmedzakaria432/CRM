@@ -30,5 +30,7 @@ public static class CrmMessageKeys
         public const string DependencyUnavailable = "Problem.Detail.DependencyUnavailable";
         public const string Unexpected = "Problem.Detail.Unexpected";
         public const string RateLimited = "Problem.Detail.RateLimited";
+        public const string ScopeRejected = "Problem.Detail.ScopeRejected";
+        public const string OutOfScope = "Problem.Detail.OutOfScope";
     }
 }

@@ -22,4 +22,6 @@
   <data name="Problem.Detail.DependencyUnavailable" xml:space="preserve"><value>إحدى الخدمات المرتبطة غير متاحة. حاول مرة أخرى بعد قليل.</value></data>
   <data name="Problem.Detail.Unexpected" xml:space="preserve"><value>حدث خطأ غير متوقع.</value></data>
   <data name="Problem.Detail.RateLimited" xml:space="preserve"><value>طلبات كثيرة جداً. أعد المحاولة بعد المدة المحددة في الترويسة Retry-After.</value></data>
+  <data name="Problem.Detail.ScopeRejected" xml:space="preserve"><value>القسم المحدد ليس من الأقسام التي تنتمي إليها.</value></data>
+  <data name="Problem.Detail.OutOfScope" xml:space="preserve"><value>ينتمي هذا السجل إلى قسم خارج نطاق صلاحياتك.</value></data>
 </root>

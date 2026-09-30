@@ -4,10 +4,10 @@ namespace Crm.BuildingBlocks.Application.Specifications;
 
 /// <summary>
 /// Reusable query intent (CLAUDE.md, "Backend", DDD rules - e.g. OverdueTicketsSpecification).
-/// <see cref="IgnoreSoftDeleteFilter"/> is the only escape hatch a specification exposes: it lifts
-/// exactly the named soft-delete filter (Infrastructure/SpecificationEvaluator), never every filter,
-/// so a specification can never accidentally leak another tenant's rows once story 06 adds the
-/// tenant filter.
+/// Two named escape hatches, each lifting exactly one filter: <see cref="IgnoreSoftDeleteFilter"/> lifts the
+/// named soft-delete filter (Infrastructure/SpecificationEvaluator); <see cref="IgnoreOrganisationScopeFilter"/>
+/// lifts the named organisation-scope filter (Story 06) and is used only by the sign-in membership lookup.
+/// Neither ever lifts every filter, so a specification can never accidentally leak another tenant's rows.
 /// </summary>
 public abstract class Specification<T>
 {
@@ -27,6 +27,8 @@ public abstract class Specification<T>
 
     public bool IgnoreSoftDeleteFilter { get; private set; }
 
+    public bool IgnoreOrganisationScopeFilter { get; private set; }
+
     protected void Where(Expression<Func<T, bool>> criteria) => Criteria = criteria;
 
     protected void AddInclude(Expression<Func<T, object>> include) => Includes.Add(include);
@@ -44,4 +46,9 @@ public abstract class Specification<T>
     protected void AsReadOnly() => AsNoTracking = true;
 
     protected void IncludeSoftDeleted() => IgnoreSoftDeleteFilter = true;
+
+    /// <summary>THE ONE PERMITTED SCOPE LIFT (Story 06): used only by the sign-in membership lookup
+    /// (Organisation's MembershipsOfUserSpecification). Lifts only ModuleDbContext.ScopeFilterName - the
+    /// soft-delete filter stays. Adding a second caller is a security review, not a refactor.</summary>
+    protected void IgnoreOrganisationScope() => IgnoreOrganisationScopeFilter = true;
 }

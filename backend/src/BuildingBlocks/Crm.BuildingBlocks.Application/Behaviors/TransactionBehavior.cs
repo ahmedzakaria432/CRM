@@ -96,6 +96,13 @@ public sealed partial class TransactionBehavior<TRequest, TResponse>(
 
             return BuildConflictResponse();
         }
+        catch (OrganisationScopeViolationException)
+        {
+            // Explicit rollback, then let OrganisationScopeBehavior (outer) turn it into 403.
+            pendingIntegrationEvents.DequeueAll();
+            await unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
     }
 
     // Loud on purpose: an event published where no outbox write follows would be silently lost.

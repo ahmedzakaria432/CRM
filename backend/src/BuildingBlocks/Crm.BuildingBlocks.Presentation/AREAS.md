@@ -22,9 +22,13 @@ request history, and the public help centre. Filled by stories 47-50.
 
 Tenant administration and reporting - identity/user/role management, audit log, SLA and automation
 configuration, management dashboards and exports. Filled by stories 08-10, 51-54. Also the home for
-Story 02's demonstration Sample CRUD endpoints, deleted in Story 11.
+Story 02's demonstration Sample CRUD endpoints, deleted in Story 11, and (Story 06) the `Organisation`
+module's Branches/Departments/Memberships controllers, which carry `[Authorize(Policy = CrmPolicies.Administrator)]`.
 
-<!-- Story 09: this Area requires an authenticated tenant-admin policy. No [Authorize] yet - stories 07 and 09 own authentication and the per-Area policies. This is also the only Area where the unnamed IgnoreQueryFilters() escape hatch (CLAUDE.md, "Backend", Scoping) is permitted. -->
+<!-- Story 09: this Area requires an authenticated tenant-admin policy for its other controllers. Story 06 only
+     wires up CrmPolicies.Administrator (role-based); stories 07 and 09 refine it into the full permission model.
+     No Area lifts the organisation-scope filter - the only lift is the sign-in membership lookup
+     (Specification.IgnoreOrganisationScope(), CLAUDE.md, "Backend", Scoping). -->
 
 ## Public Area
 

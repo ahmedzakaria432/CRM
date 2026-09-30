@@ -22,4 +22,6 @@
   <data name="Problem.Detail.DependencyUnavailable" xml:space="preserve"><value>A downstream service is unavailable. Try again shortly.</value></data>
   <data name="Problem.Detail.Unexpected" xml:space="preserve"><value>An unexpected error occurred.</value></data>
   <data name="Problem.Detail.RateLimited" xml:space="preserve"><value>Too many requests. Retry after the time in the Retry-After header.</value></data>
+  <data name="Problem.Detail.ScopeRejected" xml:space="preserve"><value>The selected department is not one of your departments.</value></data>
+  <data name="Problem.Detail.OutOfScope" xml:space="preserve"><value>The record belongs to a department outside your scope.</value></data>
 </root>

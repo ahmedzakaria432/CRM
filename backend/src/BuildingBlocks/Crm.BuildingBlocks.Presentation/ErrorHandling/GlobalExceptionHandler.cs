@@ -34,6 +34,7 @@ public sealed partial class GlobalExceptionHandler(
             DomainException domain => DomainRule(domain),
             ValidationException validation => ValidationFailed(validation),
             ConcurrencyConflictException concurrency => ConcurrencyConflict(concurrency),
+            OrganisationScopeViolationException scope => OutOfScope(scope),
             BadHttpRequestException badRequest => Unreadable(badRequest),
             ExecutionRejectedException or HttpRequestException => DependencyUnavailable(exception),
             _ => Unexpected(exception),
@@ -79,6 +80,18 @@ public sealed partial class GlobalExceptionHandler(
             ProblemTypes.Conflict,
             localization.Get(CrmMessageKeys.ProblemDetail.Concurrency),
             "Persistence.ConcurrencyConflict");
+    }
+
+    // Backstop only: OrganisationScopeBehavior (Story 06) already turns this into a Result-shaped 403 for
+    // every command/query. This branch only fires if the exception somehow escapes the pipeline.
+    private ProblemDetails OutOfScope(OrganisationScopeViolationException exception)
+    {
+        LogOutOfScope(exception.Operation, exception.EntityType);
+        return Create(
+            StatusCodes.Status403Forbidden,
+            ProblemTypes.Forbidden,
+            localization.Get(CrmMessageKeys.ProblemDetail.OutOfScope),
+            "Organisation.OutOfScope");
     }
 
     private ProblemDetails Unreadable(BadHttpRequestException exception)
@@ -129,6 +142,9 @@ public sealed partial class GlobalExceptionHandler(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Concurrency conflict reached the pipeline")]
     private partial void LogConcurrency(Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Organisation scope violation ({Operation} {EntityType}) reached the pipeline")]
+    private partial void LogOutOfScope(string operation, string entityType);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Unreadable request, status {StatusCode}")]
     private partial void LogUnreadable(int statusCode);

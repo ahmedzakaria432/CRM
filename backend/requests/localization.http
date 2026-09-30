@@ -4,12 +4,15 @@
 # FluentValidation messages follow it; Content-Language echoes the resolved culture. Run against a Development
 # API (`docker compose up -d` first). Compare with diagnostics.http requests 4, 6, 7 (no Accept-Language: English,
 # byte-identical to before this story).
+# Story 06: Sample rows are department-scoped; every /api/Admin/Samples request runs as agentA.
+@agentA = 06000000-0000-0000-0003-000000000003
 
 ### 1. Arabic validation (acceptance criterion) - 400, title "فشل التحقق من صحة البيانات",
 ### errors.Name[0] "'Name' لا يجب أن يكون فارغاً.", header Content-Language: ar
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: ar
+X-Dev-User: {{agentA}}
 
 { "name": "", "lines": [] }
 
@@ -17,6 +20,7 @@ Accept-Language: ar
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: en
+X-Dev-User: {{agentA}}
 
 { "name": "", "lines": [] }
 
@@ -24,6 +28,7 @@ Accept-Language: en
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: ar-SA,en;q=0.5
+X-Dev-User: {{agentA}}
 
 { "name": "", "lines": [] }
 
@@ -31,12 +36,14 @@ Accept-Language: ar-SA,en;q=0.5
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: fr
+X-Dev-User: {{agentA}}
 
 { "name": "", "lines": [] }
 
 ### 5. No Accept-Language header - defaults to English
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
+X-Dev-User: {{agentA}}
 
 { "name": "", "lines": [] }
 
@@ -48,10 +55,3 @@ Accept-Language: ar
 ### Fails first if UseCrmRequestLocalization runs after UseExceptionHandler (Probe 1).
 GET {{host}}/api/Admin/Diagnostics/throw
 Accept-Language: ar
-
-### 8. Domain rule - 422 title "مخالفة لقاعدة عمل", detail stays the English domain message, code Sample.DuplicateLine
-POST {{host}}/api/Admin/Samples
-Content-Type: application/json
-Accept-Language: ar
-
-{ "name": "Dup", "lines": ["a", "A"] }

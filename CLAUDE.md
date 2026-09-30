@@ -104,7 +104,8 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   unit of work is resolved from the command's assembly (`IUnitOfWorkResolver`). A handler never sends a command
   that belongs to another module.
 - **Shared kernel stays small.** `Crm.SharedKernel` holds only what every module genuinely shares: the DDD
-  building blocks, `Result`/`Error`, and org-scope ids once Story 06 adds them. A concept one module owns
+  building blocks, `Result`/`Error`, and the org-scope ids and scope markers (`Crm.SharedKernel.Scoping`:
+  `TenantId`, `BranchId`, `DepartmentId`, `ITenantScoped`, `IOrganisationScoped`). A concept one module owns
   (`EmailAddress` in Customers, `TicketNumber` in Tickets) lives in that module's Domain; another module that needs
   the value receives a primitive through Contracts.
 - **Frontend-facing contract is unchanged.** Controllers from every module merge into the same four per-Area
@@ -162,7 +163,8 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   goes through `ILocalizationService` and a `.resx` pair in the owning module's Application project, registered
   with `AddLocalizationResource`. Cached query results are culture-neutral: return both languages
   (`LocalizedText`) rather than caching a translated string.
-- **Pipeline behaviours:** validation -> authorisation -> logging -> transaction -> caching. "Logging" is also the
+- **Pipeline behaviours:** validation -> authorisation -> organisation scope -> logging -> transaction -> caching.
+  "Logging" is also the
   OpenTelemetry span and the `crm.request.duration` metric per request.
 - **Logging:** Serilog, compact JSON in every environment; every line carries `CorrelationId` (from
   `X-Correlation-Id`, generated when absent) and `UserId`/`TenantId`/`DepartmentId`/`BranchId` when authenticated
@@ -192,9 +194,19 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   `backend/scripts/ef.ps1 -Module <Module> migrations add <Name>`.
 - **Auditing:** entities derive from `AuditableEntity` (created/modified by + at). Soft delete via
   `ISoftDeletable` + a global query filter, applied to every module by `ModuleDbContext`.
-- **Scoping:** every query and command is scoped by tenant, department, and branch through
-  `ICurrentUserService`. The scope filter is a building block applied by `ModuleDbContext` to every module; there
-  is no "global" read path outside explicitly authorised admin endpoints.
+- **Scoping:** two markers in `Crm.SharedKernel.Scoping` — `ITenantScoped` (tenant only) and
+  `IOrganisationScoped : ITenantScoped` (tenant + branch + department). `ModuleDbContext` applies
+  `ModuleDbContext.ScopeFilterName`, a second **named** query filter next to the soft-delete filter, to every
+  such entity in every module automatically — nothing to opt into. The write guard in
+  `ModuleDbContext.OrganisationScope.cs` refuses to save a row outside the caller's scope. An out-of-scope
+  read or write returns 403 `urn:crm:problem:forbidden` (code `Organisation.OutOfScope`), never an accidental
+  404. The one permitted lift is `Specification.IgnoreOrganisationScope()`, used only by the sign-in membership
+  lookup (`Organisation`'s `MembershipsOfUserSpecification`) — it lifts only the scope filter, never soft
+  delete. `ICurrentUserService.Scope` is the caller's resolved `OrganisationScope` (tenant, memberships, and
+  the active scope chosen via the `X-Crm-Scope` header, which only narrows — a department the caller does not
+  belong to is rejected with 403, never silently widened). Creating a scoped row resolves its target department
+  with `OrganisationScope.ResolveWriteTarget`. There is no "global" read path outside explicitly authorised
+  admin endpoints.
 - **Patterns in use:** modular monolith, repository + specification, strategy (channel adapters, assignment rules),
   decorator (caching, retry), outbox (integration events between modules and outbound integrations), factory
   (aggregate creation), options pattern (configuration). Do not add a pattern without a use case that needs it.

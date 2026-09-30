@@ -91,6 +91,9 @@ namespace Crm.Modules.Sample.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset?>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset");
 
@@ -102,6 +105,9 @@ namespace Crm.Modules.Sample.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("DeletedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -118,9 +124,14 @@ namespace Crm.Modules.Sample.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IsDeleted");
+
+                    b.HasIndex("TenantId", "DepartmentId");
 
                     b.ToTable("Samples", "sample");
                 });

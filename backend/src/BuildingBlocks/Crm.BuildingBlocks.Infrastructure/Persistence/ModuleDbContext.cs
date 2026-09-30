@@ -3,6 +3,7 @@ using Crm.BuildingBlocks.Application.Abstractions;
 using Crm.BuildingBlocks.Application.Exceptions;
 using Crm.BuildingBlocks.Infrastructure.Outbox;
 using Crm.SharedKernel;
+using Crm.SharedKernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -19,7 +20,7 @@ namespace Crm.BuildingBlocks.Infrastructure.Persistence;
 /// A module's DbContext maps that module's aggregates only. It never maps, joins, or holds a
 /// foreign key to another module's table - that other module is reached through its Contracts.
 /// </remarks>
-public abstract class ModuleDbContext(DbContextOptions options) : DbContext(options), IUnitOfWork
+public abstract partial class ModuleDbContext(DbContextOptions options, ICurrentUserService currentUser) : DbContext(options), IUnitOfWork
 {
     public const string SoftDeleteFilterName = "SoftDelete";
 
@@ -44,6 +45,7 @@ public abstract class ModuleDbContext(DbContextOptions options) : DbContext(opti
 
         modelBuilder.ApplySoftDeleteQueryFilter();
         modelBuilder.ApplyUtcDateTimeOffsetConverter();
+        ApplyOrganisationScopeFilters(modelBuilder);
 
         base.OnModelCreating(modelBuilder);
     }
@@ -55,6 +57,7 @@ public abstract class ModuleDbContext(DbContextOptions options) : DbContext(opti
     {
         try
         {
+            EnsureWritesInScope();
             return await base.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException ex)

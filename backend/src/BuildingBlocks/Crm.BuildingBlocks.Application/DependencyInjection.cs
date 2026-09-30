@@ -24,9 +24,10 @@ public static class DependencyInjection
             cfg.RegisterServicesFromAssemblies([.. moduleApplicationAssemblies]);
 
             // Order is the execution order (CLAUDE.md, "Backend"):
-            // validation -> authorisation -> logging -> transaction -> caching.
+            // validation -> authorisation -> organisation scope -> logging -> transaction -> caching.
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(OrganisationScopeBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
             cfg.AddOpenBehavior(typeof(CachingBehavior<,>));

@@ -35,6 +35,7 @@
             <span class="truncate text-lg font-semibold">{{ t('shell.appName') }}</span>
           </div>
           <div class="flex items-center gap-3">
+            <ShellScopeSwitcher />
             <ShellLocaleSwitcher />
             <UiThemeToggle :light-label="t('shell.theme.toLight')" :dark-label="t('shell.theme.toDark')" />
             <UiAvatar name="—" size="sm" />
@@ -79,13 +80,22 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+const { scope } = useMyScope()
 
 interface AgentNavItem {
   to: string
   label: string
 }
-// Computed so the label follows a locale switch.
-const agentNav = computed<ReadonlyArray<AgentNavItem>>(() => [{ to: '/agent', label: t('shell.nav.home') }])
+// Computed so the label follows a locale switch and the administrator nav items follow the scope load.
+const agentNav = computed<ReadonlyArray<AgentNavItem>>(() => [
+  { to: '/agent', label: t('shell.nav.home') },
+  ...(scope.isAdministrator
+    ? [
+        { to: '/admin/branches', label: t('organisation.nav.branches') },
+        { to: '/admin/departments', label: t('organisation.nav.departments') },
+      ]
+    : []),
+])
 
 const drawerOpen = ref(false)
 

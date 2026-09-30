@@ -2,7 +2,7 @@
   <dialog
     ref="dialogRef"
     :aria-labelledby="titleId"
-    class="fixed inset-y-0 m-0 flex h-full max-h-none flex-col bg-surface p-0 text-fg backdrop:bg-overlay"
+    class="fixed inset-y-0 m-0 hidden h-full max-h-none flex-col bg-surface open:flex p-0 text-fg backdrop:bg-overlay"
     :class="[
       side === 'start' ? 'start-0 end-auto border-e border-border' : 'end-0 start-auto border-s border-border',
       size === 'sm' ? 'w-64' : size === 'lg' ? 'w-[28rem]' : 'w-80',

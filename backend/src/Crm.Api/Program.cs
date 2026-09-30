@@ -3,12 +3,16 @@ using Crm.Api.Modules;
 using Crm.BuildingBlocks.Application;
 using Crm.BuildingBlocks.Infrastructure;
 using Crm.BuildingBlocks.Infrastructure.Correlation;
+using Crm.BuildingBlocks.Infrastructure.Identity;
 using Crm.BuildingBlocks.Infrastructure.Modules;
 using Crm.BuildingBlocks.Infrastructure.Observability;
 using Crm.BuildingBlocks.Presentation;
+using Crm.BuildingBlocks.Presentation.Authorization;
 using Crm.BuildingBlocks.Presentation.ErrorHandling;
 using Crm.BuildingBlocks.Presentation.Localization;
 using Crm.BuildingBlocks.Presentation.RateLimiting;
+using Crm.BuildingBlocks.Presentation.Scoping;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
 using Serilog;
@@ -26,6 +30,11 @@ try
     builder.Services.AddCrmObservability(builder.Configuration, builder.Environment); // Serilog, OpenTelemetry, correlation id
     builder.Services.AddCrmErrorHandling();                                            // global exception handler + problem details
     builder.Services.AddCrmRateLimiting(builder.Configuration);
+
+    // Story 06: X-Dev-User sign-in, honoured in Development only (the handler returns NoResult elsewhere, so
+    // every [Authorize] endpoint answers a 401 challenge, never a 500). Story 07 replaces it with JWT bearer.
+    builder.Services.AddAuthentication(DevUserAuthentication.Scheme).AddCrmDevUser();
+    builder.Services.AddCrmAuthorization();
 
     // Shared building blocks first, then every module. MediatR is registered once, over every module's
     // Application assembly - a module never registers it itself.
@@ -87,7 +96,9 @@ try
     //    culture set further down does not flow back up to them (Story 05, Probe 1);
     // 3. request logging outside the exception handler - it logs the final (handled) status once;
     // 4. exception handler, then status-code pages - bare 401/404/405 become problems too;
-    // 5. rate limiter after routing (implicit), so the endpoint's [Area] is known.
+    // 5. Development-only Swagger + migrate/seed (below);
+    // 6. authentication, then the active-scope check (403 on a forged X-Crm-Scope), then authorisation;
+    // 7. rate limiter after routing (implicit), so the endpoint's [Area] is known.
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseCrmRequestLocalization();
     app.UseCrmRequestLogging();
@@ -109,6 +120,10 @@ try
         // applies migrations as an explicit step, not as a side effect of the process starting.
         await app.Services.MigrateAndSeedModulesAsync();
     }
+
+    app.UseAuthentication();
+    app.UseCrmOrganisationScope();
+    app.UseAuthorization();
 
     app.UseRateLimiter();
 

@@ -7,6 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="..\BuildingBlocks\Crm.BuildingBlocks.Infrastructure\Crm.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\BuildingBlocks\Crm.BuildingBlocks.Presentation\Crm.BuildingBlocks.Presentation.csproj" />
+    <ProjectReference Include="..\Modules\Organisation\Crm.Modules.Organisation.Infrastructure\Crm.Modules.Organisation.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Organisation\Crm.Modules.Organisation.Presentation\Crm.Modules.Organisation.Presentation.csproj" />
     <ProjectReference Include="..\Modules\Sample\Crm.Modules.Sample.Infrastructure\Crm.Modules.Sample.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Sample\Crm.Modules.Sample.Presentation\Crm.Modules.Sample.Presentation.csproj" />
   </ItemGroup>

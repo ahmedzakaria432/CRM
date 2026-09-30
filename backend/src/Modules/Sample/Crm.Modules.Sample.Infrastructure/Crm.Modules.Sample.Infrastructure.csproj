@@ -11,6 +11,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Crm.BuildingBlocks.Infrastructure\Crm.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\Crm.Modules.Sample.Application\Crm.Modules.Sample.Application.csproj" />
+    <!-- Story 06: Sample is the first organisation-scoped aggregate, seeded into the Organisation module's
+         dev-seed tenant/branch/department. A Contracts reference is rule 1 allowed. -->
+    <ProjectReference Include="..\..\Organisation\Crm.Modules.Organisation.Contracts\Crm.Modules.Organisation.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

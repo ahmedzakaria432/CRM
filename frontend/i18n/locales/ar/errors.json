@@ -15,6 +15,18 @@
       "dependency-unavailable": "خدمة مرتبطة غير متاحة",
       "network": "تعذّر الاتصال بالخادم"
     },
-    "code": {}
+    "code": {
+      "Organisation": {
+        "OutOfScope": "ينتمي هذا السجل إلى قسم خارج نطاق صلاحياتك.",
+        "ActiveScopeRejected": "القسم المحدد ليس من أقسامك.",
+        "DepartmentRequired": "اختر القسم أولاً.",
+        "BranchCodeTaken": "هذا الرمز مستخدم بالفعل.",
+        "DepartmentCodeTaken": "هذا الرمز مستخدم بالفعل.",
+        "BranchInactive": "الفرع غير نشط.",
+        "BranchAlreadyInactive": "غير نشط بالفعل.",
+        "DepartmentAlreadyInactive": "غير نشط بالفعل.",
+        "MembershipExists": "المستخدم عضو في هذا القسم بالفعل."
+      }
+    }
   }
 }

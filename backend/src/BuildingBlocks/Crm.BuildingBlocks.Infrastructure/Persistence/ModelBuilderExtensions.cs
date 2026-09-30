@@ -13,8 +13,9 @@ public static class ModelBuilderExtensions
     /// AND together, and IgnoreQueryFilters([name]) lifts only that one filter. The unnamed overload
     /// silently REPLACES a prior filter instead of composing with it - using it here would let
     /// Story 06's tenant filter overwrite this one and resurrect soft-deleted rows product-wide with
-    /// no error. Do not switch to the unnamed overload; do not rename ModuleDbContext.SoftDeleteFilterName
-    /// without updating Story 06.
+    /// no error. Do not switch to the unnamed overload; do not rename ModuleDbContext.SoftDeleteFilterName.
+    /// Story 06's scope filter is ModuleDbContext.ScopeFilterName, applied in ModuleDbContext.OrganisationScope.cs
+    /// as a second named filter, next to this one.
     /// </summary>
     public static void ApplySoftDeleteQueryFilter(this ModelBuilder modelBuilder)
     {

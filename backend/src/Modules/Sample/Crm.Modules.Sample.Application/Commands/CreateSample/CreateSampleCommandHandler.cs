@@ -10,12 +10,23 @@ namespace Crm.Modules.Sample.Application.Commands.CreateSample;
 
 public sealed class CreateSampleCommandHandler(
     IRepository<SampleAggregate, SampleId> repository,
-    ISampleUnitOfWork unitOfWork)
+    ISampleUnitOfWork unitOfWork,
+    ICurrentUserService currentUser)
     : IRequestHandler<CreateSampleCommand, Result<SampleAggregateDto>>
 {
     public async Task<Result<SampleAggregateDto>> Handle(CreateSampleCommand request, CancellationToken cancellationToken)
     {
-        SampleAggregate sample = SampleAggregate.Create(SampleName.Create(request.Name), request.Lines);
+        ScopeWriteTarget? target = currentUser.Scope.ResolveWriteTarget(request.DepartmentId);
+
+        if (target is null)
+        {
+            return request.DepartmentId is not null
+                ? Result.Failure<SampleAggregateDto>(Error.Forbidden("Organisation.OutOfScope", "The requested department is outside your scope."))
+                : Result.Failure<SampleAggregateDto>(Error.Validation("Organisation.DepartmentRequired", "DepartmentId: Choose the department this record belongs to."));
+        }
+
+        SampleAggregate sample = SampleAggregate.Create(
+            SampleName.Create(request.Name), request.Lines, target.TenantId, target.BranchId, target.DepartmentId);
 
         repository.Add(sample);
         await unitOfWork.SaveChangesAsync(cancellationToken);

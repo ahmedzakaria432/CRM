@@ -1,0 +1,52 @@
+{
+  "organisation": {
+    "nav": {
+      "branches": "الفروع",
+      "departments": "الأقسام"
+    },
+    "scope": {
+      "label": "نطاق القسم",
+      "all": "جميع أقسامي",
+      "option": "{department} · {branch}"
+    },
+    "branches": {
+      "title": "الفروع",
+      "create": "فرع جديد",
+      "empty": "لا توجد فروع بعد"
+    },
+    "departments": {
+      "title": "الأقسام",
+      "create": "قسم جديد",
+      "empty": "لا توجد أقسام بعد"
+    },
+    "fields": {
+      "code": "الرمز",
+      "name": "الاسم",
+      "nameEn": "الاسم (بالإنجليزية)",
+      "nameAr": "الاسم (بالعربية)",
+      "branch": "الفرع",
+      "status": "الحالة",
+      "actions": "الإجراءات"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "actions": {
+      "rename": "إعادة التسمية",
+      "deactivate": "إلغاء التفعيل",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "close": "إغلاق",
+      "showInactive": "إظهار غير النشط"
+    },
+    "confirm": {
+      "deactivate": "إلغاء تفعيل {name}؟ سيختفي من القوائم وتبقى السجلات الحالية مرتبطة به."
+    },
+    "load": {
+      "error": "تعذّر تحميل البيانات",
+      "retry": "حاول مرة أخرى"
+    },
+    "devLogin": "تسجيل دخول التطوير"
+  }
+}

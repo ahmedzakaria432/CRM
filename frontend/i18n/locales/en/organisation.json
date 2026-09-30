@@ -1,0 +1,52 @@
+{
+  "organisation": {
+    "nav": {
+      "branches": "Branches",
+      "departments": "Departments"
+    },
+    "scope": {
+      "label": "Department scope",
+      "all": "All my departments",
+      "option": "{department} · {branch}"
+    },
+    "branches": {
+      "title": "Branches",
+      "create": "New branch",
+      "empty": "No branches yet"
+    },
+    "departments": {
+      "title": "Departments",
+      "create": "New department",
+      "empty": "No departments yet"
+    },
+    "fields": {
+      "code": "Code",
+      "name": "Name",
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "branch": "Branch",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "rename": "Rename",
+      "deactivate": "Deactivate",
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "showInactive": "Show inactive"
+    },
+    "confirm": {
+      "deactivate": "Deactivate {name}? It disappears from pickers; existing records keep it."
+    },
+    "load": {
+      "error": "Could not load the data",
+      "retry": "Try again"
+    },
+    "devLogin": "Development sign-in"
+  }
+}

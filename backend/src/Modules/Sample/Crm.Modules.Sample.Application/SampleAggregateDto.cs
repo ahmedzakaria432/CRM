@@ -5,13 +5,17 @@ using Crm.Modules.Sample.Domain;
 
 namespace Crm.Modules.Sample.Application;
 
-/// <summary>Shared across CreateSample, GetSampleById, and RenameSample - all three return the same
-/// shape, so one DTO here beats three near-identical records. Never crosses back into a domain type;
-/// FromDomain is the one place that touches SampleAggregate.</summary>
+/// <summary>Shared across CreateSample, GetSampleById, ListSamples, and RenameSample - all return the same
+/// shape, so one DTO here beats near-identical records. Never crosses back into a domain type; FromDomain is
+/// the one place that touches SampleAggregate. TenantId/BranchId/DepartmentId are primitives (Story 06) -
+/// never a SharedKernel id type across the API boundary.</summary>
 public sealed record SampleAggregateDto(
     Guid Id,
     string Name,
     IReadOnlyList<string> Lines,
+    Guid TenantId,
+    Guid BranchId,
+    Guid DepartmentId,
     byte[] RowVersion,
     string? CreatedBy,
     DateTimeOffset? CreatedAtUtc,
@@ -22,6 +26,9 @@ public sealed record SampleAggregateDto(
         sample.Id.Value,
         sample.Name.Value,
         sample.Lines.Select(l => l.Text).ToList(),
+        sample.TenantId.Value,
+        sample.BranchId.Value,
+        sample.DepartmentId.Value,
         sample.RowVersion,
         sample.CreatedBy,
         sample.CreatedAtUtc,

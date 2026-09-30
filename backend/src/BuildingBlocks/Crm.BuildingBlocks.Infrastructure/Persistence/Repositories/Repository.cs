@@ -1,6 +1,8 @@
 using Crm.BuildingBlocks.Application.Abstractions;
+using Crm.BuildingBlocks.Application.Exceptions;
 using Crm.BuildingBlocks.Application.Specifications;
 using Crm.SharedKernel;
+using Crm.SharedKernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 
 namespace Crm.BuildingBlocks.Infrastructure.Persistence.Repositories;
@@ -18,11 +20,13 @@ public class Repository<TAggregate, TId, TContext>(TContext context) : IReposito
 {
     protected TContext Context { get; } = context;
 
-    public Task<TAggregate?> GetByIdAsync(TId id, CancellationToken cancellationToken = default) =>
-        Context.Set<TAggregate>().FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
+    public async Task<TAggregate?> GetByIdAsync(TId id, CancellationToken cancellationToken = default) =>
+        await Context.Set<TAggregate>().FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken)
+        ?? await ThrowIfOutOfScopeAsync(Context.Set<TAggregate>().Where(e => e.Id.Equals(id)), cancellationToken);
 
-    public Task<TAggregate?> FirstOrDefaultAsync(Specification<TAggregate> specification, CancellationToken cancellationToken = default) =>
-        ApplySpecification(specification).FirstOrDefaultAsync(cancellationToken);
+    public async Task<TAggregate?> FirstOrDefaultAsync(Specification<TAggregate> specification, CancellationToken cancellationToken = default) =>
+        await ApplySpecification(specification).FirstOrDefaultAsync(cancellationToken)
+        ?? await ThrowIfOutOfScopeAsync(ApplySpecification(specification), cancellationToken);
 
     public async Task<IReadOnlyList<TAggregate>> ListAsync(Specification<TAggregate> specification, CancellationToken cancellationToken = default) =>
         await ApplySpecification(specification).ToListAsync(cancellationToken);
@@ -39,4 +43,17 @@ public class Repository<TAggregate, TId, TContext>(TContext context) : IReposito
 
     private IQueryable<TAggregate> ApplySpecification(Specification<TAggregate> specification) =>
         SpecificationEvaluator.GetQuery(Context.Set<TAggregate>(), specification);
+
+    // Only on a miss, only for scoped aggregates: re-ask with ONLY the scope filter lifted. A hit means the row
+    // exists in another tenant/branch/department -> 403, never an accidental 404 (Story 06).
+    private static async Task<TAggregate?> ThrowIfOutOfScopeAsync(IQueryable<TAggregate> query, CancellationToken cancellationToken)
+    {
+        if (typeof(ITenantScoped).IsAssignableFrom(typeof(TAggregate))
+            && await query.IgnoreQueryFilters([ModuleDbContext.ScopeFilterName]).AnyAsync(cancellationToken))
+        {
+            throw new OrganisationScopeViolationException(typeof(TAggregate).Name, "Read");
+        }
+
+        return null;
+    }
 }

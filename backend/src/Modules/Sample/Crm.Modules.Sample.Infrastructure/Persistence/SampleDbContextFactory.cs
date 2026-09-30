@@ -1,5 +1,6 @@
 // CANONICAL SLICE - deleted alongside the rest of the Sample module in Story 11.
 
+using Crm.BuildingBlocks.Infrastructure.Identity;
 using Crm.BuildingBlocks.Infrastructure.Modules;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,5 +11,5 @@ public sealed class SampleDbContextFactory : ModuleDesignTimeDbContextFactory<Sa
 {
     protected override string Schema => SampleDbContext.SchemaName;
 
-    protected override SampleDbContext Create(DbContextOptions<SampleDbContext> options) => new(options);
+    protected override SampleDbContext Create(DbContextOptions<SampleDbContext> options) => new(options, SystemCurrentUser.Instance);
 }
