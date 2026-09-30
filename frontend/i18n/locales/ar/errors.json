@@ -20,6 +20,7 @@
         "OutOfScope": "ينتمي هذا السجل إلى قسم خارج نطاق صلاحياتك.",
         "ActiveScopeRejected": "القسم المحدد ليس من أقسامك.",
         "DepartmentRequired": "اختر القسم أولاً.",
+        "DepartmentNotFound": "لم يتم العثور على القسم.",
         "BranchCodeTaken": "هذا الرمز مستخدم بالفعل.",
         "DepartmentCodeTaken": "هذا الرمز مستخدم بالفعل.",
         "BranchInactive": "الفرع غير نشط.",

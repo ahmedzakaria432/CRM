@@ -1,8 +1,6 @@
-import type { components } from '~/api/generated/agent'
+export type { TicketDto } from './types'
 
-export type TicketDto = components['schemas']['TicketDto']
-
-/** One ticket (Story 18: the header of the minimal detail page; Story 20 extends it with the workspace). */
+/** One ticket (Story 20: loaded by the ticket workspace). */
 export function useTicket(id: string) {
   const { clients, call } = useApi()
 

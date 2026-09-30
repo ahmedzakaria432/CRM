@@ -14,17 +14,19 @@
         <CustomerContactsPanel :customer-id="id" />
         <CustomerNotesPanel :customer-id="id" />
       </div>
-      <CustomerTicketsPanel />
+      <CustomerTicketsPanel v-if="can(Permissions.TicketsRead)" :customer-id="id" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { isGuid } from '~/utils/customers'
+import { Permissions } from '~/utils/permissions'
 
 definePageMeta({ layout: 'agent', key: (route) => route.path })
 
 const { t } = useI18n()
+const { can } = useCan()
 const route = useRoute()
 const id = String(route.params.id)
 const valid = isGuid(id)

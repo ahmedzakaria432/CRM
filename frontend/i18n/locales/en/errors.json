@@ -20,6 +20,7 @@
         "OutOfScope": "This record belongs to a department outside your scope.",
         "ActiveScopeRejected": "The selected department is not one of yours.",
         "DepartmentRequired": "Choose a department first.",
+        "DepartmentNotFound": "The department was not found.",
         "BranchCodeTaken": "That code is already in use.",
         "DepartmentCodeTaken": "That code is already in use.",
         "BranchInactive": "The branch is inactive.",

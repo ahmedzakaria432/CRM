@@ -41,15 +41,22 @@ public sealed record TicketDto(
     IReadOnlyList<string> AllowedActions, IReadOnlyList<TicketActivityDto> Activities, IReadOnlyList<TicketPersonDto> People,
     byte[] RowVersion);
 
+/// <summary>The customer a list row belongs to (Story 20). Null on the row when the caller cannot see the customer.</summary>
+public sealed record TicketCustomerRefDto(Guid Id, string Number, string NameAr, string NameEn);
+
 public sealed record TicketListItemDto(
     Guid Id, string Number, string Subject, string Status, string Priority, string Channel, Guid CustomerId, Guid? ContactId,
     TicketCategoryRefDto? Category, Guid? AssignedAgentId, string? AssignedAgentName, Guid BranchId, Guid DepartmentId,
-    DateTimeOffset? CreatedAtUtc, DateTimeOffset? ModifiedAtUtc);
+    DateTimeOffset? CreatedAtUtc, DateTimeOffset? ModifiedAtUtc,
+    TicketCustomerRefDto? Customer);
 
 public sealed record TicketQueueCountsDto(int Mine, int Unassigned, int All);
 
 /// <summary>A department named by a Transferred activity.</summary>
 public sealed record TicketDepartmentRefDto(Guid Id, string Code, string NameAr, string NameEn);
+
+/// <summary>An active staff member who can take tickets of the listed departments (Story 20 pickers).</summary>
+public sealed record TicketAgentDto(Guid Id, string DisplayName, IReadOnlyList<Guid> DepartmentIds);
 
 /// <summary>One thread entry. Type (Message | Note | Activity) and Visibility (Public | Internal | System) map 1:1.
 /// Messages and notes carry Body (plain text - render as text, never as HTML); messages carry Direction

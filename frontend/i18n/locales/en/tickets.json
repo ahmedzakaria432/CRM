@@ -1,7 +1,8 @@
 {
   "tickets": {
     "nav": {
-      "categories": "Ticket categories"
+      "categories": "Ticket categories",
+      "tickets": "Tickets"
     },
     "categories": {
       "title": "Ticket categories",
@@ -78,7 +79,174 @@
       "back": "Back",
       "notFound": "Ticket not found",
       "notFoundDescription": "The link may be wrong, or the ticket was removed.",
-      "loadError": "The ticket could not be loaded."
+      "loadError": "The ticket could not be loaded.",
+      "backToTickets": "Back to tickets",
+      "assignedTo": "Assigned to {name}",
+      "unassigned": "Unassigned",
+      "sections": "Ticket sections",
+      "conversation": "Conversation",
+      "details": "Details",
+      "customer": "Customer",
+      "transferred": "Ticket transferred to {department}"
+    },
+    "inbox": {
+      "title": "Tickets",
+      "caption": "Tickets",
+      "create": "New ticket",
+      "search": "Search",
+      "searchHint": "Ticket number or subject",
+      "results": "{count} tickets",
+      "loadError": "The tickets could not be loaded",
+      "retry": "Try again",
+      "clearFilters": "Clear filters",
+      "open": "Open ticket {number}",
+      "empty": "No tickets match these filters",
+      "emptyDescription": "Try another search or clear the filters.",
+      "emptyMine": "No tickets assigned to you",
+      "emptyMineDescription": "Pick one from the unassigned tickets.",
+      "showUnassigned": "Show unassigned tickets",
+      "emptyUnassigned": "No unassigned tickets",
+      "emptyUnassignedDescription": "Every open ticket has an owner.",
+      "emptyAll": "No tickets yet",
+      "emptyAllDescription": "Create the first ticket to start.",
+      "unknownCustomer": "Customer outside your scope",
+      "unassigned": "Unassigned"
+    },
+    "views": {
+      "label": "Views",
+      "mine": "My tickets",
+      "unassigned": "Unassigned",
+      "all": "All in scope"
+    },
+    "filters": {
+      "label": "Filters",
+      "toggle": "Filters ({count})",
+      "status": "Status",
+      "statusWorking": "Open work",
+      "statusAny": "Any status",
+      "priority": "Priority",
+      "category": "Category",
+      "assignee": "Assignee",
+      "department": "Department",
+      "branch": "Branch",
+      "customer": "Customer",
+      "all": "All",
+      "anyone": "Anyone",
+      "me": "Me",
+      "sort": "Sort by"
+    },
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "updated": "Recently updated",
+      "priority": "Highest priority first",
+      "number": "Ticket number"
+    },
+    "columns": {
+      "number": "Number",
+      "subject": "Subject",
+      "status": "Status",
+      "priority": "Priority",
+      "assignee": "Assignee",
+      "modifiedAt": "Updated",
+      "createdAt": "Created"
+    },
+    "actions": {
+      "label": "Ticket actions",
+      "Open": "Open",
+      "AwaitCustomer": "Wait for customer",
+      "PutOnHold": "Put on hold",
+      "Resolve": "Resolve",
+      "Close": "Close",
+      "Reopen": "Reopen",
+      "Cancel": "Cancel ticket",
+      "Claim": "Assign to me",
+      "Assign": "Assign",
+      "Unassign": "Unassign",
+      "Transfer": "Transfer",
+      "done": "Ticket updated",
+      "dismiss": "Dismiss"
+    },
+    "confirm": {
+      "cancelTitle": "Cancel this ticket?",
+      "cancelDescription": "A cancelled ticket cannot be reopened.",
+      "transferTitle": "Transfer this ticket?",
+      "transferDescription": "It moves to {department}. The assignee and the category are cleared, and you may lose access to it.",
+      "back": "Back",
+      "close": "Close"
+    },
+    "properties": {
+      "title": "Details",
+      "status": "Status",
+      "statusActions": "Change status",
+      "noStatusActions": "No status change is available.",
+      "priority": "Priority",
+      "category": "Category",
+      "noCategory": "No category",
+      "inactiveCategory": "{name} (inactive)",
+      "assignee": "Assignee",
+      "assignTo": "Assign to",
+      "chooseAgent": "Choose an agent",
+      "noAgents": "No other agent in this department",
+      "department": "Department",
+      "transferTo": "Transfer to",
+      "chooseDepartment": "Choose a department",
+      "channel": "Channel",
+      "createdAt": "Created",
+      "firstResponse": "First response",
+      "optionsError": "The options could not be loaded",
+      "retry": "Try again",
+      "readOnly": "You can view this ticket but not change it."
+    },
+    "channel": {
+      "Agent": "Agent",
+      "Portal": "Portal"
+    },
+    "customerPanel": {
+      "title": "Customer",
+      "open": "Open customer page",
+      "contact": "Contact",
+      "primaryContact": "Primary contact",
+      "noContact": "No contact on this ticket",
+      "loadError": "The customer could not be loaded",
+      "retry": "Try again",
+      "notFound": "The customer was not found",
+      "notFoundDescription": "It may have been removed."
+    },
+    "composer": {
+      "label": "Write",
+      "reply": "Reply",
+      "note": "Internal note",
+      "replyLabel": "Reply to the customer",
+      "replyHint": "The customer sees this reply.",
+      "noteLabel": "Internal note",
+      "noteHint": "Only staff see internal notes.",
+      "sendReply": "Send reply",
+      "addNote": "Add note",
+      "sent": "Reply sent",
+      "noted": "Note added",
+      "conflict": "Someone updated the ticket at the same moment. Your text is kept, send it again.",
+      "sendAgain": "Send again"
+    },
+    "create": {
+      "title": "New ticket",
+      "customer": "Customer",
+      "customerHint": "Active customers only",
+      "chooseCustomerFirst": "Choose a customer first",
+      "contact": "Contact",
+      "noContact": "No contact",
+      "contactsError": "The contacts could not be loaded",
+      "department": "Department",
+      "category": "Category",
+      "noCategory": "No category",
+      "categoriesError": "The categories could not be loaded",
+      "subject": "Subject",
+      "description": "Description",
+      "priority": "Priority",
+      "submit": "Create ticket",
+      "cancel": "Cancel",
+      "close": "Close",
+      "created": "Ticket {number} created"
     }
   }
 }

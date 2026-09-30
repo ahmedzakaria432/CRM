@@ -74,7 +74,13 @@
       "close": "Close"
     },
     "tickets": {
-      "title": "Tickets", "empty": "No tickets yet", "emptyDescription": "This customer's tickets will appear here."
+      "title": "Tickets",
+      "empty": "No tickets yet",
+      "emptyDescription": "Create the first ticket for this customer.",
+      "create": "New ticket",
+      "viewAll": "View all {count} tickets",
+      "loadError": "The tickets could not be loaded",
+      "retry": "Try again"
     },
     "picker": {
       "placeholder": "Name, number, email, or phone", "searching": "Searching", "results": "{count} customers found",

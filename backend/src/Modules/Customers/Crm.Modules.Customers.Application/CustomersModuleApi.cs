@@ -1,5 +1,6 @@
 using Crm.Modules.Customers.Application.Queries.FindContactsByEmail;
 using Crm.Modules.Customers.Application.Queries.GetCustomerById;
+using Crm.Modules.Customers.Application.Queries.GetCustomerNames;
 using Crm.Modules.Customers.Contracts;
 using Crm.Modules.Customers.Domain;
 using Crm.SharedKernel.Results;
@@ -19,6 +20,10 @@ public sealed class CustomersModuleApi(ISender sender) : ICustomersModuleApi
             ? Result.Success(ToSummary(result.Value))
             : Result.Failure<CustomerSummary>(result.Error);
     }
+
+    public Task<Result<IReadOnlyList<CustomerNameSummary>>> GetCustomerNamesAsync(
+        IReadOnlyCollection<Guid> customerIds, CancellationToken cancellationToken = default) =>
+        sender.Send(new GetCustomerNamesQuery([.. customerIds]), cancellationToken);
 
     public Task<Result<IReadOnlyList<CustomerContactMatch>>> FindContactByEmailAsync(string email, CancellationToken cancellationToken = default) =>
         sender.Send(new FindContactsByEmailQuery(email), cancellationToken);

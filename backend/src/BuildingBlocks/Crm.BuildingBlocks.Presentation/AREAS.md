@@ -7,7 +7,7 @@ controllers for that Area. These notes record what each Area is for and which po
 ## Agent Area
 
 The agent workspace persona - ticket inbox, ticket detail, dashboards, tasks, and team collaboration.
-Filled by stories 20, 21, 28-31. Story 11: the `Customers` module's `CustomersController` (`customers.read`/`customers.write`). Story 15: the `Tickets` module's `TicketsController` and `TicketCategoriesController` (`tickets.read`/`tickets.write`/`tickets.assign`). Story 18: the thread (`GET …/Tickets/{id}/thread`), replies, customer replies and internal notes on `TicketsController` (`tickets.read`/`tickets.write`).
+Filled by stories 20, 21, 28-31. Story 11: the `Customers` module's `CustomersController` (`customers.read`/`customers.write`). Story 15: the `Tickets` module's `TicketsController` and `TicketCategoriesController` (`tickets.read`/`tickets.write`/`tickets.assign`). Story 18: the thread (`GET …/Tickets/{id}/thread`), replies, customer replies and internal notes on `TicketsController` (`tickets.read`/`tickets.write`). Story 20: the pickers `GET …/Tickets/agents` (`tickets.read`) and `GET …/Tickets/transfer-targets` (`tickets.assign`) on `TicketsController`.
 
 <!-- Story 07: every controller here requires the Staff JWT (`StaffAreaAuthorizationConvention`); each MediatR request declares its permission (`[RequirePermission]`). `[AllowAnonymous]` only on the Identity sign-in actions and the Development-only diagnostics. -->
 

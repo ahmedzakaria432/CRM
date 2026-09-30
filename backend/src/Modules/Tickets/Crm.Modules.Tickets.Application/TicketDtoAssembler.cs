@@ -1,5 +1,6 @@
 using System.Globalization;
 using Crm.BuildingBlocks.Application.Abstractions;
+using Crm.Modules.Customers.Contracts;
 using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Organisation.Contracts;
 using Crm.Modules.Tickets.Application.Abstractions;
@@ -13,7 +14,8 @@ namespace Crm.Modules.Tickets.Application;
 /// names for the thread). Every handler calls it
 /// BEFORE eventBus.Publish: a nested query after Publish throws (TransactionBehavior, R2).</summary>
 public sealed class TicketDtoAssembler(
-    IRepository<Category, CategoryId> categories, IIdentityModuleApi identity, IOrganisationModuleApi organisation)
+    IRepository<Category, CategoryId> categories, IIdentityModuleApi identity, IOrganisationModuleApi organisation,
+    ICustomersModuleApi customers)
 {
     public async Task<TicketDto> ToDtoAsync(Ticket ticket, CancellationToken cancellationToken)
     {
@@ -143,6 +145,9 @@ public sealed class TicketDtoAssembler(
         HashSet<Guid> agentIds = [.. rows.Select(r => r.AssignedAgentId).OfType<Guid>()];
         IReadOnlyList<StaffUserSummary> people = await LookupAsync(agentIds, cancellationToken);
 
+        HashSet<Guid> customerIds = [.. rows.Select(r => r.CustomerId)];
+        Dictionary<Guid, CustomerNameSummary> customerById = (await CustomerNamesAsync(customerIds, cancellationToken)).ToDictionary(c => c.Id);
+
         return
         [
             .. rows.Select(r => new TicketListItemDto(
@@ -151,7 +156,10 @@ public sealed class TicketDtoAssembler(
                 r.CategoryId is { } cid && byId.TryGetValue(cid, out Category? category) ? ToRef(category) : null,
                 r.AssignedAgentId,
                 r.AssignedAgentId is { } aid ? people.FirstOrDefault(p => p.Id == aid)?.DisplayName : null,
-                r.BranchId, r.DepartmentId, r.CreatedAtUtc, r.ModifiedAtUtc)),
+                r.BranchId, r.DepartmentId, r.CreatedAtUtc, r.ModifiedAtUtc,
+                customerById.TryGetValue(r.CustomerId, out CustomerNameSummary? c)
+                    ? new TicketCustomerRefDto(c.Id, c.Number, c.DisplayNameAr, c.DisplayNameEn)
+                    : null)),
         ];
     }
 
@@ -163,6 +171,18 @@ public sealed class TicketDtoAssembler(
         }
 
         Result<IReadOnlyList<StaffUserSummary>> result = await identity.GetStaffUsersAsync(ids, cancellationToken);
+        return result.IsSuccess ? result.Value : [];
+    }
+
+    // A failed or out-of-scope customer lookup never fails the page: the row just has no customer (Story 20, R4).
+    private async Task<IReadOnlyList<CustomerNameSummary>> CustomerNamesAsync(HashSet<Guid> ids, CancellationToken cancellationToken)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        Result<IReadOnlyList<CustomerNameSummary>> result = await customers.GetCustomerNamesAsync(ids, cancellationToken);
         return result.IsSuccess ? result.Value : [];
     }
 

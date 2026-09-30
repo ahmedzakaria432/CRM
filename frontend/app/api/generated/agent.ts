@@ -1897,6 +1897,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/Agent/Tickets/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Active staff of the department (in your scope), or of every department in your scope. Pickers only. */
+        get: {
+            parameters: {
+                query?: {
+                    departmentId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TicketAgentDto"][];
+                        "application/json": components["schemas"]["TicketAgentDto"][];
+                        "text/json": components["schemas"]["TicketAgentDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/Agent/Tickets/transfer-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every active department of the tenant a ticket can be transferred to (tickets.assign). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TicketDepartmentRefDto"][];
+                        "application/json": components["schemas"]["TicketDepartmentRefDto"][];
+                        "text/json": components["schemas"]["TicketDepartmentRefDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/Agent/Tickets/{id}": {
         parameters: {
             query?: never;
@@ -3414,6 +3536,13 @@ export interface components {
             /** Format: date-time */
             occurredAtUtc?: string;
         };
+        /** @description An active staff member who can take tickets of the listed departments (Story 20 pickers). */
+        TicketAgentDto: {
+            /** Format: uuid */
+            id?: string;
+            displayName?: string | null;
+            departmentIds?: string[] | null;
+        };
         TicketBodyRequest: {
             body?: string | null;
         };
@@ -3441,6 +3570,14 @@ export interface components {
             id?: string;
             name?: components["schemas"]["TicketCategoryNameDto"];
             isActive?: boolean;
+        };
+        /** @description The customer a list row belongs to (Story 20). Null on the row when the caller cannot see the customer. */
+        TicketCustomerRefDto: {
+            /** Format: uuid */
+            id?: string;
+            number?: string | null;
+            nameAr?: string | null;
+            nameEn?: string | null;
         };
         /** @description A department named by a Transferred activity. */
         TicketDepartmentRefDto: {
@@ -3514,6 +3651,7 @@ export interface components {
             createdAtUtc?: string | null;
             /** Format: date-time */
             modifiedAtUtc?: string | null;
+            customer?: components["schemas"]["TicketCustomerRefDto"];
         };
         TicketListItemDtoPagedResult: {
             items?: components["schemas"]["TicketListItemDto"][] | null;

@@ -1,6 +1,8 @@
 using Crm.Modules.Organisation.Application.Queries.GetDepartmentReference;
 using Crm.Modules.Organisation.Application.Queries.GetMembershipsOfUser;
 using Crm.Modules.Organisation.Application.Queries.IsDepartmentMember;
+using Crm.Modules.Organisation.Application.Queries.ListDepartmentMembers;
+using Crm.Modules.Organisation.Application.Queries.ListDepartmentReferences;
 using Crm.Modules.Organisation.Contracts;
 using Crm.SharedKernel.Results;
 using MediatR;
@@ -19,4 +21,11 @@ public sealed class OrganisationModuleApi(ISender sender) : IOrganisationModuleA
 
     public Task<Result<bool>> IsDepartmentMemberAsync(Guid userId, Guid departmentId, CancellationToken cancellationToken = default) =>
         sender.Send(new IsDepartmentMemberQuery(userId, departmentId), cancellationToken);
+
+    public Task<Result<IReadOnlyList<DepartmentMember>>> GetDepartmentMembersAsync(
+        IReadOnlyCollection<Guid> departmentIds, CancellationToken cancellationToken = default) =>
+        sender.Send(new ListDepartmentMembersQuery([.. departmentIds]), cancellationToken);
+
+    public Task<Result<IReadOnlyList<DepartmentReference>>> ListDepartmentsAsync(bool activeOnly, CancellationToken cancellationToken = default) =>
+        sender.Send(new ListDepartmentReferencesQuery(activeOnly), cancellationToken);
 }

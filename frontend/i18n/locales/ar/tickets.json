@@ -1,7 +1,8 @@
 {
   "tickets": {
     "nav": {
-      "categories": "تصنيفات التذاكر"
+      "categories": "تصنيفات التذاكر",
+      "tickets": "التذاكر"
     },
     "categories": {
       "title": "تصنيفات التذاكر",
@@ -78,7 +79,174 @@
       "back": "رجوع",
       "notFound": "لم يتم العثور على التذكرة",
       "notFoundDescription": "قد يكون الرابط غير صحيح، أو أُزيلت التذكرة.",
-      "loadError": "تعذّر تحميل التذكرة."
+      "loadError": "تعذّر تحميل التذكرة.",
+      "backToTickets": "العودة إلى التذاكر",
+      "assignedTo": "مسندة إلى {name}",
+      "unassigned": "غير مسندة",
+      "sections": "أقسام التذكرة",
+      "conversation": "المحادثة",
+      "details": "التفاصيل",
+      "customer": "العميل",
+      "transferred": "تم نقل التذكرة إلى {department}"
+    },
+    "inbox": {
+      "title": "التذاكر",
+      "caption": "التذاكر",
+      "create": "تذكرة جديدة",
+      "search": "بحث",
+      "searchHint": "رقم التذكرة أو الموضوع",
+      "results": "عدد التذاكر: {count}",
+      "loadError": "تعذّر تحميل التذاكر",
+      "retry": "حاول مرة أخرى",
+      "clearFilters": "مسح المرشحات",
+      "open": "فتح التذكرة {number}",
+      "empty": "لا توجد تذاكر مطابقة لهذه المرشحات",
+      "emptyDescription": "جرّب بحثًا آخر أو امسح المرشحات.",
+      "emptyMine": "لا توجد تذاكر مسندة إليك",
+      "emptyMineDescription": "اختر تذكرة من التذاكر غير المسندة.",
+      "showUnassigned": "عرض التذاكر غير المسندة",
+      "emptyUnassigned": "لا توجد تذاكر غير مسندة",
+      "emptyUnassignedDescription": "لكل تذكرة مفتوحة مسؤول.",
+      "emptyAll": "لا توجد تذاكر بعد",
+      "emptyAllDescription": "أنشئ أول تذكرة للبدء.",
+      "unknownCustomer": "عميل خارج نطاقك",
+      "unassigned": "غير مسندة"
+    },
+    "views": {
+      "label": "طرق العرض",
+      "mine": "تذاكري",
+      "unassigned": "غير المسندة",
+      "all": "كل التذاكر في نطاقي"
+    },
+    "filters": {
+      "label": "المرشحات",
+      "toggle": "المرشحات ({count})",
+      "status": "الحالة",
+      "statusWorking": "العمل المفتوح",
+      "statusAny": "أي حالة",
+      "priority": "الأولوية",
+      "category": "التصنيف",
+      "assignee": "المسؤول",
+      "department": "القسم",
+      "branch": "الفرع",
+      "customer": "العميل",
+      "all": "الكل",
+      "anyone": "أي شخص",
+      "me": "أنا",
+      "sort": "الترتيب حسب"
+    },
+    "sort": {
+      "newest": "الأحدث أولًا",
+      "oldest": "الأقدم أولًا",
+      "updated": "آخر تحديث أولًا",
+      "priority": "الأعلى أولوية أولًا",
+      "number": "رقم التذكرة"
+    },
+    "columns": {
+      "number": "الرقم",
+      "subject": "الموضوع",
+      "status": "الحالة",
+      "priority": "الأولوية",
+      "assignee": "المسؤول",
+      "modifiedAt": "آخر تحديث",
+      "createdAt": "تاريخ الإنشاء"
+    },
+    "actions": {
+      "label": "إجراءات التذكرة",
+      "Open": "فتح",
+      "AwaitCustomer": "انتظار العميل",
+      "PutOnHold": "تعليق",
+      "Resolve": "حل",
+      "Close": "إغلاق",
+      "Reopen": "إعادة فتح",
+      "Cancel": "إلغاء التذكرة",
+      "Claim": "إسناد إليّ",
+      "Assign": "إسناد",
+      "Unassign": "إلغاء الإسناد",
+      "Transfer": "نقل",
+      "done": "تم تحديث التذكرة",
+      "dismiss": "إخفاء"
+    },
+    "confirm": {
+      "cancelTitle": "هل تريد إلغاء هذه التذكرة؟",
+      "cancelDescription": "لا يمكن إعادة فتح التذكرة الملغاة.",
+      "transferTitle": "هل تريد نقل هذه التذكرة؟",
+      "transferDescription": "ستنتقل إلى {department}. سيُلغى الإسناد والتصنيف، وقد تفقد الوصول إليها.",
+      "back": "رجوع",
+      "close": "إغلاق"
+    },
+    "properties": {
+      "title": "التفاصيل",
+      "status": "الحالة",
+      "statusActions": "تغيير الحالة",
+      "noStatusActions": "لا يتوفر تغيير للحالة.",
+      "priority": "الأولوية",
+      "category": "التصنيف",
+      "noCategory": "بدون تصنيف",
+      "inactiveCategory": "{name} (غير نشط)",
+      "assignee": "المسؤول",
+      "assignTo": "إسناد إلى",
+      "chooseAgent": "اختر موظفًا",
+      "noAgents": "لا يوجد موظف آخر في هذا القسم",
+      "department": "القسم",
+      "transferTo": "نقل إلى",
+      "chooseDepartment": "اختر قسمًا",
+      "channel": "القناة",
+      "createdAt": "تاريخ الإنشاء",
+      "firstResponse": "أول رد",
+      "optionsError": "تعذّر تحميل الخيارات",
+      "retry": "حاول مرة أخرى",
+      "readOnly": "يمكنك عرض هذه التذكرة دون تعديلها."
+    },
+    "channel": {
+      "Agent": "موظف",
+      "Portal": "البوابة"
+    },
+    "customerPanel": {
+      "title": "العميل",
+      "open": "فتح صفحة العميل",
+      "contact": "جهة الاتصال",
+      "primaryContact": "جهة الاتصال الرئيسية",
+      "noContact": "لا توجد جهة اتصال لهذه التذكرة",
+      "loadError": "تعذّر تحميل العميل",
+      "retry": "حاول مرة أخرى",
+      "notFound": "لم يتم العثور على العميل",
+      "notFoundDescription": "ربما أُزيل."
+    },
+    "composer": {
+      "label": "كتابة",
+      "reply": "رد",
+      "note": "ملاحظة داخلية",
+      "replyLabel": "الرد على العميل",
+      "replyHint": "سيرى العميل هذا الرد.",
+      "noteLabel": "ملاحظة داخلية",
+      "noteHint": "لا يرى الملاحظات الداخلية إلا الموظفون.",
+      "sendReply": "إرسال الرد",
+      "addNote": "إضافة الملاحظة",
+      "sent": "تم إرسال الرد",
+      "noted": "تمت إضافة الملاحظة",
+      "conflict": "حدّث شخص آخر التذكرة في اللحظة نفسها. نصّك محفوظ، أرسله مرة أخرى.",
+      "sendAgain": "إرسال مرة أخرى"
+    },
+    "create": {
+      "title": "تذكرة جديدة",
+      "customer": "العميل",
+      "customerHint": "العملاء النشطون فقط",
+      "chooseCustomerFirst": "اختر عميلًا أولًا",
+      "contact": "جهة الاتصال",
+      "noContact": "بدون جهة اتصال",
+      "contactsError": "تعذّر تحميل جهات الاتصال",
+      "department": "القسم",
+      "category": "التصنيف",
+      "noCategory": "بدون تصنيف",
+      "categoriesError": "تعذّر تحميل التصنيفات",
+      "subject": "الموضوع",
+      "description": "الوصف",
+      "priority": "الأولوية",
+      "submit": "إنشاء التذكرة",
+      "cancel": "إلغاء",
+      "close": "إغلاق",
+      "created": "تم إنشاء التذكرة {number}"
     }
   }
 }

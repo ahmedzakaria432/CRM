@@ -1,0 +1,86 @@
+@host = http://localhost:5187
+
+# Story 20 - ticket inbox and workspace UI: the read endpoints it added. Run against a Development API
+# (`docker compose up -d`, then `dotnet run --project backend/src/Crm.Api --launch-profile http`).
+# New in this story: `customer` on every row of GET /api/Agent/Tickets (number + both names, null when the caller cannot see
+# the customer), GET /api/Agent/Tickets/agents (tickets.read) and GET /api/Agent/Tickets/transfer-targets (tickets.assign).
+# Run tickets.http first: its request 52 transfers T-000002 (a RYD-CARE customer's ticket) to JED-CARE, which is what makes
+# request 2 show `customer: null`.
+# Access tokens live 2 minutes in Development - re-run the logins when a request answers 401. Sign-in is limited to 30/min.
+
+@ryCare = 06000000-0000-0000-0002-000000000001
+@ryBill = 06000000-0000-0000-0002-000000000002
+@jeCare = 06000000-0000-0000-0002-000000000003
+@ahmed = 11000000-0000-0000-0000-000000000001
+
+### Login as agent A (Agent in RYD-CARE)
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
+### Login as agent B (Agent in JED-CARE)
+# @name loginAgentB
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentBToken = {{loginAgentB.response.body.accessToken}}
+
+### Login as supervisor (Supervisor in RYD-CARE, Agent in RYD-BILL)
+# @name loginSupervisor
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "supervisor@crm.local", "password": "Crm_Dev_2026!" }
+
+@supervisorToken = {{loginSupervisor.response.body.accessToken}}
+
+###############################################################################################################################
+
+### 1. Agent A lists every ticket in scope - 200; each RYD-CARE row has customer { number: "C-00000n", nameAr, nameEn } (T-000001 Ahmed, T-000002 Najd)
+GET {{host}}/api/Agent/Tickets?queue=all
+Authorization: Bearer {{agentAToken}}
+
+### 2. Agent B lists every ticket in scope - 200; T-000003 has customer Red Sea; a ticket transferred by tickets.http 52 has customer null
+GET {{host}}/api/Agent/Tickets?queue=all
+Authorization: Bearer {{agentBToken}}
+
+### 3. Agent A filters by two statuses - 200; only New/Open/PendingCustomer rows as asked (status repeats)
+GET {{host}}/api/Agent/Tickets?queue=mine&status=Open&status=PendingCustomer
+Authorization: Bearer {{agentAToken}}
+
+### 4. Agent A lists the agents of the scope - 200; active members of RYD-CARE (Omar Haddad, the Arabic-named agent, System Administrator), each with departmentIds
+GET {{host}}/api/Agent/Tickets/agents
+Authorization: Bearer {{agentAToken}}
+
+### 5. Agent A lists the agents of RYD-CARE - 200; same list
+GET {{host}}/api/Agent/Tickets/agents?departmentId={{ryCare}}
+Authorization: Bearer {{agentAToken}}
+
+### 6. Agent A asks for JED-CARE's agents - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Tickets/agents?departmentId={{jeCare}}
+Authorization: Bearer {{agentAToken}}
+
+### 7. Supervisor (scope all) lists the agents - 200; RYD-CARE and RYD-BILL members, the supervisor's departmentIds holds both
+GET {{host}}/api/Agent/Tickets/agents
+Authorization: Bearer {{supervisorToken}}
+
+### 8. Supervisor lists transfer targets - 200; RYD-BILL, RYD-CARE, JED-CARE (and RYD-TKT when tickets.http 55 ran), ordered by code, active only
+GET {{host}}/api/Agent/Tickets/transfer-targets
+Authorization: Bearer {{supervisorToken}}
+
+### 9. Agent A lists transfer targets - 403 naming tickets.assign
+GET {{host}}/api/Agent/Tickets/transfer-targets
+Authorization: Bearer {{agentAToken}}
+
+### 10. No token - 401
+GET {{host}}/api/Agent/Tickets/agents
+
+### 11. Agent A lists Ahmed's tickets (the customer 360 panel request) - 200; Ahmed's tickets only
+GET {{host}}/api/Agent/Tickets?customerId={{ahmed}}&queue=all&pageSize=10
+Authorization: Bearer {{agentAToken}}

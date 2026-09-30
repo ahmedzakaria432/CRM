@@ -44,7 +44,7 @@
             </UiButton>
           </div>
         </header>
-        <main id="main" tabindex="-1" class="flex-1 overflow-y-auto p-4">
+        <main id="main" tabindex="-1" class="flex-1 overflow-x-clip p-4">
           <NuxtErrorBoundary>
             <slot />
             <template #error="{ error, clearError }">
@@ -99,6 +99,7 @@ interface AgentNavItem {
 // Computed so the label follows a locale switch and the admin nav items follow the signed-in user's permissions.
 const agentNav = computed<ReadonlyArray<AgentNavItem>>(() => [
   { to: '/agent', label: t('shell.nav.home') },
+  ...(can(Permissions.TicketsRead) ? [{ to: '/agent/tickets', label: t('tickets.nav.tickets') }] : []),
   ...(can(Permissions.CustomersRead) ? [{ to: '/agent/customers', label: t('customers.nav.customers') }] : []),
   ...(can(Permissions.AdminOrganisation)
     ? [

@@ -11,6 +11,11 @@ public interface ICustomersModuleApi
     /// <summary>Story 15: does this customer exist in my scope, which department owns it, which contacts does it have.</summary>
     Task<Result<CustomerSummary>> GetCustomerSummaryAsync(Guid customerId, CancellationToken cancellationToken = default);
 
+    /// <summary>Story 20: number and names of each customer the caller may see (customers.read + scope). Unknown and
+    /// out-of-scope ids are simply absent - success, never 403. At most 100 ids.</summary>
+    Task<Result<IReadOnlyList<CustomerNameSummary>>> GetCustomerNamesAsync(
+        IReadOnlyCollection<Guid> customerIds, CancellationToken cancellationToken = default);
+
     /// <summary>Story 47: every in-scope contact whose email equals <paramref name="email"/> (normalised). A
     /// malformed email is an empty list, not a failure.</summary>
     Task<Result<IReadOnlyList<CustomerContactMatch>>> FindContactByEmailAsync(string email, CancellationToken cancellationToken = default);
@@ -42,3 +47,5 @@ public sealed record CustomerContactMatch(
     Guid TenantId,
     Guid BranchId,
     Guid DepartmentId);
+
+public sealed record CustomerNameSummary(Guid Id, string Number, string DisplayNameAr, string DisplayNameEn);

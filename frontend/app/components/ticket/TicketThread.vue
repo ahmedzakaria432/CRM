@@ -72,8 +72,10 @@ import { activityText, mergeLookups, personName } from '~/utils/ticketThread'
 
 interface Props {
   ticketId: string
+  version?: number
+  customerLabel?: string
 }
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), { version: 0, customerLabel: undefined })
 
 const { t, te, locale } = useI18n()
 const format = useFormat()
@@ -122,6 +124,33 @@ async function loadMore(): Promise<void> {
   morePages.value = [...morePages.value, result.data]
 }
 
+const lastSequence = computed(() => entries.value[entries.value.length - 1]?.sequence ?? 0)
+
+/** Appends everything after the last loaded entry (R11) - up to 5 pages; beyond that "Show more" stays. */
+async function loadNewer(): Promise<void> {
+  if (!data.value) {
+    await refresh()
+    return
+  }
+  let after = lastSequence.value
+  for (let i = 0; i < 5; i += 1) {
+    const result = await thread.page(after)
+    if (!result.ok) {
+      moreFailed.value = true
+      return
+    }
+    morePages.value = [...morePages.value, result.data]
+    const next = result.data.nextCursor
+    if (next === null || next === undefined) return
+    after = next
+  }
+}
+
+watch(
+  () => props.version,
+  () => void loadNewer(),
+)
+
 function when(entry: TicketThreadEntryDto): string {
   return entry.occurredAtUtc ? format.dateTime(entry.occurredAtUtc) : ''
 }
@@ -133,7 +162,7 @@ function authorOf(entry: TicketThreadEntryDto): string {
 }
 
 function senderOf(entry: TicketThreadEntryDto): string {
-  return entry.direction === 'Inbound' ? t('tickets.thread.customer') : authorOf(entry)
+  return entry.direction === 'Inbound' ? (props.customerLabel ?? t('tickets.thread.customer')) : authorOf(entry)
 }
 
 function recorderOf(entry: TicketThreadEntryDto): string {

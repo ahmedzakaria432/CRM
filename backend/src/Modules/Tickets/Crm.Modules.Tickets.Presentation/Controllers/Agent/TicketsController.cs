@@ -15,13 +15,15 @@ using Crm.Modules.Tickets.Application.Commands.UnassignTicket;
 using Crm.Modules.Tickets.Application.Queries.GetTicketById;
 using Crm.Modules.Tickets.Application.Queries.GetTicketQueueCounts;
 using Crm.Modules.Tickets.Application.Queries.GetTicketThread;
+using Crm.Modules.Tickets.Application.Queries.ListTicketAgents;
+using Crm.Modules.Tickets.Application.Queries.ListTransferTargets;
 using Crm.Modules.Tickets.Application.Queries.SearchTickets;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Crm.Modules.Tickets.Presentation.Controllers.Agent;
 
-/// <summary>The agent's ticket surface (Stories 15 and 18). tickets.read / tickets.write / tickets.assign are declared on each
+/// <summary>The agent's ticket surface (Stories 15, 18 and 20). tickets.read / tickets.write / tickets.assign are declared on each
 /// request; every ticket is organisation-scoped. RowVersion is base64 - send back what the last response returned.</summary>
 [Area(CrmAreas.Agent)]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -48,6 +50,18 @@ public sealed class TicketsController : ApiControllerBase
     [ProducesResponseType<TicketQueueCountsDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<TicketQueueCountsDto>> Queues(CancellationToken cancellationToken) =>
         ToActionResult(await Sender.Send(new GetTicketQueueCountsQuery(), cancellationToken));
+
+    /// <summary>Active staff of the department (in your scope), or of every department in your scope. Pickers only.</summary>
+    [HttpGet("agents")]
+    [ProducesResponseType<IReadOnlyList<TicketAgentDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<TicketAgentDto>>> Agents([FromQuery] Guid? departmentId, CancellationToken cancellationToken) =>
+        ToActionResult(await Sender.Send(new ListTicketAgentsQuery(departmentId), cancellationToken));
+
+    /// <summary>Every active department of the tenant a ticket can be transferred to (tickets.assign).</summary>
+    [HttpGet("transfer-targets")]
+    [ProducesResponseType<IReadOnlyList<TicketDepartmentRefDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<TicketDepartmentRefDto>>> TransferTargets(CancellationToken cancellationToken) =>
+        ToActionResult(await Sender.Send(new ListTransferTargetsQuery(), cancellationToken));
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType<TicketDto>(StatusCodes.Status200OK)]
