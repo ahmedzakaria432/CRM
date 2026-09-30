@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- PasswordHasher<T> ships in the shared framework; no ASP.NET Core Identity stores or EF package is used. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <!-- dotnet ef runs its design-time tooling against this project (backend/scripts/ef.ps1 -Module Identity). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Crm.BuildingBlocks.Infrastructure\Crm.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\Crm.Modules.Identity.Application\Crm.Modules.Identity.Application.csproj" />
+    <!-- The dev seed reads the well-known user ids from Organisation's Contracts. -->
+    <ProjectReference Include="..\..\Organisation\Crm.Modules.Organisation.Contracts\Crm.Modules.Organisation.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

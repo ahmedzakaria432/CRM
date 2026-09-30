@@ -1,15 +1,13 @@
 import { createCrmFetch } from '~/api/crm-fetch'
 import { createCrmClients } from '~/api/clients'
-import { scopeCookieName, devUserCookieName } from '~/utils/scope'
+import { scopeCookieName } from '~/utils/scope'
 
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
 
-  // Story 06: the active department scope, and (Development only) the dev-login user. Read here, not inside
-  // baseFetch - composables are only safe in the plugin body.
+  // Story 06: the active department scope. Read here, not inside baseFetch - composables are only safe in the
+  // plugin body.
   const scopeCookie = useCookie<string | null>(scopeCookieName, { sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 })
-  // DEVELOPMENT ONLY (Story 06): the dev login's user. Story 07 deletes this and /_dev/login.
-  const devUserCookie = useCookie<string | null>(devUserCookieName, { sameSite: 'lax' })
 
   const crmFetch = createCrmFetch({
     baseFetch: (request) => {
@@ -17,7 +15,6 @@ export default defineNuxtPlugin((nuxtApp) => {
       const headers = new Headers(request.headers)
       headers.set('Accept-Language', nuxtApp.$i18n.locale.value)
       if (scopeCookie.value) headers.set('X-Crm-Scope', scopeCookie.value)
-      if (import.meta.dev && devUserCookie.value) headers.set('X-Dev-User', devUserCookie.value)
       return globalThis.fetch(new Request(request, { headers }))
     },
     session: () => useAuthSession().session.value,

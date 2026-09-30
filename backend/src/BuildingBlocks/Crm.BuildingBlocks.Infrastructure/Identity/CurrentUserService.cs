@@ -5,16 +5,17 @@ using Microsoft.AspNetCore.Http;
 
 namespace Crm.BuildingBlocks.Infrastructure.Identity;
 
-// Story 06: scope from membership claims + X-Crm-Scope; Story 07 issues the JWT.
+// Story 06: scope from membership claims + X-Crm-Scope. Story 07: the claims come from the staff JWT (Identity module).
 public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
-    // Cached per principal INSTANCE, not per request (R4): the dev-login handler resolves this service
-    // while HttpContext.User is still the anonymous principal, so a request-lifetime cache would pin
-    // OrganisationScope.None for the rest of the request, after the handler has already signed the user in.
+    // Cached per principal INSTANCE, not per request: an authentication handler that resolves this service
+    // before HttpContext.User is set would otherwise pin OrganisationScope.None for the rest of the request.
     private ClaimsPrincipal? _cachedUser;
     private OrganisationScope? _cachedScope;
 
     public string? UserId => Claim(CrmClaimTypes.UserId);
+
+    public string? SessionId => Claim(CrmClaimTypes.SessionId);
 
     public string UserIdOrSystem => UserId ?? "system";
 

@@ -175,3 +175,11 @@ export function isProblem(value: unknown): value is Problem {
     isRecord(value['fieldErrors'])
   )
 }
+
+/** The Problem behind an `error` from useAsyncData: a handler that throws a Problem gets it wrapped in a
+ * NuxtError (h3 createError keeps the original as `cause`), so unwrap it before testing. */
+export function problemOf(error: unknown): Problem | null {
+  if (isProblem(error)) return error
+  if (isRecord(error) && isProblem(error['cause'])) return error['cause']
+  return null
+}

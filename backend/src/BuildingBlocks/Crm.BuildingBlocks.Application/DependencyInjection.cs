@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Resources;
+using Crm.BuildingBlocks.Application.Authorization;
 using Crm.BuildingBlocks.Application.Behaviors;
 using Crm.BuildingBlocks.Application.Localization;
 using Crm.BuildingBlocks.Application.Messaging;
@@ -32,6 +33,9 @@ public static class DependencyInjection
             cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
             cfg.AddOpenBehavior(typeof(CachingBehavior<,>));
         });
+
+        // Story 07: the app refuses to start when any request in any module lacks an authorisation declaration.
+        RequestAuthorizationGuard.EnsureEveryRequestDeclares(moduleApplicationAssemblies);
 
         services.AddValidatorsFromAssemblies(moduleApplicationAssemblies);
         services.AddScoped<IUnitOfWorkResolver, UnitOfWorkResolver>();

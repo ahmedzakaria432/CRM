@@ -8,7 +8,7 @@ using MediatR;
 namespace Crm.Modules.Organisation.Application.Queries.GetMembershipsOfUser;
 
 /// <summary>The only reader of MembershipsOfUserSpecification - the sign-in membership lookup, run while the
-/// caller has no scope yet (the dev login handler, and Story 07's real sign-in).</summary>
+/// caller has no scope yet (Identity's sign-in and refresh).</summary>
 public sealed class GetMembershipsOfUserQueryHandler(IRepository<Membership, MembershipId> repository)
     : IRequestHandler<GetMembershipsOfUserQuery, Result<UserMemberships>>
 {

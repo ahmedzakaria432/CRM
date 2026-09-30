@@ -4,6 +4,9 @@ public interface ICurrentUserService
 {
     string? UserId { get; }
 
+    /// <summary>The caller's session (refresh-token family) id from the `sid` claim, or null. Story 07.</summary>
+    string? SessionId { get; }
+
     /// <summary>"system" when unauthenticated - seeder, background jobs, migrations.</summary>
     string UserIdOrSystem { get; }
 

@@ -9,24 +9,24 @@ controllers for that Area. These notes record what each Area is for and which po
 The agent workspace persona - ticket inbox, ticket detail, dashboards, tasks, and team collaboration.
 Filled by stories 20, 21, 28-31.
 
-<!-- Story 09: this Area requires an authenticated agent/supervisor/admin policy. No [Authorize] yet - stories 07 and 09 own authentication and the per-Area policies. -->
+<!-- Story 07: every controller here requires the Staff JWT (`StaffAreaAuthorizationConvention`); each MediatR request declares its permission (`[RequirePermission]`). `[AllowAnonymous]` only on the Identity sign-in actions and the Development-only diagnostics. -->
 
 ## Portal Area
 
 The customer self-service persona - portal auth/registration, ticket submission and tracking,
 request history, and the public help centre. Filled by stories 47-50.
 
-<!-- Story 09: this Area requires an authenticated portal-customer policy. No [Authorize] yet - stories 07 and 09 own authentication and the per-Area policies. -->
+<!-- Anonymous until story 47 (portal JWT). -->
 
 ## Admin Area
 
 Tenant administration and reporting - identity/user/role management, audit log, SLA and automation
 configuration, management dashboards and exports. Filled by stories 08-10, 51-54. Also the home for
 Story 02's demonstration Sample CRUD endpoints, deleted in Story 11, and (Story 06) the `Organisation`
-module's Branches/Departments/Memberships controllers, which carry `[Authorize(Policy = CrmPolicies.Administrator)]`.
+module's Branches/Departments/Memberships controllers, whose requests require `admin.organisation`.
 
-<!-- Story 09: this Area requires an authenticated tenant-admin policy for its other controllers. Story 06 only
-     wires up CrmPolicies.Administrator (role-based); stories 07 and 09 refine it into the full permission model.
+<!-- Story 07: every controller here requires the Staff JWT (`StaffAreaAuthorizationConvention`); the permission is
+     declared per request (`[RequirePermission(CrmPermissions.Admin...)]`), so a signed-in agent gets 403 naming it.
      No Area lifts the organisation-scope filter - the only lift is the sign-in membership lookup
      (Specification.IgnoreOrganisationScope(), CLAUDE.md, "Backend", Scoping). -->
 
@@ -39,5 +39,5 @@ Rate limited per client IP by the global limiter (`AddCrmRateLimiting`, `RateLim
 in this Area, in any module, with no attribute to add. 429 + `Retry-After`. Stories 27 and 47 add named policies
 (per email, per account) with `[EnableRateLimiting]` for anonymous endpoints outside this Area.
 
-<!-- Story 09: this Area requires API-key authentication, not the JWT policies the other three Areas use. No [Authorize] yet - stories 07, 09, and 55 own authentication for this Area. -->
+<!-- Anonymous until story 55 (API keys). -->
 

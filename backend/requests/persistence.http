@@ -4,49 +4,62 @@
 # below are otherwise unchanged from Story 02.
 @agentA = 06000000-0000-0000-0003-000000000003
 
+# Story 07: requests run as agent A, signed in below (access tokens expire after 2 minutes in Development -
+# re-run the login when a request answers 401). Password: Identity:DevSeed:Password in appsettings.Development.json.
+### Login as agent A
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
 ### Create a sample — 200, echoes createdBy/createdAtUtc
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "Round trip", "lines": ["first", "second"] }
 
 ### Read it back — value object and child both present
 GET {{host}}/api/Admin/Samples/{{sampleId}}
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 ### Update — populates modifiedBy/modifiedAtUtc, bumps rowVersion.
 ### rowVersion is a base64 byte[]; send back exactly what the GET returned.
 PUT {{host}}/api/Admin/Samples/{{sampleId}}
 Content-Type: application/json
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "Renamed", "rowVersion": "{{rowVersion}}" }
 
 ### Stale rowVersion — 409, NOT 500
 PUT {{host}}/api/Admin/Samples/{{sampleId}}
 Content-Type: application/json
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "Conflicting", "rowVersion": "AAAAAAAAB9E=" }
 
 ### Soft delete — 204, no SQL DELETE in the EF log
 DELETE {{host}}/api/Admin/Samples/{{sampleId}}
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 ### Gone from the default query — 404
 GET {{host}}/api/Admin/Samples/{{sampleId}}
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 ### Arabic value object round-trips unmangled
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "عميل تجريبي", "lines": ["سطر أول"] }
 
 ### Canonical query slice, now on a controller — 200 (Agent/Sample is not organisation-scoped, no header needed)
 GET {{host}}/api/Agent/Sample?name=Ahmed
+Authorization: Bearer {{agentAToken}}
 
 ### Validation still returns RFC 9457 with field errors — 400
 GET {{host}}/api/Agent/Sample?name=
+Authorization: Bearer {{agentAToken}}

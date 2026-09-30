@@ -5,5 +5,19 @@
     "version": "v1"
   },
   "paths": {},
-  "components": {}
+  "components": {
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Staff access token from POST /api/Agent/Auth/login",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ]
 }

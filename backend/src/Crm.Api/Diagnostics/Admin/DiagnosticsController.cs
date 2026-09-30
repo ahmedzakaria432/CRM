@@ -1,5 +1,6 @@
 using Crm.BuildingBlocks.Presentation;
 using Crm.SharedKernel.Results;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Crm.Api.Diagnostics.Admin;
@@ -11,6 +12,7 @@ namespace Crm.Api.Diagnostics.Admin;
 /// </summary>
 [Area(CrmAreas.Admin)]
 [DevelopmentOnly]
+[AllowAnonymous] // Development-only failure-mode endpoints; 404 elsewhere. Anonymous so diagnostics.http needs no token for them (Story 07).
 public sealed partial class DiagnosticsController(
     ILogger<DiagnosticsController> logger,
     IHttpClientFactory httpClients) : ApiControllerBase

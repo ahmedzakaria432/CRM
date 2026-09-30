@@ -9,7 +9,7 @@ export interface AuthSession {
   isRefreshRequest(request: Request): boolean
 }
 
-/** Until Story 07: nobody is signed in, and refresh always fails. A 401 therefore goes straight to login. */
+/** Server side and before the client auth plugin runs: nobody is signed in and refresh always fails. */
 export const anonymousSession: AuthSession = {
   accessToken: () => null,
   refresh: async () => false,

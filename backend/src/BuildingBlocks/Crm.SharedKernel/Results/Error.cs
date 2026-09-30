@@ -15,4 +15,6 @@ public sealed record Error(string Code, string Description, ErrorType Type)
     public static Error Forbidden(string code, string description) => new(code, description, ErrorType.Forbidden);
 
     public static Error Domain(string code, string description) => new(code, description, ErrorType.Domain);
+
+    public static Error Unauthorized(string code, string description) => new(code, description, ErrorType.Unauthorized);
 }

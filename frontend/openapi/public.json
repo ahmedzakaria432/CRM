@@ -84,8 +84,21 @@
         },
         "additionalProperties": {}
       }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Staff access token from POST /api/Agent/Auth/login",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
     }
   },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
   "tags": [
     {
       "name": "Diagnostics"

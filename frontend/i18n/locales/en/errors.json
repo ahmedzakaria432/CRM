@@ -25,7 +25,26 @@
         "BranchInactive": "The branch is inactive.",
         "BranchAlreadyInactive": "It is already inactive.",
         "DepartmentAlreadyInactive": "It is already inactive.",
-        "MembershipExists": "The user already belongs to this department."
+        "MembershipExists": "The user already belongs to this department.",
+        "NoMemberships": "You are not a member of any department yet."
+      },
+      "Identity": {
+        "InvalidCredentials": "Email or password is incorrect.",
+        "InvalidRefreshToken": "Your session has ended. Sign in again.",
+        "EmailTaken": "A user with this email already exists.",
+        "UserNotFound": "The user was not found.",
+        "UserAlreadyInactive": "The user is already inactive.",
+        "UserAlreadyActive": "The user is already active.",
+        "CannotDeactivateSelf": "You cannot deactivate your own account.",
+        "CurrentPasswordInvalid": "The current password is incorrect.",
+        "EmailInvalid": "The email address is not valid."
+      },
+      "Authorization": {
+        "PermissionDenied": "You do not have permission to do this.",
+        "Unauthenticated": "Sign in to continue."
+      },
+      "Persistence": {
+        "ConcurrencyConflict": "Someone else changed this record. It was reloaded - try again."
       }
     }
   }

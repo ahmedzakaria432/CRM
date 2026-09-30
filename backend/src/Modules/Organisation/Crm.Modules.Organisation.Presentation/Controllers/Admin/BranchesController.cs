@@ -1,18 +1,17 @@
 using Crm.BuildingBlocks.Presentation;
-using Crm.BuildingBlocks.Presentation.Authorization;
 using Crm.Modules.Organisation.Application;
 using Crm.Modules.Organisation.Application.Commands.CreateBranch;
 using Crm.Modules.Organisation.Application.Commands.DeactivateBranch;
 using Crm.Modules.Organisation.Application.Commands.RenameBranch;
 using Crm.Modules.Organisation.Application.Queries.ListBranches;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Crm.Modules.Organisation.Presentation.Controllers.Admin;
 
 [Area(CrmAreas.Admin)]
-[Authorize(Policy = CrmPolicies.Administrator)]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
 public sealed class BranchesController : ApiControllerBase
 {
     [HttpGet]

@@ -38,7 +38,10 @@
             <ShellScopeSwitcher />
             <ShellLocaleSwitcher />
             <UiThemeToggle :light-label="t('shell.theme.toLight')" :dark-label="t('shell.theme.toDark')" />
-            <UiAvatar name="—" size="sm" />
+            <div class="shrink-0"><UiAvatar :name="auth.me?.displayName ?? '—'" size="sm" /></div>
+            <UiButton variant="ghost" size="sm" class="max-sm:hidden" @click="auth.logout()">
+              {{ t('identity.menu.signOut') }}
+            </UiButton>
           </div>
         </header>
         <main id="main" tabindex="-1" class="flex-1 overflow-y-auto p-4">
@@ -73,31 +76,45 @@
         >
           {{ item.label }}
         </NuxtLink>
+        <UiButton variant="ghost" class="justify-start" @click="signOutFromDrawer()">
+          {{ t('identity.menu.signOut') }}
+        </UiButton>
       </nav>
     </UiDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Permissions } from '~/utils/permissions'
+
 const { t } = useI18n()
-const { scope } = useMyScope()
+useMyScope()
+const auth = useAuthStore()
+const { can } = useCan()
 
 interface AgentNavItem {
   to: string
   label: string
 }
-// Computed so the label follows a locale switch and the administrator nav items follow the scope load.
+// Computed so the label follows a locale switch and the admin nav items follow the signed-in user's permissions.
 const agentNav = computed<ReadonlyArray<AgentNavItem>>(() => [
   { to: '/agent', label: t('shell.nav.home') },
-  ...(scope.isAdministrator
+  ...(can(Permissions.AdminOrganisation)
     ? [
         { to: '/admin/branches', label: t('organisation.nav.branches') },
         { to: '/admin/departments', label: t('organisation.nav.departments') },
       ]
     : []),
+  ...(can(Permissions.AdminUsers) ? [{ to: '/admin/users', label: t('identity.nav.users') }] : []),
+  { to: '/agent/account', label: t('identity.menu.account') },
 ])
 
 const drawerOpen = ref(false)
+
+function signOutFromDrawer(): void {
+  drawerOpen.value = false
+  void auth.logout()
+}
 
 function errorMessage(error: unknown): string | undefined {
   if (import.meta.dev && error instanceof Error) return error.message

@@ -150,7 +150,9 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   `Controllers/<Area>/`. One **Area per persona** — `Agent`, `Portal`, `Admin`, `Public`. Every controller derives
   from `ApiControllerBase`, carries `[Area(CrmAreas.X)]`, and inherits the `api/[area]/[controller]` route template.
   Each Area gets its own Swagger document at `/swagger/{area}/swagger.json`; the UI at `/swagger` is
-  Development-only. Area purposes and policies: `Crm.BuildingBlocks.Presentation/AREAS.md`.
+  Development-only. Area purposes and policies: `Crm.BuildingBlocks.Presentation/AREAS.md`. Agent and Admin controllers require the staff JWT by convention
+  (`StaffAreaAuthorizationConvention`); `[AllowAnonymous]` only on Identity's sign-in actions and the
+  Development-only diagnostics. Portal and Public are anonymous until stories 47/55.
 - **Queries** project straight to DTOs with `.Select(...)`, use `AsNoTracking()`, and never return an entity or
   a domain type across the API boundary.
 - **Results:** handlers return `Result` / `Result<T>`. Expected business failures are results, not exceptions.
@@ -165,7 +167,11 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   (`LocalizedText`) rather than caching a translated string.
 - **Pipeline behaviours:** validation -> authorisation -> organisation scope -> logging -> transaction -> caching.
   "Logging" is also the
-  OpenTelemetry span and the `crm.request.duration` metric per request.
+  OpenTelemetry span and the `crm.request.duration` metric per request. Authorisation enforces the request's declaration: every MediatR request carries exactly one of
+  `[RequirePermission(CrmPermissions.X)]`, `[RequireAuthenticatedUser]`, `[AllowAnonymousRequest]`
+  (`Crm.BuildingBlocks.Application/Authorization`); `RequestAuthorizationGuard` refuses to start the app otherwise.
+  Permissions are a code-defined catalogue with a fixed role map; effective permissions are the roles held in the
+  departments of the active scope. 401 with no user, 403 naming the permission; the handler never runs.
 - **Logging:** Serilog, compact JSON in every environment; every line carries `CorrelationId` (from
   `X-Correlation-Id`, generated when absent) and `UserId`/`TenantId`/`DepartmentId`/`BranchId` when authenticated
   (claim names in `CrmClaimTypes`). Log only through `ILogger<T>` with a `[LoggerMessage]` method — CA1848/CA2254 are
@@ -206,7 +212,8 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   the active scope chosen via the `X-Crm-Scope` header, which only narrows — a department the caller does not
   belong to is rejected with 403, never silently widened). Creating a scoped row resolves its target department
   with `OrganisationScope.ResolveWriteTarget`. There is no "global" read path outside explicitly authorised
-  admin endpoints.
+  admin endpoints. Identity's `User` is deliberately not `ITenantScoped` (sign-in precedes the scope); its admin queries compare
+  `TenantId` to the caller's tenant explicitly — the one hand-written tenant filter.
 - **Patterns in use:** modular monolith, repository + specification, strategy (channel adapters, assignment rules),
   decorator (caching, retry), outbox (integration events between modules and outbound integrations), factory
   (aggregate creation), options pattern (configuration). Do not add a pattern without a use case that needs it.

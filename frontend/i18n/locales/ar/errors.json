@@ -25,7 +25,26 @@
         "BranchInactive": "الفرع غير نشط.",
         "BranchAlreadyInactive": "غير نشط بالفعل.",
         "DepartmentAlreadyInactive": "غير نشط بالفعل.",
-        "MembershipExists": "المستخدم عضو في هذا القسم بالفعل."
+        "MembershipExists": "المستخدم عضو في هذا القسم بالفعل.",
+        "NoMemberships": "لست عضواً في أي قسم بعد."
+      },
+      "Identity": {
+        "InvalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+        "InvalidRefreshToken": "انتهت جلستك. سجّل الدخول مرة أخرى.",
+        "EmailTaken": "يوجد مستخدم بهذا البريد الإلكتروني بالفعل.",
+        "UserNotFound": "لم يتم العثور على المستخدم.",
+        "UserAlreadyInactive": "المستخدم غير نشط بالفعل.",
+        "UserAlreadyActive": "المستخدم نشط بالفعل.",
+        "CannotDeactivateSelf": "لا يمكنك إلغاء تفعيل حسابك.",
+        "CurrentPasswordInvalid": "كلمة المرور الحالية غير صحيحة.",
+        "EmailInvalid": "عنوان البريد الإلكتروني غير صالح."
+      },
+      "Authorization": {
+        "PermissionDenied": "ليست لديك صلاحية للقيام بذلك.",
+        "Unauthenticated": "سجّل الدخول للمتابعة."
+      },
+      "Persistence": {
+        "ConcurrencyConflict": "قام شخص آخر بتغيير هذا السجل. تمت إعادة تحميله - حاول مرة أخرى."
       }
     }
   }

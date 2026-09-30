@@ -1,0 +1,90 @@
+{
+  "identity": {
+    "login": {
+      "title": "Sign in",
+      "submit": "Sign in",
+      "email": "Email",
+      "password": "Password",
+      "invalid": "Email or password is incorrect.",
+      "rateLimited": "Too many attempts. Wait a moment and try again.",
+      "failed": "Sign-in failed. Try again."
+    },
+    "nav": {
+      "users": "Users"
+    },
+    "menu": {
+      "account": "My account",
+      "signOut": "Sign out"
+    },
+    "account": {
+      "title": "My account",
+      "changePassword": "Change password",
+      "passwordRules": "10 to 128 characters, with at least one letter and one digit.",
+      "mismatch": "The passwords do not match.",
+      "changed": "Password changed. Your other sessions were signed out."
+    },
+    "users": {
+      "title": "Users",
+      "create": "New user",
+      "empty": "No users match your search",
+      "notFound": "The user was not found",
+      "search": "Search by name or email",
+      "searchAction": "Search",
+      "back": "Back to users"
+    },
+    "fields": {
+      "displayName": "Display name",
+      "email": "Email",
+      "locale": "Preferred language",
+      "initialPassword": "Initial password",
+      "newPassword": "New password",
+      "currentPassword": "Current password",
+      "confirmPassword": "Confirm new password",
+      "status": "Status",
+      "lastSignIn": "Last sign-in",
+      "never": "Never",
+      "department": "Department",
+      "role": "Role",
+      "actions": "Actions"
+    },
+    "locale": {
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "locked": "Locked"
+    },
+    "roles": {
+      "Administrator": "Administrator",
+      "Supervisor": "Supervisor",
+      "Agent": "Agent"
+    },
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "resetPassword": "Reset password",
+      "addMembership": "Add to department",
+      "remove": "Remove"
+    },
+    "detail": {
+      "profile": "Profile",
+      "status": "Account status",
+      "memberships": "Department memberships",
+      "noMemberships": "No memberships yet. The user can sign in but sees no data."
+    },
+    "confirm": {
+      "deactivate": "Deactivate {name}? They are signed out everywhere and cannot sign in.",
+      "removeMembership": "Remove {name} from {department}?"
+    },
+    "saved": "Saved",
+    "load": {
+      "error": "Could not load the data",
+      "retry": "Try again"
+    }
+  }
+}

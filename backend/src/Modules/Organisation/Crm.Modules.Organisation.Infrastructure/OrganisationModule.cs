@@ -1,5 +1,4 @@
 using System.Reflection;
-using Crm.BuildingBlocks.Application.Abstractions;
 using Crm.BuildingBlocks.Infrastructure.Modules;
 using Crm.Modules.Organisation.Application;
 using Crm.Modules.Organisation.Contracts;
@@ -31,9 +30,5 @@ public sealed class OrganisationModule : IModule
 
         // The module's public face: what other modules may reference through Crm.Modules.Organisation.Contracts.
         services.AddScoped<IOrganisationModuleApi, OrganisationModuleApi>();
-
-        // DEVELOPMENT ONLY (Story 06): harmless outside Development - nothing calls it once DevUserAuthenticationHandler
-        // returns NoResult in every other environment. Deleted with the rest of the dev-login seam by Story 07.
-        services.AddScoped<IDevUserDirectory, DevUserDirectory>();
     }
 }

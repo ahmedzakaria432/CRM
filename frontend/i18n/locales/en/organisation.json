@@ -46,7 +46,6 @@
     "load": {
       "error": "Could not load the data",
       "retry": "Try again"
-    },
-    "devLogin": "Development sign-in"
+    }
   }
 }

@@ -1,0 +1,249 @@
+@host = http://localhost:5187
+
+# Story 07 - basic user administration (admin.users). Run top to bottom against a Development API. Access tokens
+# live 2 minutes in Development: re-run the three login requests when a request answers 401. The user
+# rowVersion changes on every sign-in, so each write below reads the user first.
+# Ids: Crm.Modules.Organisation.Contracts.DevSeed.OrganisationDevSeed.
+@admin = 06000000-0000-0000-0003-000000000001
+@agentB = 06000000-0000-0000-0003-000000000004
+@ryCare = 06000000-0000-0000-0002-000000000001
+@jeCare = 06000000-0000-0000-0002-000000000003
+@adminJeddahCareMembershipId = 06000000-0000-0000-0004-000000000003
+
+### Login as admin
+# @name loginAdmin
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "Crm_Dev_2026!" }
+
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+### Login as agent A
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
+### 1. List users as admin - 200: items (the four seeded users, ordered by display name), total, page 1, pageSize 20
+GET {{host}}/api/Admin/Users
+Authorization: Bearer {{adminToken}}
+
+### 2. Search and page - on a fresh database: 1 item, total 2 ("agent" matches agent A and agent B)
+GET {{host}}/api/Admin/Users?search=agent&page=1&pageSize=1
+Authorization: Bearer {{adminToken}}
+
+### 3. List users as agent A - 403 Authorization.PermissionDenied, detail names admin.users. The API log has the Warning
+### "Permission admin.users denied" and NO "Handling ListUsersQuery" line (the handler never ran).
+GET {{host}}/api/Admin/Users
+Authorization: Bearer {{agentAToken}}
+
+### 4. List users with no token - 401
+GET {{host}}/api/Admin/Users
+
+### 5. Create a user - 200 (id, rowVersion, isActive true). Change the email if it already exists.
+# @name created
+POST {{host}}/api/Admin/Users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "email": "new.agent@crm.local", "displayName": "New Agent", "preferredLocale": "ar", "initialPassword": "Welcome_2026" }
+
+@createdId = {{created.response.body.id}}
+
+### 6. Same again - 409 Identity.EmailTaken
+POST {{host}}/api/Admin/Users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "email": "new.agent@crm.local", "displayName": "New Agent", "preferredLocale": "ar", "initialPassword": "Welcome_2026" }
+
+### 7. Invalid body with Accept-Language: ar - 400 with Arabic messages for Email, DisplayName, PreferredLocale and
+### InitialPassword. (EmailAddress also rejects a malformed address in the domain; its 422 Identity.EmailInvalid is
+### reached only by a caller that bypasses the validator.)
+POST {{host}}/api/Admin/Users
+Content-Type: application/json
+Accept-Language: ar
+Authorization: Bearer {{adminToken}}
+
+{ "email": "broken@", "displayName": "", "preferredLocale": "fr", "initialPassword": "short" }
+
+### 8a. Login as the new user - 200
+# @name loginNew
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "new.agent@crm.local", "password": "Welcome_2026" }
+
+### 8b. Me as the new user - memberships [], permissions []
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{loginNew.response.body.accessToken}}
+
+### 8c. MyScope as the new user - 403 Organisation.NoMemberships
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{loginNew.response.body.accessToken}}
+
+### 9a. As admin, add the new user to RYD-CARE as Agent (Organisation's Memberships endpoint) - 200
+POST {{host}}/api/Admin/Memberships
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "userId": "{{createdId}}", "departmentId": "{{ryCare}}", "role": "Agent" }
+
+### 9b. Refresh the new user's session - the new token carries the membership
+# @name refreshNew
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginNew.response.body.refreshToken}}" }
+
+### 9c. Me with the refreshed token - lists RYD-CARE and the Agent permissions
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{refreshNew.response.body.accessToken}}
+
+### 10a. Read the user (fresh rowVersion - signing in changed it)
+# @name createdNow
+GET {{host}}/api/Admin/Users/{{createdId}}
+Authorization: Bearer {{adminToken}}
+
+### 10b. Edit the profile - 200; sending the same rowVersion again is 409 Persistence.ConcurrencyConflict
+PUT {{host}}/api/Admin/Users/{{createdId}}/profile
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "displayName": "وكيل جديد", "preferredLocale": "en", "rowVersion": "{{createdNow.response.body.rowVersion}}" }
+
+### 10c. Same stale rowVersion again - 409
+PUT {{host}}/api/Admin/Users/{{createdId}}/profile
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "displayName": "وكيل جديد", "preferredLocale": "en", "rowVersion": "{{createdNow.response.body.rowVersion}}" }
+
+### 11a. Read again, then reset the password - 200; the user's previous refresh token (request 9b) answers 401
+# @name createdNow2
+GET {{host}}/api/Admin/Users/{{createdId}}
+Authorization: Bearer {{adminToken}}
+
+### 11b. Reset password
+PUT {{host}}/api/Admin/Users/{{createdId}}/password
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "newPassword": "Reset_Pass_77", "rowVersion": "{{createdNow2.response.body.rowVersion}}" }
+
+### 11c. Login with the reset password - 200
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "new.agent@crm.local", "password": "Reset_Pass_77" }
+
+### 12. Login as agent B (keep its refresh token for request 14)
+# @name loginAgentB
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+### 13a. Read agent B, then deactivate - 200 isActive false
+# @name agentBNow
+GET {{host}}/api/Admin/Users/{{agentB}}
+Authorization: Bearer {{adminToken}}
+
+### 13b. Deactivate
+# @name deactivated
+POST {{host}}/api/Admin/Users/{{agentB}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{agentBNow.response.body.rowVersion}}" }
+
+### 13c. Deactivate again - 422 Identity.UserAlreadyInactive
+POST {{host}}/api/Admin/Users/{{agentB}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{deactivated.response.body.rowVersion}}" }
+
+### 14a. Refresh agent B's token from request 12 - 401 (deactivation revoked every session)
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginAgentB.response.body.refreshToken}}" }
+
+### 14b. Login as agent B - 401 Identity.InvalidCredentials (deactivation blocks sign-in)
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+### 14c. Me with agent B's still-unexpired access token from request 12 - 401
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{loginAgentB.response.body.accessToken}}
+
+### 15a. Read the admin
+# @name adminNow
+GET {{host}}/api/Admin/Users/{{admin}}
+Authorization: Bearer {{adminToken}}
+
+### 15b. The admin deactivates themself - 422 Identity.CannotDeactivateSelf
+POST {{host}}/api/Admin/Users/{{admin}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{adminNow.response.body.rowVersion}}" }
+
+### 16a. Read agent B, then reactivate - 200 isActive true
+# @name agentBNow2
+GET {{host}}/api/Admin/Users/{{agentB}}
+Authorization: Bearer {{adminToken}}
+
+### 16b. Reactivate
+POST {{host}}/api/Admin/Users/{{agentB}}/reactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{agentBNow2.response.body.rowVersion}}" }
+
+### 16c. Login as agent B - 200
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+### 17a. ROLES DIFFER BY DEPARTMENT, REQUESTS FOLLOW THE SCOPE - as admin change the Jeddah Care membership to Agent
+### (read its rowVersion from GET /api/Admin/Memberships?userId={{admin}} and paste it). 200.
+GET {{host}}/api/Admin/Memberships?userId={{admin}}
+Authorization: Bearer {{adminToken}}
+
+### 17b. PUT the role change (paste the rowVersion from 17a)
+PUT {{host}}/api/Admin/Memberships/{{adminJeddahCareMembershipId}}/role
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "role": "Agent", "rowVersion": "PASTE-ROWVERSION" }
+
+### 17c. Log in as admin again (the role travels on the token), then list users with X-Crm-Scope: jeCare - 403 naming
+### admin.users; with X-Crm-Scope: ryCare - 200. Then restore the role to Administrator.
+# @name loginAdmin2
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "Crm_Dev_2026!" }
+
+### 17d. jeCare - 403
+GET {{host}}/api/Admin/Users
+Authorization: Bearer {{loginAdmin2.response.body.accessToken}}
+X-Crm-Scope: {{jeCare}}
+
+### 17e. ryCare - 200
+GET {{host}}/api/Admin/Users
+Authorization: Bearer {{loginAdmin2.response.body.accessToken}}
+X-Crm-Scope: {{ryCare}}
+
+### 18. Unknown user - 404 Identity.UserNotFound
+GET {{host}}/api/Admin/Users/00000000-0000-0000-0000-00000000dead
+Authorization: Bearer {{adminToken}}

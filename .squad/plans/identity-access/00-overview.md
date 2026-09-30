@@ -11,7 +11,7 @@ Entry point for the **Identity and Access** feature. This is **feature 2 of 12**
 
 | NN | Intake | Title | Plan file | Depends on |
 |----|--------|-------|-----------|------------|
-| 07 | [`authentication-with-jwt-refresh-tokens-and-password-reset`](../../stories/identity-access/authentication-with-jwt-refresh-tokens-and-password-reset/intake.md) | Authentication with JWT refresh tokens and password reset | _not planned yet_ | CRM-02, CRM-04, CRM-06 |
+| 07 | [`authentication-with-jwt-refresh-tokens-and-password-reset`](../../stories/identity-access/authentication-with-jwt-refresh-tokens-and-password-reset/intake.md) | Authentication users roles and permissions (absorbs 08, 09) | [`07-story-authentication-users-roles-and-permissions.md`](07-story-authentication-users-roles-and-permissions.md) | CRM-02, CRM-04, CRM-06 |
 | 08 | [`user-and-role-management`](../../../next-steps-stories/stories/identity-access/user-and-role-management/intake.md) | User and role management | _not planned yet_ | CRM-06, CRM-07 |
 | 09 | [`permission-model-and-policy-based-authorisation`](../../../next-steps-stories/stories/identity-access/permission-model-and-policy-based-authorisation/intake.md) | Permission model and policy based authorisation | _not planned yet_ | CRM-06, CRM-08 |
 | 10 | [`audit-log`](../../../next-steps-stories/stories/identity-access/audit-log/intake.md) | Audit log | _not planned yet_ | CRM-02, CRM-03, CRM-09 |

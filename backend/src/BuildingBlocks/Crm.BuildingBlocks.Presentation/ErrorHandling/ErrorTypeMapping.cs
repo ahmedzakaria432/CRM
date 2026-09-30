@@ -13,6 +13,7 @@ public static class ErrorTypeMapping
         ErrorType.Conflict => StatusCodes.Status409Conflict,
         ErrorType.Forbidden => StatusCodes.Status403Forbidden,
         ErrorType.Domain => StatusCodes.Status422UnprocessableEntity,
+        ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
         _ => StatusCodes.Status500InternalServerError,
     };
 
@@ -23,6 +24,7 @@ public static class ErrorTypeMapping
         ErrorType.Conflict => ProblemTypes.Conflict,
         ErrorType.Forbidden => ProblemTypes.Forbidden,
         ErrorType.Domain => ProblemTypes.DomainRule,
+        ErrorType.Unauthorized => ProblemTypes.Unauthorized,
         _ => ProblemTypes.Internal,
     };
 }

@@ -1,9 +1,9 @@
 using Crm.Api.Diagnostics;
 using Crm.Api.Modules;
 using Crm.BuildingBlocks.Application;
+using Crm.BuildingBlocks.Application.Abstractions;
 using Crm.BuildingBlocks.Infrastructure;
 using Crm.BuildingBlocks.Infrastructure.Correlation;
-using Crm.BuildingBlocks.Infrastructure.Identity;
 using Crm.BuildingBlocks.Infrastructure.Modules;
 using Crm.BuildingBlocks.Infrastructure.Observability;
 using Crm.BuildingBlocks.Presentation;
@@ -12,7 +12,6 @@ using Crm.BuildingBlocks.Presentation.ErrorHandling;
 using Crm.BuildingBlocks.Presentation.Localization;
 using Crm.BuildingBlocks.Presentation.RateLimiting;
 using Crm.BuildingBlocks.Presentation.Scoping;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
 using Serilog;
@@ -31,9 +30,9 @@ try
     builder.Services.AddCrmErrorHandling();                                            // global exception handler + problem details
     builder.Services.AddCrmRateLimiting(builder.Configuration);
 
-    // Story 06: X-Dev-User sign-in, honoured in Development only (the handler returns NoResult elsewhere, so
-    // every [Authorize] endpoint answers a 401 challenge, never a 500). Story 07 replaces it with JWT bearer.
-    builder.Services.AddAuthentication(DevUserAuthentication.Scheme).AddCrmDevUser();
+    // Story 07: staff sign-in is JWT bearer (scheme registered by the Identity module). It is the default scheme,
+    // so an [Authorize] challenge is always a 401 problem, never "no authenticationScheme was specified".
+    builder.Services.AddAuthentication(CrmAuthenticationSchemes.Staff);
     builder.Services.AddCrmAuthorization();
 
     // Shared building blocks first, then every module. MediatR is registered once, over every module's
@@ -51,7 +50,7 @@ try
         builder.Services.AddDiagnostics(builder.Configuration);
     }
 
-    IMvcBuilder mvc = builder.Services.AddControllers();
+    IMvcBuilder mvc = builder.Services.AddControllers(options => options.Conventions.Add(new StaffAreaAuthorizationConvention()));
 
     foreach (ModuleEntry entry in ModuleCatalog.All)
     {
@@ -76,6 +75,18 @@ try
             apiDescription.ActionDescriptor.RouteValues.TryGetValue("area", out string? area)
             && string.Equals(area, docName, StringComparison.OrdinalIgnoreCase));
 
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Staff access token from POST /api/Agent/Auth/login",
+        });
+        options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] = [],
+        });
+
         // Controllers live in the module Presentation assemblies, so their XML doc files are read too.
         foreach (string xmlDoc in Directory.EnumerateFiles(AppContext.BaseDirectory, "Crm.*.xml"))
         {
@@ -97,7 +108,7 @@ try
     // 3. request logging outside the exception handler - it logs the final (handled) status once;
     // 4. exception handler, then status-code pages - bare 401/404/405 become problems too;
     // 5. Development-only Swagger + migrate/seed (below);
-    // 6. authentication, then the active-scope check (403 on a forged X-Crm-Scope), then authorisation;
+    // 6. authentication (staff JWT), then the active-scope check (403 on a forged X-Crm-Scope), then authorisation;
     // 7. rate limiter after routing (implicit), so the endpoint's [Area] is known.
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseCrmRequestLocalization();

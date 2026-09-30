@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Crm.BuildingBlocks.Application\Crm.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\Crm.Modules.Identity.Domain\Crm.Modules.Identity.Domain.csproj" />
+    <ProjectReference Include="..\Crm.Modules.Identity.Contracts\Crm.Modules.Identity.Contracts.csproj" />
+    <!-- Sign-in reads the user's memberships through IOrganisationModuleApi (Contracts only, CRM0001). -->
+    <ProjectReference Include="..\..\Organisation\Crm.Modules.Organisation.Contracts\Crm.Modules.Organisation.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

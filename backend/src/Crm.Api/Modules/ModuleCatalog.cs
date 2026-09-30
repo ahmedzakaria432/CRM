@@ -15,6 +15,8 @@ internal static class ModuleCatalog
         // module's seed points at.
         new(new Crm.Modules.Organisation.Infrastructure.OrganisationModule(), Crm.Modules.Organisation.Presentation.AssemblyReference.Assembly),
 
+        new(new Crm.Modules.Identity.Infrastructure.IdentityModule(), Crm.Modules.Identity.Presentation.AssemblyReference.Assembly),
+
         // CANONICAL SLICE - removed with the Sample module in Story 11.
         new(new Crm.Modules.Sample.Infrastructure.SampleModule(), Crm.Modules.Sample.Presentation.AssemblyReference.Assembly),
     ];

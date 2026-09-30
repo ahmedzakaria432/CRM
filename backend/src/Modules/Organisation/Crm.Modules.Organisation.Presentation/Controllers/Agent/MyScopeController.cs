@@ -1,14 +1,13 @@
 using Crm.BuildingBlocks.Presentation;
 using Crm.Modules.Organisation.Application;
 using Crm.Modules.Organisation.Application.Queries.GetMyScope;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Crm.Modules.Organisation.Presentation.Controllers.Agent;
 
 [Area(CrmAreas.Agent)]
-[Authorize]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public sealed class MyScopeController : ApiControllerBase
 {
     [HttpGet]

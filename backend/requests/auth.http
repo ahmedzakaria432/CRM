@@ -1,0 +1,221 @@
+@host = http://localhost:5187
+
+# Story 07 - staff sign-in, refresh, sign-out, "who am I", and change password. Run top to bottom against a
+# Development API (`docker compose up -d` first, then `dotnet run --project backend/src/Crm.Api --launch-profile http`).
+# Seeded staff users (Crm.Modules.Identity.Contracts.DevSeed.IdentityDevSeed), password Identity:DevSeed:Password in
+# appsettings.Development.json ("Crm_Dev_2026!"):
+#   admin@crm.local        Administrator in all three departments
+#   supervisor@crm.local   Supervisor in RYD-CARE, Agent in RYD-BILL
+#   agent.a@crm.local      Agent in RYD-CARE
+#   agent.b@crm.local      Agent in JED-CARE
+# In Development the access token lives 2 minutes and a lockout lasts 2 minutes (appsettings.Development.json), so
+# expiry and lockout can be walked by hand. Sign-in and refresh are limited to 30 per minute per IP in Development.
+@ryCare = 06000000-0000-0000-0002-000000000001
+@ryBill = 06000000-0000-0000-0002-000000000002
+
+### 1. Login as admin - 200: accessToken, refreshToken, both expiries, tokenType "Bearer" and
+### Set-Cookie: crm_refresh=...; path=/api/Agent/Auth; secure; samesite=strict; httponly.
+### Paste the accessToken payload (2nd segment) into a base64url decoder: exp/iat/nbf are integers, `membership` is an
+### array of "department|branch|role" strings (three for admin), `role` is ["Administrator"], plus sub/name/tenant_id/sid.
+# @name loginAdmin
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "Crm_Dev_2026!" }
+
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+### 2. GET Me with no Authorization header - 401 urn:crm:problem:unauthorized (RFC 9457 body, not empty)
+GET {{host}}/api/Agent/Me
+
+### 3. GET Me as admin - 200: displayName "System Administrator", preferredLocale "en", three memberships,
+### roles ["Administrator"], all eight permissions
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{adminToken}}
+
+### 4. Login with the email upper-cased and padded - 200 (the email is normalised: trimmed, lower-case)
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "ADMIN@crm.local ", "password": "Crm_Dev_2026!" }
+
+### 5. Login as supervisor - 200
+# @name loginSupervisor
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "supervisor@crm.local", "password": "Crm_Dev_2026!" }
+
+@supervisorToken = {{loginSupervisor.response.body.accessToken}}
+
+### 6. GET MyScope as supervisor - two departments (two `membership` claims arrived as several claims)
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{supervisorToken}}
+
+### 7a. Supervisor Me, no X-Crm-Scope - roles ["Agent","Supervisor"], permissions include tickets.assign
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{supervisorToken}}
+
+### 7b. Supervisor Me with X-Crm-Scope: ryBill - roles ["Agent"], NO tickets.assign (effective permissions follow the
+### active scope)
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{supervisorToken}}
+X-Crm-Scope: {{ryBill}}
+
+### 7c. Supervisor Me with X-Crm-Scope: ryCare - roles ["Supervisor"], has tickets.assign
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{supervisorToken}}
+X-Crm-Scope: {{ryCare}}
+
+### 8. Refresh (JSON body) - 200, a NEW refreshToken (the presented one is now rotated)
+# @name refresh1
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginSupervisor.response.body.refreshToken}}" }
+
+### 9. Refresh again with the OLD token - 401 Identity.InvalidRefreshToken; the API log has the Warning
+### "Refresh token reuse detected; session ... revoked"
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginSupervisor.response.body.refreshToken}}" }
+
+### 10. Refresh with the token from request 8 - 401 (reuse revoked the whole family)
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{refresh1.response.body.refreshToken}}" }
+
+### 11a. Login as agent A
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+### 11b. Logout with its refresh token - 204 (the crm_refresh cookie is deleted too)
+POST {{host}}/api/Agent/Auth/logout
+Content-Type: application/json
+
+{ "refreshToken": "{{loginAgentA.response.body.refreshToken}}" }
+
+### 11c. Refresh with it - 401 (logout revoked the session)
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginAgentA.response.body.refreshToken}}" }
+
+### 12. Logout with a token that does not exist - 204 (idempotent, no oracle)
+POST {{host}}/api/Agent/Auth/logout
+Content-Type: application/json
+
+{ "refreshToken": "not-a-token" }
+
+### 13. Wrong password - 401 Identity.InvalidCredentials, detail "Invalid email or password."
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "wrong-password-1" }
+
+### 14. Unknown email - 401 with the SAME body as request 13 (never reveals whether the account exists)
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "nobody@crm.local", "password": "wrong-password-1" }
+
+### 15a. Malformed email - 401, same body again
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "not-an-email", "password": "x" }
+
+### 15b. Empty fields - 400 urn:crm:problem:validation (errors.Email, errors.Password)
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "", "password": "" }
+
+### 16. LOCKOUT - send this request FIVE times: five 401s; the fifth writes the Warning "account locked until ...".
+### Then the CORRECT password (16b) is still 401 (locked). Wait Identity:Sessions:LockoutWindow (2 minutes in
+### Development), then 16b - 200. Attempts while locked do not extend the lock.
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "wrong-password-1" }
+
+### 16b. Correct password for agent B
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+### 17a. Login as agent B (a second session; keep its tokens)
+# @name loginAgentB2
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentBToken = {{loginAgentB2.response.body.accessToken}}
+
+### 17b. Change password with a wrong current password - 400, errors.CurrentPassword
+POST {{host}}/api/Agent/Me/change-password
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "currentPassword": "wrong", "newPassword": "Another_Pass_42" }
+
+### 17c. New password equal to the current one - 400 (errors.NewPassword)
+POST {{host}}/api/Agent/Me/change-password
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "currentPassword": "Crm_Dev_2026!", "newPassword": "Crm_Dev_2026!" }
+
+### 17d. Too short - 400 (errors.NewPassword)
+POST {{host}}/api/Agent/Me/change-password
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "currentPassword": "Crm_Dev_2026!", "newPassword": "short" }
+
+### 18a. Change agent B's password - 204. Every OTHER session of agent B is revoked (an older refresh token from
+### request 16b now answers 401); THIS session's refresh token (request 17a) still answers 200.
+POST {{host}}/api/Agent/Me/change-password
+Content-Type: application/json
+Authorization: Bearer {{agentBToken}}
+
+{ "currentPassword": "Crm_Dev_2026!", "newPassword": "Another_Pass_42" }
+
+### 18b. This session survives - refresh with the request 17a token - 200
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginAgentB2.response.body.refreshToken}}" }
+
+### 18c. Login with the new password - 200
+# @name loginAgentB3
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Another_Pass_42" }
+
+### 18d. Change it back - 204
+POST {{host}}/api/Agent/Me/change-password
+Content-Type: application/json
+Authorization: Bearer {{loginAgentB3.response.body.accessToken}}
+
+{ "currentPassword": "Another_Pass_42", "newPassword": "Crm_Dev_2026!" }
+
+### 19. ACCESS-TOKEN EXPIRY - re-send request 3 with an admin token more than two minutes old: 401 with
+### WWW-Authenticate: Bearer error="invalid_token". Refresh (request 8 shape) - 200, then retry request 3 - 200.
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{adminToken}}
+
+### 20. RATE LIMIT - send request 13 repeatedly: past 30 attempts within a minute (Development) the answer is 429
+### urn:crm:problem:rate-limited with a Retry-After header. Wait a minute before continuing.
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "wrong-password-1" }

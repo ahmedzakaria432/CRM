@@ -270,7 +270,7 @@ traces, metrics, and the structured logs.
   exception message is **not** redacted — a connection string inside a `SqlException` reaches the log (never the
   response). EF sensitive-data logging (Development only) prints SQL parameter values.
 
-## Organisation scope and dev login
+## Organisation scope and sign-in
 
 Story 06 adds multi-department, multi-branch data isolation, enforced once at the data layer:
 
@@ -283,23 +283,31 @@ Story 06 adds multi-department, multi-branch data isolation, enforced once at th
 - **`X-Crm-Scope` header** narrows the caller's effective departments to one (a department id) or leaves them at
   `all` (absent, empty, or `all`). It can never widen: a department the caller does not belong to is rejected
   with 403 `Organisation.ActiveScopeRejected`, logged as a Warning.
-- **`X-Dev-User: <user id>` — Development only**, until Story 07 ships real sign-in. Accepts one of the four
-  seeded well-known users (`Crm.Modules.Organisation.Contracts.DevSeed.OrganisationDevSeed`) and builds the
-  principal from their memberships:
+- **Sign-in (Story 07):** staff sign in with `POST /api/Agent/Auth/login` (email + password) and send the access
+  token as `Authorization: Bearer <token>`. The Development seed creates four users, all with the password in
+  `Identity:DevSeed:Password` (`appsettings.Development.json`; missing → no users are seeded):
 
-  | User | Memberships |
-  |---|---|
-  | Admin (`…003-000000000001`) | Administrator in all three departments |
-  | Supervisor (`…003-000000000002`) | Supervisor in Riyadh Customer Care, Agent in Riyadh Billing |
-  | Agent A (`…003-000000000003`) | Agent in Riyadh Customer Care |
-  | Agent B (`…003-000000000004`) | Agent in Jeddah Customer Care (a different branch and department) |
+  | User | Email | Memberships |
+  |---|---|---|
+  | Admin (`…003-000000000001`) | `admin@crm.local` | Administrator in all three departments |
+  | Supervisor (`…003-000000000002`) | `supervisor@crm.local` | Supervisor in Riyadh Customer Care, Agent in Riyadh Billing |
+  | Agent A (`…003-000000000003`) | `agent.a@crm.local` | Agent in Riyadh Customer Care |
+  | Agent B (`…003-000000000004`) | `agent.b@crm.local` | Agent in Jeddah Customer Care (a different branch and department) |
 
-  The header is honoured only in Development (`DevUserAuthenticationHandler` returns `NoResult` outside it, so
-  every `[Authorize]` endpoint answers a 401 challenge, never a 500). Story 07 deletes the handler and issues
-  JWTs with the same claim shape instead.
-- **Try it:** `backend/requests/organisation.http` runs the full cross-department matrix (an agent's write/read
-  into another department, the union vs. one-department view, the forged-header rejection, and the naive query
-  that is still scoped automatically) against a running Development API.
+  The access token is a short-lived HS256 JWT (claims `sub`, `name`, `tenant_id`, `sid`, one `membership` per
+  membership, one `role` per distinct role); the refresh token rotates on every use and is also set as the HttpOnly
+  cookie `crm_refresh` (`Path=/api/Agent/Auth`, `SameSite=Strict`, `Secure`). Reusing a rotated refresh token
+  revokes the whole session; five failed sign-ins lock the account for `Identity:Sessions:LockoutWindow`.
+- **The signing key is never in `appsettings.json`.** Outside Development set `Identity__Jwt__SigningKey` (at least
+  32 bytes) in the environment or secret store; the app **refuses to start** without it.
+- **Authorisation:** every MediatR request declares `[RequirePermission(CrmPermissions.X)]`,
+  `[RequireAuthenticatedUser]`, or `[AllowAnonymousRequest]`; the app refuses to start otherwise. Roles map to
+  permissions in code (`CrmPermissions`), and a user's effective permissions are those of the roles they hold in the
+  departments of the active scope. 401 without a token, 403 naming the permission.
+- **Try it:** `backend/requests/auth.http` and `users.http` cover sign-in, refresh, lockout, password change and user
+  administration; `organisation.http` runs the full cross-department matrix (an agent's write/read into another
+  department, the union vs. one-department view, the forged-header rejection, and the naive query that is still
+  scoped automatically) against a running Development API.
 
 ## Caching
 

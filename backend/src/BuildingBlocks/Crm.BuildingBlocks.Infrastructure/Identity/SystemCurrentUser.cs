@@ -14,6 +14,8 @@ public sealed class SystemCurrentUser : ICurrentUserService
 
     public string? UserId => null;
 
+    public string? SessionId => null;
+
     public string UserIdOrSystem => "system";
 
     public string? TenantId => null;

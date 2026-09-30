@@ -8,4 +8,5 @@ public enum ErrorType
     Conflict,
     Forbidden,
     Domain,
+    Unauthorized,
 }

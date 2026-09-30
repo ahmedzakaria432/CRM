@@ -55,6 +55,13 @@ public sealed class OrganisationScope
         }
 
         Roles = memberships.Select(m => m.Role).Distinct(StringComparer.Ordinal).OrderBy(r => r, StringComparer.Ordinal).ToList();
+
+        EffectiveRoles = memberships
+            .Where(m => Departments.Contains(m.DepartmentId))
+            .Select(m => m.Role)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(r => r, StringComparer.Ordinal)
+            .ToList();
     }
 
     public bool IsUnrestricted { get; }
@@ -77,6 +84,10 @@ public sealed class OrganisationScope
     public IReadOnlyList<BranchId> Branches { get; }
 
     public IReadOnlyList<string> Roles { get; }
+
+    /// <summary>Roles of the memberships inside <see cref="Departments"/> - what effective permissions follow
+    /// (Story 07). Empty when the active scope was rejected.</summary>
+    public IReadOnlyList<string> EffectiveRoles { get; }
 
     /// <summary>The one place the three-column rule is written in C#; the SQL rule in ModuleDbContext.OrganisationScope.cs
     /// must stay equivalent.</summary>

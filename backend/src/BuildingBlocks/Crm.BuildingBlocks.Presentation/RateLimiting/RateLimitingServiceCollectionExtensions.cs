@@ -13,6 +13,12 @@ namespace Crm.BuildingBlocks.Presentation.RateLimiting;
 /// <summary>Bound from "RateLimiting:Public".</summary>
 public sealed record PublicRateLimitSettings(int PermitLimit, TimeSpan Window);
 
+/// <summary>Named policies applied with [EnableRateLimiting] (Story 07).</summary>
+public static class CrmRateLimitPolicies
+{
+    public const string SignIn = "sign-in";
+}
+
 public static class RateLimitingServiceCollectionExtensions
 {
     /// <summary>
@@ -25,6 +31,9 @@ public static class RateLimitingServiceCollectionExtensions
     {
         PublicRateLimitSettings settings = configuration.GetSection("RateLimiting:Public").Get<PublicRateLimitSettings>()
             ?? throw new InvalidOperationException("RateLimiting:Public is not configured.");
+
+        PublicRateLimitSettings signIn = configuration.GetSection("RateLimiting:SignIn").Get<PublicRateLimitSettings>()
+            ?? throw new InvalidOperationException("RateLimiting:SignIn is not configured.");
 
         services.AddRateLimiter(options =>
         {
@@ -42,6 +51,9 @@ public static class RateLimitingServiceCollectionExtensions
                             QueueLimit = 0,
                         })
                     : RateLimitPartition.GetNoLimiter("unlimited"));
+            options.AddPolicy(CrmRateLimitPolicies.SignIn, context => RateLimitPartition.GetFixedWindowLimiter(
+                $"sign-in:{context.Connection.RemoteIpAddress}",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = signIn.PermitLimit, Window = signIn.Window, QueueLimit = 0 }));
 
             options.OnRejected = async (context, cancellationToken) =>
             {

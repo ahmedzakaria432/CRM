@@ -7,12 +7,23 @@
 # Story 06: Sample rows are department-scoped; every /api/Admin/Samples request runs as agentA.
 @agentA = 06000000-0000-0000-0003-000000000003
 
+# Story 07: requests run as agent A, signed in below (access tokens expire after 2 minutes in Development -
+# re-run the login when a request answers 401). Password: Identity:DevSeed:Password in appsettings.Development.json.
+### Login as agent A
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
 ### 1. Arabic validation (acceptance criterion) - 400, title "فشل التحقق من صحة البيانات",
 ### errors.Name[0] "'Name' لا يجب أن يكون فارغاً.", header Content-Language: ar
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: ar
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "", "lines": [] }
 
@@ -20,7 +31,7 @@ X-Dev-User: {{agentA}}
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: en
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "", "lines": [] }
 
@@ -28,7 +39,7 @@ X-Dev-User: {{agentA}}
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: ar-SA,en;q=0.5
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "", "lines": [] }
 
@@ -36,14 +47,14 @@ X-Dev-User: {{agentA}}
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
 Accept-Language: fr
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "", "lines": [] }
 
 ### 5. No Accept-Language header - defaults to English
 POST {{host}}/api/Admin/Samples
 Content-Type: application/json
-X-Dev-User: {{agentA}}
+Authorization: Bearer {{agentAToken}}
 
 { "name": "", "lines": [] }
 

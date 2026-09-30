@@ -1,18 +1,17 @@
 using Crm.BuildingBlocks.Presentation;
-using Crm.BuildingBlocks.Presentation.Authorization;
 using Crm.Modules.Organisation.Application;
 using Crm.Modules.Organisation.Application.Commands.CreateDepartment;
 using Crm.Modules.Organisation.Application.Commands.DeactivateDepartment;
 using Crm.Modules.Organisation.Application.Commands.RenameDepartment;
 using Crm.Modules.Organisation.Application.Queries.ListDepartments;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Crm.Modules.Organisation.Presentation.Controllers.Admin;
 
 [Area(CrmAreas.Admin)]
-[Authorize(Policy = CrmPolicies.Administrator)]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
 public sealed class DepartmentsController : ApiControllerBase
 {
     [HttpGet]

@@ -4,9 +4,6 @@ export const scopeCookieName = 'crm-scope'
 /** The X-Crm-Scope header value meaning "every department the caller belongs to". */
 export const allDepartments = 'all'
 
-/** DEVELOPMENT ONLY (Story 06): the dev login's chosen user. Story 07 deletes this and /_dev/login. */
-export const devUserCookieName = 'crm-dev-user'
-
 export interface LocalizedTextLike {
   ar?: string | null
   en?: string | null
