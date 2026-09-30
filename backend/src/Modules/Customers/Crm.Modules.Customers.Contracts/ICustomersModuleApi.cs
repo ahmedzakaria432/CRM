@@ -16,10 +16,31 @@ public interface ICustomersModuleApi
     Task<Result<IReadOnlyList<CustomerNameSummary>>> GetCustomerNamesAsync(
         IReadOnlyCollection<Guid> customerIds, CancellationToken cancellationToken = default);
 
-    /// <summary>Story 47: every in-scope contact whose email equals <paramref name="email"/> (normalised). A
+    /// <summary>Staff only (customers.read, caller's scope); the portal uses FindPortalContactsByEmailAsync. Every
+    /// in-scope contact whose email equals <paramref name="email"/> (normalised). A
     /// malformed email is an empty list, not a failure.</summary>
     Task<Result<IReadOnlyList<CustomerContactMatch>>> FindContactByEmailAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>Story 47, in-process sign-in lookup (no HTTP endpoint, anonymous, scope lifted - reviewed): every contact
+    /// WITH PORTAL ACCESS of an ACTIVE customer, in any tenant, whose normalised email equals <paramref name="email"/>. A
+    /// malformed email is an empty list. At most 20.</summary>
+    Task<Result<IReadOnlyList<PortalContactMatch>>> FindPortalContactsByEmailAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>Story 47, in-process sign-in/refresh lookup: the contact if it still has portal access and its customer is
+    /// active; otherwise a failed Result (404 Customers.PortalContactNotFound).</summary>
+    Task<Result<PortalContactMatch>> GetPortalContactAsync(Guid contactId, CancellationToken cancellationToken = default);
 }
+
+public sealed record PortalContactMatch(
+    Guid CustomerId,
+    Guid ContactId,
+    string ContactName,
+    string Email,
+    bool IsPrimary,
+    string PreferredLanguage,
+    Guid TenantId,
+    Guid BranchId,
+    Guid DepartmentId);
 
 public sealed record CustomerSummary(
     Guid Id,

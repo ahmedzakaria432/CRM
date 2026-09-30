@@ -1,5 +1,6 @@
 import { createCrmFetch } from '~/api/crm-fetch'
 import { createCrmClients } from '~/api/clients'
+import { isPortalApiRequest } from '~/utils/permissions'
 import { scopeCookieName } from '~/utils/scope'
 
 export default defineNuxtPlugin((nuxtApp) => {
@@ -14,12 +15,20 @@ export default defineNuxtPlugin((nuxtApp) => {
       // The browser's own Accept-Language is the OS language, not the language the user picked (Task F2).
       const headers = new Headers(request.headers)
       headers.set('Accept-Language', nuxtApp.$i18n.locale.value)
-      if (scopeCookie.value) headers.set('X-Crm-Scope', scopeCookie.value)
+      // Story 47: the staff department scope never travels on a portal request (a customer has no departments).
+      if (scopeCookie.value && !isPortalApiRequest(request)) headers.set('X-Crm-Scope', scopeCookie.value)
       return globalThis.fetch(new Request(request, { headers }))
     },
-    session: () => useAuthSession().session.value,
-    onUnauthenticated: async () => {
-      await navigateTo({ path: '/login', query: { redirect: useRoute().fullPath } })
+    // Story 47: one session per audience - /api/Portal/* uses the portal customer session, everything else the staff one.
+    session: (request) => {
+      const sessions = useAuthSession()
+      return isPortalApiRequest(request) ? sessions.portalSession.value : sessions.session.value
+    },
+    onUnauthenticated: async (request) => {
+      await navigateTo({
+        path: isPortalApiRequest(request) ? '/portal/login' : '/login',
+        query: { redirect: useRoute().fullPath },
+      })
     },
   })
 

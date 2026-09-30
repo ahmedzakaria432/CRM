@@ -17,4 +17,17 @@ public static class CrmClaimTypes
     /// <summary>One per membership: "&lt;departmentId&gt;|&lt;branchId&gt;|&lt;role&gt;" (Guid "D" format). Story 06.</summary>
     public const string Membership = "membership";
     public const string Role = "role";
+
+    // Portal tokens only (Story 47); a staff token never carries them.
+    public const string PortalCustomerId = "customer_id";
+    public const string PortalContactId = "contact_id";
+
+    /// <summary>"true" | "false".</summary>
+    public const string PortalAccountAdmin = "portal_admin";
+
+    /// <summary>The customer's home branch.</summary>
+    public const string PortalBranchId = "portal_branch";
+
+    /// <summary>The customer's home (owning) department.</summary>
+    public const string PortalDepartmentId = "portal_department";
 }

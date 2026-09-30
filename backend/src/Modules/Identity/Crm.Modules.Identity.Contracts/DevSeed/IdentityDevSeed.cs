@@ -9,4 +9,8 @@ public static class IdentityDevSeed
     public const string SupervisorEmail = "supervisor@crm.local";
     public const string AgentAEmail = "agent.a@crm.local";
     public const string AgentBEmail = "agent.b@crm.local";
+
+    /// <summary>Portal account of CustomersDevSeed.AhmedContactId (primary contact, so account admin); the password is
+    /// Identity:DevSeed:Password. Story 47.</summary>
+    public static readonly Guid AhmedPortalAccountId = Guid.Parse("47000000-0000-0000-0000-000000000001");
 }

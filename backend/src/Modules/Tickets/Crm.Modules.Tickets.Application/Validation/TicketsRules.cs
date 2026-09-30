@@ -38,6 +38,28 @@ public static class TicketsRules
             .WithMessage(_ => localization.Get(TicketsMessageKeys.Validation.SortUnsupported));
     }
 
+    /// <summary>The portal tab is open or closed (or absent). Story 47.</summary>
+    public static IRuleBuilderOptions<T, string?> SupportedPortalTab<T>(this IRuleBuilder<T, string?> rule, ILocalizationService localization)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(localization);
+
+        return rule
+            .Must(t => t is null || PortalTicketStatuses.Tabs.Contains(t, StringComparer.OrdinalIgnoreCase))
+            .WithMessage(_ => localization.Get(TicketsMessageKeys.Validation.PortalTabUnsupported));
+    }
+
+    /// <summary>A portal status name (or absent). Story 47.</summary>
+    public static IRuleBuilderOptions<T, string?> SupportedPortalStatus<T>(this IRuleBuilder<T, string?> rule, ILocalizationService localization)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(localization);
+
+        return rule
+            .Must(s => s is null || PortalTicketStatuses.All.Contains(s, StringComparer.OrdinalIgnoreCase))
+            .WithMessage(_ => localization.Get(TicketsMessageKeys.Validation.PortalStatusUnsupported));
+    }
+
     public static IRuleBuilderOptions<T, string> SupportedStatus<T>(this IRuleBuilder<T, string> rule, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(rule);

@@ -23,6 +23,19 @@ internal static class TicketRefusals
                 StatusName(ticket.Status, localization)));
     }
 
+    /// <summary>The customer twin of NotAllowed (Story 47): asks Ticket.CustomerCan, and names the portal status of the ticket.</summary>
+    public static Error? CustomerNotAllowed(Ticket ticket, CustomerTicketAction action, ILocalizationService localization)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        ArgumentNullException.ThrowIfNull(localization);
+
+        return ticket.CustomerCan(action)
+            ? null
+            : TicketsErrors.TransitionNotAllowed(string.Format(
+                CultureInfo.CurrentCulture, localization.Get(TicketsMessageKeys.Refusal.TransitionNotAllowed),
+                PortalStatusName(ticket.Status, localization)));
+    }
+
     public static Error AlreadyClaimed(string assigneeName, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(localization);
@@ -30,6 +43,16 @@ internal static class TicketRefusals
         return TicketsErrors.AlreadyClaimed(string.Format(
             CultureInfo.CurrentCulture, localization.Get(TicketsMessageKeys.Refusal.AlreadyClaimed), assigneeName));
     }
+
+    private static string PortalStatusName(TicketStatus status, ILocalizationService localization) => localization.Get(
+        PortalTicketStatuses.Name(status) switch
+        {
+            PortalTicketStatuses.Received => TicketsMessageKeys.PortalStatus.Received,
+            PortalTicketStatuses.InProgress => TicketsMessageKeys.PortalStatus.InProgress,
+            PortalTicketStatuses.AwaitingYourReply => TicketsMessageKeys.PortalStatus.AwaitingYourReply,
+            PortalTicketStatuses.Resolved => TicketsMessageKeys.PortalStatus.Resolved,
+            _ => TicketsMessageKeys.PortalStatus.Closed,
+        });
 
     private static string StatusName(TicketStatus status, ILocalizationService localization) => localization.Get(status switch
     {

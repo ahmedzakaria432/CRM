@@ -8,8 +8,9 @@ namespace Crm.Modules.Tickets.Domain;
 /// conversation methods append one message or note (plus one status activity when a reply reopens the ticket).
 /// Every entry takes the next Sequence. There is no public status setter.</summary>
 /// <remarks>ITransferableOrganisationScoped: the write guard judges a modified ticket by its original scope, so
-/// TransferTo can move it out of the sender's scope. Only TransferTo changes DepartmentId/BranchId.</remarks>
-public sealed class Ticket : AuditableEntity<TicketId>, ISoftDeletable, IHasRowVersion, ITransferableOrganisationScoped
+/// TransferTo can move it out of the sender's scope. Only TransferTo changes DepartmentId/BranchId.
+/// IPortalCustomerOwned (Story 47): the portal customer of CustomerId reaches this ticket; CustomerId never changes.</remarks>
+public sealed class Ticket : AuditableEntity<TicketId>, ISoftDeletable, IHasRowVersion, ITransferableOrganisationScoped, IPortalCustomerOwned
 {
     public const int SubjectMaxLength = 200;
     public const int DescriptionMaxLength = 4000;
@@ -172,6 +173,46 @@ public sealed class Ticket : AuditableEntity<TicketId>, ISoftDeletable, IHasRowV
 
     /// <summary>Derived from the same table - what Story 20's UI offers (before permission filtering).</summary>
     public IReadOnlyList<TicketAction> AllowedActions() => [.. Enum.GetValues<TicketAction>().Where(CanPerform)];
+
+    /// <summary>What the customer may do in this status (Story 47, D10). One source for the portal DTO and the two
+    /// customer methods below.</summary>
+    public static IReadOnlyList<CustomerTicketAction> CustomerActionsFor(TicketStatus status)
+    {
+        List<CustomerTicketAction> actions = [];
+
+        if (status is not (TicketStatus.Closed or TicketStatus.Cancelled))
+        {
+            actions.Add(CustomerTicketAction.Reply);
+        }
+
+        if (StatusTransitions[TicketAction.Resolve].From.Contains(status))
+        {
+            actions.Add(CustomerTicketAction.RequestClosure);
+        }
+
+        if (status == TicketStatus.Resolved)
+        {
+            actions.Add(CustomerTicketAction.Reopen);
+        }
+
+        return actions;
+    }
+
+    public bool CustomerCan(CustomerTicketAction action) => CustomerActionsFor(Status).Contains(action);
+
+    /// <summary>The customer says the problem is solved: the ticket is Resolved.</summary>
+    public void RequestClosure(Guid actorId, DateTimeOffset nowUtc)
+    {
+        EnsureCustomerAllowed(CustomerTicketAction.RequestClosure, TicketAction.Resolve);
+        Resolve(actorId, nowUtc);
+    }
+
+    /// <summary>The customer reopens a Resolved ticket. A Closed ticket cannot be reopened by the customer.</summary>
+    public void ReopenAtCustomerRequest(Guid actorId, DateTimeOffset nowUtc)
+    {
+        EnsureCustomerAllowed(CustomerTicketAction.Reopen, TicketAction.Reopen);
+        Reopen(actorId, nowUtc);
+    }
 
     public void Open(Guid actorId, DateTimeOffset nowUtc) =>
         ChangeStatus(TicketAction.Open, TicketActivityKind.Opened, actorId, nowUtc);
@@ -386,6 +427,14 @@ public sealed class Ticket : AuditableEntity<TicketId>, ISoftDeletable, IHasRowV
         Status = StatusTransitions[action].To;
         Record(kind, actorId, previous.ToString(), Status.ToString(), nowUtc);
         Raise(new TicketStatusChanged(Id, previous, Status, nowUtc));
+    }
+
+    private void EnsureCustomerAllowed(CustomerTicketAction action, TicketAction asTicketAction)
+    {
+        if (!CustomerCan(action))
+        {
+            throw new DomainException(TicketDomainErrors.TransitionNotAllowed(asTicketAction, Status));
+        }
     }
 
     private void EnsureAllowed(TicketAction action)

@@ -15,4 +15,8 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     public DbSet<Domain.User> Users => Set<Domain.User>();
 
     public DbSet<Domain.RefreshTokenFamily> RefreshTokenFamilies => Set<Domain.RefreshTokenFamily>();
+
+    public DbSet<Domain.PortalAccount> PortalAccounts => Set<Domain.PortalAccount>();
+
+    public DbSet<Domain.PortalSession> PortalSessions => Set<Domain.PortalSession>();
 }

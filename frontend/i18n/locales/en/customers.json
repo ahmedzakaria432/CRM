@@ -53,7 +53,7 @@
     "contacts": {
       "title": "Contacts", "add": "Add contact", "addTitle": "Add contact", "editTitle": "Edit contact",
       "edit": "Edit", "remove": "Remove", "setPrimary": "Make primary", "primary": "Primary",
-      "portalAccess": "Portal access", "empty": "No contacts yet",
+      "portalAccess": "Portal access", "setPortalPassword": "Set portal password", "empty": "No contacts yet",
       "emptyDescription": "Add a contact so the team can reach this customer.",
       "removeTitle": "Remove this contact?", "removeDescription": "{name} will be removed from this customer.",
       "saved": "Contact saved", "removed": "Contact removed", "primarySet": "Primary contact changed",
@@ -85,6 +85,11 @@
     "picker": {
       "placeholder": "Name, number, email, or phone", "searching": "Searching", "results": "{count} customers found",
       "empty": "No active customer matches", "error": "The search failed", "retry": "Try again", "clear": "Clear"
+    },
+    "portal": {
+      "title": "Portal password", "description": "Set the password {name} uses to sign in to the customer portal. Tell them the password yourself; it is never sent automatically.",
+      "password": "Password", "hint": "10 to 128 characters, with at least one letter and one digit.",
+      "save": "Set password", "saved": "The contact can now sign in to the portal.", "close": "Close"
     }
   }
 }

@@ -12,6 +12,8 @@ public static class TicketsMessageKeys
         public const string PriorityUnsupported = "Tickets.Validation.PriorityUnsupported";
         public const string ActionUnsupported = "Tickets.Validation.ActionUnsupported";
         public const string VisibilityUnsupported = "Tickets.Validation.VisibilityUnsupported";
+        public const string PortalTabUnsupported = "Tickets.Validation.PortalTabUnsupported";
+        public const string PortalStatusUnsupported = "Tickets.Validation.PortalStatusUnsupported";
     }
 
     public static class Refusal
@@ -29,5 +31,15 @@ public static class TicketsMessageKeys
         public const string Resolved = "Tickets.Status.Resolved";
         public const string Closed = "Tickets.Status.Closed";
         public const string Cancelled = "Tickets.Status.Cancelled";
+    }
+
+    /// <summary>The customer-friendly status names of the portal (Story 47, D9).</summary>
+    public static class PortalStatus
+    {
+        public const string Received = "Tickets.PortalStatus.Received";
+        public const string InProgress = "Tickets.PortalStatus.InProgress";
+        public const string AwaitingYourReply = "Tickets.PortalStatus.AwaitingYourReply";
+        public const string Resolved = "Tickets.PortalStatus.Resolved";
+        public const string Closed = "Tickets.PortalStatus.Closed";
     }
 }

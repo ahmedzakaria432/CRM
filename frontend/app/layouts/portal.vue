@@ -10,8 +10,45 @@
       <div
         class="mx-auto flex max-w-5xl flex-col items-start gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <span class="text-lg font-semibold">{{ t('shell.appName') }}</span>
-        <div class="flex items-center gap-2">
+        <NuxtLink v-if="isPortalRoute" to="/portal" class="text-lg font-semibold text-fg focus-visible:focus-ring">
+          {{ t('shell.appName') }}
+        </NuxtLink>
+        <span v-else class="text-lg font-semibold">{{ t('shell.appName') }}</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <nav v-if="isPortalRoute && portal.isAuthenticated" :aria-label="t('portal.nav.label')">
+            <ul class="flex flex-wrap items-center gap-1">
+              <li>
+                <NuxtLink
+                  to="/portal"
+                  exact-active-class="bg-surface-sunken"
+                  class="rounded-md px-2.5 py-1.5 text-sm text-fg hover:bg-surface-raised focus-visible:focus-ring"
+                >
+                  {{ t('portal.nav.tickets') }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/portal/tickets/new"
+                  active-class="bg-surface-sunken"
+                  class="rounded-md px-2.5 py-1.5 text-sm text-fg hover:bg-surface-raised focus-visible:focus-ring"
+                >
+                  {{ t('portal.nav.new') }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/portal/account"
+                  active-class="bg-surface-sunken"
+                  class="rounded-md px-2.5 py-1.5 text-sm text-fg hover:bg-surface-raised focus-visible:focus-ring"
+                >
+                  {{ t('portal.nav.account') }}
+                </NuxtLink>
+              </li>
+              <li>
+                <UiButton variant="ghost" size="sm" @click="portal.logout()">{{ t('portal.nav.signOut') }}</UiButton>
+              </li>
+            </ul>
+          </nav>
           <ShellLocaleSwitcher />
           <UiThemeToggle :light-label="t('shell.theme.toLight')" :dark-label="t('shell.theme.toDark')" />
         </div>
@@ -38,6 +75,11 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+const route = useRoute()
+const portal = usePortalAuthStore()
+
+// The customer portal nav shows on /portal/** for a signed-in customer; the staff /login page shares this layout.
+const isPortalRoute = computed(() => route.path === '/portal' || route.path.startsWith('/portal/'))
 
 // Never render a 5xx's real message in production; import.meta.dev only, and never the stack.
 function errorMessage(error: unknown): string | undefined {

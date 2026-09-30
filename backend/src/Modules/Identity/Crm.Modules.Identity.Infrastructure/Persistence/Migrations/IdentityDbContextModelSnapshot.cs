@@ -86,6 +86,110 @@ namespace Crm.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.ToTable("outbox_message_consumers", "identity");
                 });
 
+            modelBuilder.Entity("Crm.Modules.Identity.Domain.PortalAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FailedSignInCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("LastSignInAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("LockedOutUntilUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("ModifiedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PreferredLocale")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)")
+                        .HasColumnName("PreferredLocale");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId")
+                        .IsUnique();
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("PortalAccounts", "identity");
+                });
+
+            modelBuilder.Entity("Crm.Modules.Identity.Domain.PortalSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("ModifiedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PortalAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RevocationReason")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset?>("RevokedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PortalAccountId");
+
+                    b.ToTable("PortalSessions", "identity");
+                });
+
             modelBuilder.Entity("Crm.Modules.Identity.Domain.RefreshTokenFamily", b =>
                 {
                     b.Property<Guid>("Id")
@@ -180,6 +284,96 @@ namespace Crm.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("Users", "identity");
+                });
+
+            modelBuilder.Entity("Crm.Modules.Identity.Domain.PortalAccount", b =>
+                {
+                    b.OwnsOne("Crm.Modules.Identity.Domain.DisplayName", "DisplayName", b1 =>
+                        {
+                            b1.Property<Guid>("PortalAccountId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)")
+                                .HasColumnName("DisplayName");
+
+                            b1.HasKey("PortalAccountId");
+
+                            b1.ToTable("PortalAccounts", "identity");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PortalAccountId");
+                        });
+
+                    b.OwnsOne("Crm.Modules.Identity.Domain.EmailAddress", "Email", b1 =>
+                        {
+                            b1.Property<Guid>("PortalAccountId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(254)
+                                .HasColumnType("nvarchar(254)")
+                                .HasColumnName("Email");
+
+                            b1.HasKey("PortalAccountId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("PortalAccounts", "identity");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PortalAccountId");
+                        });
+
+                    b.Navigation("DisplayName")
+                        .IsRequired();
+
+                    b.Navigation("Email")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Crm.Modules.Identity.Domain.PortalSession", b =>
+                {
+                    b.OwnsMany("Crm.Modules.Identity.Domain.RefreshToken", "Tokens", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTimeOffset>("ExpiresAtUtc")
+                                .HasColumnType("datetimeoffset");
+
+                            b1.Property<DateTimeOffset>("IssuedAtUtc")
+                                .HasColumnType("datetimeoffset");
+
+                            b1.Property<DateTimeOffset?>("RotatedAtUtc")
+                                .HasColumnType("datetimeoffset");
+
+                            b1.Property<Guid>("SessionId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("TokenHash")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("nvarchar(64)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("SessionId");
+
+                            b1.HasIndex("TokenHash")
+                                .IsUnique();
+
+                            b1.ToTable("PortalRefreshTokens", "identity");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SessionId");
+                        });
+
+                    b.Navigation("Tokens");
                 });
 
             modelBuilder.Entity("Crm.Modules.Identity.Domain.RefreshTokenFamily", b =>

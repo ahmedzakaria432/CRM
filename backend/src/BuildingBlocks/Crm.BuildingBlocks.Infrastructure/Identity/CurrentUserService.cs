@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 namespace Crm.BuildingBlocks.Infrastructure.Identity;
 
 // Story 06: scope from membership claims + X-Crm-Scope. Story 07: the claims come from the staff JWT (Identity module).
+// Story 47: a Portal-scheme identity resolves to a customer grant (tenant + PortalCustomerGrant, no departments).
 public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
     // Cached per principal INSTANCE, not per request: an authentication handler that resolves this service
@@ -63,6 +64,15 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
 
         var tenant = new TenantId(tenantGuid);
 
+        bool portal = user.Identities.Any(i => i.IsAuthenticated && i.AuthenticationType == CrmAuthenticationSchemes.Portal);
+        if (portal)
+        {
+            // Never mixed with staff claims; X-Crm-Scope is ignored (a portal principal has no departments to narrow).
+            return user.Identities.Any(i => i.IsAuthenticated && i.AuthenticationType != CrmAuthenticationSchemes.Portal)
+                ? OrganisationScope.None
+                : ResolvePortal(user, tenant);
+        }
+
         List<ScopeMembership> memberships = [];
         foreach (Claim claim in user.FindAll(CrmClaimTypes.Membership))
         {
@@ -94,6 +104,24 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
         }
 
         return new OrganisationScope(false, tenant, memberships, activeDepartment, activeScopeRejected);
+    }
+
+    private static OrganisationScope ResolvePortal(ClaimsPrincipal user, TenantId tenant)
+    {
+        if (!Guid.TryParse(user.FindFirst(CrmClaimTypes.PortalCustomerId)?.Value, out Guid customerId)
+            || !Guid.TryParse(user.FindFirst(CrmClaimTypes.PortalContactId)?.Value, out Guid contactId)
+            || !bool.TryParse(user.FindFirst(CrmClaimTypes.PortalAccountAdmin)?.Value, out bool isAdmin)
+            || !Guid.TryParse(user.FindFirst(CrmClaimTypes.PortalBranchId)?.Value, out Guid branchId)
+            || !Guid.TryParse(user.FindFirst(CrmClaimTypes.PortalDepartmentId)?.Value, out Guid departmentId)
+            || tenant == Crm.SharedKernel.Scoping.TenantId.None
+            || customerId == Guid.Empty
+            || contactId == Guid.Empty)
+        {
+            return OrganisationScope.None; // a malformed claim never throws and never widens
+        }
+
+        return OrganisationScope.ForPortalCustomer(
+            tenant, new PortalCustomerGrant(customerId, contactId, isAdmin, new BranchId(branchId), new DepartmentId(departmentId)));
     }
 
     private static string? Join(IEnumerable<Guid> values)

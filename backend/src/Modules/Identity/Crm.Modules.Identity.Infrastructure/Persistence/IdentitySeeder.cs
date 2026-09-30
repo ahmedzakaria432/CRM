@@ -1,4 +1,5 @@
 using Crm.BuildingBlocks.Infrastructure.Modules;
+using Crm.Modules.Customers.Contracts.DevSeed;
 using Crm.Modules.Identity.Application.Abstractions;
 using Crm.Modules.Identity.Contracts.DevSeed;
 using Crm.Modules.Identity.Domain;
@@ -36,7 +37,30 @@ public sealed partial class IdentitySeeder(
         await EnsureAsync(tenant, OrganisationDevSeed.AgentAUserId, IdentityDevSeed.AgentAEmail, "Omar Haddad", PreferredLocale.English, password, cancellationToken);
         await EnsureAsync(tenant, OrganisationDevSeed.AgentBUserId, IdentityDevSeed.AgentBEmail, "نورة الشمري", PreferredLocale.Arabic, password, cancellationToken);
 
+        await EnsurePortalAccountAsync(tenant, password, cancellationToken);
+
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>Story 47: Ahmed Al-Qahtani signs in to the portal (his contact is primary, so account admin).</summary>
+    private async Task EnsurePortalAccountAsync(TenantId tenant, string password, CancellationToken cancellationToken)
+    {
+        var accountId = new PortalAccountId(IdentityDevSeed.AhmedPortalAccountId);
+
+        if (await context.PortalAccounts.AnyAsync(a => a.Id == accountId, cancellationToken))
+        {
+            return;
+        }
+
+        context.PortalAccounts.Add(PortalAccount.Create(
+            tenant,
+            CustomersDevSeed.AhmedCustomerId,
+            CustomersDevSeed.AhmedContactId,
+            EmailAddress.Create(CustomersDevSeed.AhmedEmail),
+            DisplayName.Create("أحمد القحطاني"),
+            PreferredLocale.Arabic,
+            hasher.Hash(password),
+            accountId));
     }
 
     private async Task EnsureAsync(

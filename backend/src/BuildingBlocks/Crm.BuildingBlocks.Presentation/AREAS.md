@@ -7,7 +7,7 @@ controllers for that Area. These notes record what each Area is for and which po
 ## Agent Area
 
 The agent workspace persona - ticket inbox, ticket detail, dashboards, tasks, and team collaboration.
-Filled by stories 20, 21, 28-31. Story 11: the `Customers` module's `CustomersController` (`customers.read`/`customers.write`). Story 15: the `Tickets` module's `TicketsController` and `TicketCategoriesController` (`tickets.read`/`tickets.write`/`tickets.assign`). Story 18: the thread (`GET …/Tickets/{id}/thread`), replies, customer replies and internal notes on `TicketsController` (`tickets.read`/`tickets.write`). Story 20: the pickers `GET …/Tickets/agents` (`tickets.read`) and `GET …/Tickets/transfer-targets` (`tickets.assign`) on `TicketsController`.
+Filled by stories 20, 21, 28-31. Story 11: the `Customers` module's `CustomersController` (`customers.read`/`customers.write`). Story 15: the `Tickets` module's `TicketsController` and `TicketCategoriesController` (`tickets.read`/`tickets.write`/`tickets.assign`). Story 18: the thread (`GET …/Tickets/{id}/thread`), replies, customer replies and internal notes on `TicketsController` (`tickets.read`/`tickets.write`). Story 20: the pickers `GET …/Tickets/agents` (`tickets.read`) and `GET …/Tickets/transfer-targets` (`tickets.assign`) on `TicketsController`. Story 47: Identity's `PortalAccountsController` (`customers.write`).
 
 <!-- Story 07: every controller here requires the Staff JWT (`StaffAreaAuthorizationConvention`); each MediatR request declares its permission (`[RequirePermission]`). `[AllowAnonymous]` only on the Identity sign-in actions and the Development-only diagnostics. -->
 
@@ -16,7 +16,10 @@ Filled by stories 20, 21, 28-31. Story 11: the `Customers` module's `CustomersCo
 The customer self-service persona - portal auth/registration, ticket submission and tracking,
 request history, and the public help centre. Filled by stories 47-50.
 
-<!-- Anonymous until story 47 (portal JWT). -->
+Story 47: Identity's `AuthController` (register/login/refresh/logout, anonymous, `portal-sign-in` limit) and `MeController`
+(`portal.account`); Tickets' `TicketsController` and `TicketCategoriesController` (`portal.tickets`). Every controller
+requires the portal JWT (`PortalAreaAuthorizationConvention`). Rate limited per account (signed in) or per IP by the
+global limiter (`RateLimiting:Portal`).
 
 ## Admin Area
 
@@ -26,7 +29,7 @@ module's Branches/Departments/Memberships controllers, whose requests require `a
 
 <!-- Story 07: every controller here requires the Staff JWT (`StaffAreaAuthorizationConvention`); the permission is
      declared per request (`[RequirePermission(CrmPermissions.Admin...)]`), so a signed-in agent gets 403 naming it.
-     No Area lifts the organisation-scope filter - the only lift is the sign-in membership lookup
+     No Area lifts the organisation-scope filter - the only lifts are the two sign-in lookups (memberships, portal contacts)
      (Specification.IgnoreOrganisationScope(), CLAUDE.md, "Backend", Scoping). -->
 
 ## Public Area
@@ -35,8 +38,8 @@ The versioned external API - public API key management, outbound webhooks, ERP i
 Filled by stories 55-57.
 
 Rate limited per client IP by the global limiter (`AddCrmRateLimiting`, `RateLimiting:Public`) - every controller
-in this Area, in any module, with no attribute to add. 429 + `Retry-After`. Stories 27 and 47 add named policies
-(per email, per account) with `[EnableRateLimiting]` for anonymous endpoints outside this Area.
+in this Area, in any module, with no attribute to add. 429 + `Retry-After`. Story 27 adds named policies (per email, per account) with `[EnableRateLimiting]` for anonymous endpoints outside this Area;
+Story 47 added `portal-sign-in`.
 
 <!-- Anonymous until story 55 (API keys). -->
 

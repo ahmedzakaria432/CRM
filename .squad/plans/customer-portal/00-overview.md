@@ -5,15 +5,15 @@
 Entry point for the **Customer Portal** feature. This is **feature 10 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
-**Backend modules:** no module of its own — the `Portal` Area over `Identity` (47), `Tickets` (48, 49), and a new `Feedback` module (50). See the module catalogue in `CLAUDE.md`.
+**Backend modules:** no module of its own — the `Portal` Area over `Identity` (47), `Tickets` (48, 49), and a new `Feedback` module (50). See the module catalogue in `CLAUDE.md`. 47 (absorbing 48 and 49) touches `Identity` (portal accounts and sessions, portal JWT scheme, one migration), `Customers` (two anonymous scope-lifted sign-in lookups behind `ICustomersModuleApi`), `Tickets` (`IPortalCustomerOwned` on `Ticket`, portal queries/commands, no migration), and the building blocks (portal customer grant on `OrganisationScope`, scope filter/write-guard clause, Staff/Portal policies, Portal rate limits).
 
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |
 |----|--------|-------|-----------|------------|
-| 47 | [`portal-authentication-registration-and-account`](../../stories/customer-portal/portal-authentication-registration-and-account/intake.md) | Portal authentication registration and account | _not planned yet_ | CRM-07, CRM-11, CRM-04, CRM-36 |
-| 48 | [`portal-ticket-submission-and-tracking`](../../../next-steps-stories/stories/customer-portal/portal-ticket-submission-and-tracking/intake.md) | Portal ticket submission and tracking | _not planned yet_ | CRM-47, CRM-15, CRM-16, CRM-18, CRM-12, CRM-38 |
-| 49 | [`portal-request-history-and-self-service-knowledge-access`](../../../next-steps-stories/stories/customer-portal/portal-request-history-and-self-service-knowledge-access/intake.md) | Portal request history and self service knowledge access | _not planned yet_ | CRM-48, CRM-40, CRM-13, CRM-12 |
+| 47 | [`portal-authentication-registration-and-account`](../../stories/customer-portal/portal-authentication-registration-and-account/intake.md) | Customer portal accounts ticket submission tracking and history | [`47-story-customer-portal-accounts-ticket-submission-tracking-and-history.md`](47-story-customer-portal-accounts-ticket-submission-tracking-and-history.md) | CRM-07, CRM-11, CRM-15, CRM-18, CRM-20 (48 and 49 merged in; KB, attachments, realtime deferred) |
+| 48 | [`portal-ticket-submission-and-tracking`](../../../next-steps-stories/stories/customer-portal/portal-ticket-submission-and-tracking/intake.md) | Portal ticket submission and tracking | merged into [47](47-story-customer-portal-accounts-ticket-submission-tracking-and-history.md) | CRM-47, CRM-15, CRM-16, CRM-18, CRM-12, CRM-38 |
+| 49 | [`portal-request-history-and-self-service-knowledge-access`](../../../next-steps-stories/stories/customer-portal/portal-request-history-and-self-service-knowledge-access/intake.md) | Portal request history and self service knowledge access | merged into [47](47-story-customer-portal-accounts-ticket-submission-tracking-and-history.md) (KB deferred) | CRM-48, CRM-40, CRM-13, CRM-12 |
 | 50 | [`customer-satisfaction-surveys-and-feedback`](../../../next-steps-stories/stories/customer-portal/customer-satisfaction-surveys-and-feedback/intake.md) | Customer satisfaction surveys and feedback | _not planned yet_ | CRM-15, CRM-36, CRM-35, CRM-41 |
 
 ## Dependency notes

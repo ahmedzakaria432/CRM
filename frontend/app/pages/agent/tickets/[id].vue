@@ -49,7 +49,12 @@
         </div>
         <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
           <div class="flex min-w-0 flex-col gap-4" :class="shown('conversation')">
-            <TicketThread :ticket-id="id" :version="version" :customer-label="customerLabel ?? undefined" />
+            <TicketThread
+              :ticket-id="id"
+              :version="version"
+              :customer-label="customerLabel ?? undefined"
+              :contact-id="ticket.contactId ?? undefined"
+            />
             <TicketComposer />
           </div>
           <div class="flex min-w-0 flex-col gap-4">

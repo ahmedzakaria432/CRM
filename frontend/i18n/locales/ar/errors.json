@@ -38,7 +38,11 @@
         "UserAlreadyActive": "المستخدم نشط بالفعل.",
         "CannotDeactivateSelf": "لا يمكنك إلغاء تفعيل حسابك.",
         "CurrentPasswordInvalid": "كلمة المرور الحالية غير صحيحة.",
-        "EmailInvalid": "عنوان البريد الإلكتروني غير صالح."
+        "EmailInvalid": "عنوان البريد الإلكتروني غير صالح.",
+        "PortalContactNotFound": "لم يتم العثور على جهة الاتصال لدى هذا العميل.",
+        "PortalAccessNotEnabled": "فعّل الدخول إلى البوابة لجهة الاتصال أولاً.",
+        "PortalCustomerInactive": "العميل غير نشط.",
+        "PortalEmailInUse": "حساب بوابة آخر يستخدم هذا البريد الإلكتروني بالفعل."
       },
       "Customers": {
         "CustomerNotFound": "لم يتم العثور على العميل.",
@@ -110,7 +114,9 @@
       },
       "Authorization": {
         "PermissionDenied": "ليست لديك صلاحية للقيام بذلك.",
-        "Unauthenticated": "سجّل الدخول للمتابعة."
+        "Unauthenticated": "سجّل الدخول للمتابعة.",
+        "StaffOnly": "هذه العملية مخصصة لموظفي الدعم.",
+        "PortalOnly": "سجّل الدخول إلى بوابة العملاء للمتابعة."
       },
       "Persistence": {
         "ConcurrencyConflict": "قام شخص آخر بتغيير هذا السجل. تمت إعادة تحميله - حاول مرة أخرى."

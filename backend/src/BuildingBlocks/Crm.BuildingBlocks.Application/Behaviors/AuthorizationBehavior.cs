@@ -9,7 +9,8 @@ namespace Crm.BuildingBlocks.Application.Behaviors;
 
 /// <summary>Story 07: enforces the request's authorisation declaration (CLAUDE.md, Authorisation); the handler
 /// never runs on a 401/403. A request with no HttpContext (seeders, background code) is a trusted in-process
-/// caller and passes.</summary>
+/// caller and passes. A portal principal (Story 47) is refused on any request that names no permission
+/// ([RequireAuthenticatedUser] means staff).</summary>
 public sealed partial class AuthorizationBehavior<TRequest, TResponse>(
     ICurrentUserService currentUser,
     ILogger<AuthorizationBehavior<TRequest, TResponse>> logger)
@@ -33,6 +34,12 @@ public sealed partial class AuthorizationBehavior<TRequest, TResponse>(
         {
             LogUnauthenticated(typeof(TRequest).Name);
             return CreateFailureResponse(Error.Unauthorized("Authorization.Unauthenticated", "Sign in to continue."));
+        }
+
+        if (Requirement.Permission is null && scope.IsPortalCustomer)
+        {
+            LogStaffOnly(typeof(TRequest).Name, currentUser.UserIdOrSystem);
+            return CreateFailureResponse(Error.Forbidden("Authorization.StaffOnly", "This operation is for staff users."));
         }
 
         if (Requirement.Permission is { } permission
@@ -64,6 +71,9 @@ public sealed partial class AuthorizationBehavior<TRequest, TResponse>(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Unauthenticated call to {RequestName} refused")]
     private partial void LogUnauthenticated(string requestName);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Portal principal {UserId} refused staff-only {RequestName}")]
+    private partial void LogStaffOnly(string requestName, string userId);
 
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "Permission {Permission} denied for {RequestName} to user {UserId} (roles {Roles})")]

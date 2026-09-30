@@ -3,8 +3,9 @@ import { CorrelationHeader, newCorrelationId } from './correlation'
 
 export interface CrmFetchOptions {
   baseFetch: (input: Request) => Promise<Response>
-  session: () => AuthSession
-  onUnauthenticated: () => void | Promise<void>
+  /** Story 47: which session a request belongs to (staff or portal customer). */
+  session: (request: Request) => AuthSession
+  onUnauthenticated: (request: Request) => void | Promise<void>
 }
 
 /**
@@ -15,10 +16,13 @@ export interface CrmFetchOptions {
  * scope: `/_dev/api`'s fake-transport panel builds its own private `createCrmFetch` with a scripted
  * transport specifically to exercise this logic in isolation (scenarios A-E), and it must not share
  * in-flight state with the real app instance built in `app/plugins/api.ts`.
+ *
+ * Story 47: the guard is per *session object*, so a portal refresh never joins a staff one (two audiences, two
+ * sessions, in one browser). The 401 -> one refresh -> one retry -> login contract itself is unchanged.
  */
 export function createCrmFetch(options: CrmFetchOptions): (input: Request) => Promise<Response> {
   const { baseFetch, session, onUnauthenticated } = options
-  let inflightRefresh: Promise<boolean> | null = null
+  const inflightRefreshes = new WeakMap<AuthSession, Promise<boolean>>()
 
   function withHeaders(request: Request, correlationId: string, token: string | null): Request {
     const headers = new Headers(request.headers)
@@ -31,15 +35,15 @@ export function createCrmFetch(options: CrmFetchOptions): (input: Request) => Pr
     return new Request(request, { headers })
   }
 
-  function refreshOnce(): Promise<boolean> {
-    if (inflightRefresh === null) {
-      inflightRefresh = session()
-        .refresh()
-        .finally(() => {
-          inflightRefresh = null
-        })
+  function refreshOnce(current: AuthSession): Promise<boolean> {
+    let inflight = inflightRefreshes.get(current)
+    if (inflight === undefined) {
+      inflight = current.refresh().finally(() => {
+        inflightRefreshes.delete(current)
+      })
+      inflightRefreshes.set(current, inflight)
     }
-    return inflightRefresh
+    return inflight
   }
 
   return async function crmFetch(input: Request): Promise<Response> {
@@ -47,29 +51,30 @@ export function createCrmFetch(options: CrmFetchOptions): (input: Request) => Pr
     const retryClone = input.clone()
 
     const correlationId = input.headers.get(CorrelationHeader) ?? newCorrelationId()
-    const initial = withHeaders(input, correlationId, session().accessToken())
+    const current = session(input)
+    const initial = withHeaders(input, correlationId, current.accessToken())
     const response = await baseFetch(initial)
 
-    if (response.status !== 401 || session().isRefreshRequest(input)) {
+    if (response.status !== 401 || current.isRefreshRequest(input)) {
       return response
     }
 
-    const refreshed = await refreshOnce()
+    const refreshed = await refreshOnce(current)
     if (refreshed) {
-      const retryRequest = withHeaders(retryClone, correlationId, session().accessToken())
+      const retryRequest = withHeaders(retryClone, correlationId, current.accessToken())
       const retryResponse = await baseFetch(retryRequest)
       if (retryResponse.status !== 401) {
         return retryResponse
       }
       // Retry also came back 401: no second refresh, no loop.
-      session().clear()
-      await onUnauthenticated()
+      current.clear()
+      await onUnauthenticated(input)
       return retryResponse
     }
 
     // Refresh failed outright: never retry, go straight to login.
-    session().clear()
-    await onUnauthenticated()
+    current.clear()
+    await onUnauthenticated(input)
     return response
   }
 }

@@ -6,6 +6,8 @@
     <ProjectReference Include="..\Crm.Modules.Identity.Contracts\Crm.Modules.Identity.Contracts.csproj" />
     <!-- Sign-in reads the user's memberships through IOrganisationModuleApi (Contracts only, CRM0001). -->
     <ProjectReference Include="..\..\Organisation\Crm.Modules.Organisation.Contracts\Crm.Modules.Organisation.Contracts.csproj" />
+    <!-- Portal registration/sign-in read contacts through ICustomersModuleApi (Contracts only, CRM0001). -->
+    <ProjectReference Include="..\..\Customers\Crm.Modules.Customers.Contracts\Crm.Modules.Customers.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

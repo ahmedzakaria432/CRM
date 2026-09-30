@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Crm.Modules.Tickets.Infrastructure;
 
 /// <summary>The Tickets module (Story 15): tickets, their lifecycle and assignment, the conversation thread (Story
-/// 18), and categories. It exposes no
+/// 18), categories, and the portal customer view of its own tickets (Story 47). It exposes no
 /// Contracts API yet - other modules learn about tickets through its integration events.</summary>
 public sealed class TicketsModule : IModule
 {
@@ -30,6 +30,8 @@ public sealed class TicketsModule : IModule
         services.AddScoped<ITicketNumberGenerator, SqlTicketNumberGenerator>();
         services.AddScoped<ITicketReadModel, TicketReadModel>();
         services.AddScoped<ITicketThreadReadModel, TicketThreadReadModel>();
+        services.AddScoped<IPortalTicketReadModel, PortalTicketReadModel>();
+        services.AddScoped<PortalTicketMapper>();
         services.AddScoped<TicketDtoAssembler>();
         services.AddScoped<IModuleSeeder, TicketsSeeder>();
 

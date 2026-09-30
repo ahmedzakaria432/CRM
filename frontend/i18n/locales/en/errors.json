@@ -38,7 +38,11 @@
         "UserAlreadyActive": "The user is already active.",
         "CannotDeactivateSelf": "You cannot deactivate your own account.",
         "CurrentPasswordInvalid": "The current password is incorrect.",
-        "EmailInvalid": "The email address is not valid."
+        "EmailInvalid": "The email address is not valid.",
+        "PortalContactNotFound": "The contact was not found on this customer.",
+        "PortalAccessNotEnabled": "Enable portal access on the contact first.",
+        "PortalCustomerInactive": "The customer is inactive.",
+        "PortalEmailInUse": "Another portal account already uses this email."
       },
       "Customers": {
         "CustomerNotFound": "The customer was not found.",
@@ -110,7 +114,9 @@
       },
       "Authorization": {
         "PermissionDenied": "You do not have permission to do this.",
-        "Unauthenticated": "Sign in to continue."
+        "Unauthenticated": "Sign in to continue.",
+        "StaffOnly": "This operation is for staff users.",
+        "PortalOnly": "Sign in to the customer portal to continue."
       },
       "Persistence": {
         "ConcurrencyConflict": "Someone else changed this record. It was reloaded - try again."

@@ -6,6 +6,11 @@ public sealed record ScopeMembership(DepartmentId DepartmentId, BranchId BranchI
 
 public sealed record ScopeWriteTarget(TenantId TenantId, BranchId BranchId, DepartmentId DepartmentId);
 
+/// <summary>Story 47: what a portal customer principal may reach. Built only by CurrentUserService from a Portal-scheme
+/// token. HomeBranchId/HomeDepartmentId = the customer's owning branch/department (where its new tickets go).</summary>
+public sealed record PortalCustomerGrant(
+    Guid CustomerId, Guid ContactId, bool IsAccountAdmin, BranchId HomeBranchId, DepartmentId HomeDepartmentId);
+
 /// <summary>The caller's data scope for one request. Built only by CurrentUserService; read by the
 /// ModuleDbContext scope filter, the write guard, CachingBehavior (via ICurrentUserService strings), and the
 /// Organisation module's "my scope" query.</summary>
@@ -64,6 +69,45 @@ public sealed class OrganisationScope
             .ToList();
     }
 
+    private OrganisationScope(TenantId tenant, PortalCustomerGrant grant)
+    {
+        IsUnrestricted = false;
+        Tenant = tenant;
+        Memberships = [];
+        ActiveDepartment = null;
+        ActiveScopeRejected = false;
+        Departments = [];
+        Branches = [];
+        Roles = [CrmRoles.PortalCustomer];
+        EffectiveRoles = [CrmRoles.PortalCustomer];
+        PortalCustomer = grant;
+    }
+
+    /// <summary>Story 47 (D2): a portal customer principal - a tenant and a grant, no memberships, departments or
+    /// branches. Sees tenant-scoped rows of its tenant and IPortalCustomerOwned rows of its own customer only.</summary>
+    public static OrganisationScope ForPortalCustomer(TenantId tenant, PortalCustomerGrant grant)
+    {
+        ArgumentNullException.ThrowIfNull(tenant);
+        ArgumentNullException.ThrowIfNull(grant);
+
+        if (tenant == TenantId.None)
+        {
+            throw new ArgumentException("A portal customer belongs to a tenant.", nameof(tenant));
+        }
+
+        if (grant.CustomerId == Guid.Empty || grant.ContactId == Guid.Empty)
+        {
+            throw new ArgumentException("A portal customer grant names a customer and a contact.", nameof(grant));
+        }
+
+        return new OrganisationScope(tenant, grant);
+    }
+
+    /// <summary>Set only for a portal customer principal (Story 47); null for staff, anonymous and system callers.</summary>
+    public PortalCustomerGrant? PortalCustomer { get; }
+
+    public bool IsPortalCustomer => PortalCustomer is not null;
+
     public bool IsUnrestricted { get; }
 
     public TenantId Tenant { get; }
@@ -89,8 +133,8 @@ public sealed class OrganisationScope
     /// (Story 07). Empty when the active scope was rejected.</summary>
     public IReadOnlyList<string> EffectiveRoles { get; }
 
-    /// <summary>The one place the three-column rule is written in C#; the SQL rule in ModuleDbContext.OrganisationScope.cs
-    /// must stay equivalent.</summary>
+    /// <summary>The one place the three-column rule is written in C#; the C# twin of both SQL rules in
+    /// ModuleDbContext.OrganisationScope.cs, which must stay equivalent.</summary>
     public bool Allows(ITenantScoped row)
     {
         ArgumentNullException.ThrowIfNull(row);
@@ -103,6 +147,11 @@ public sealed class OrganisationScope
         if (!row.TenantId.Equals(Tenant))
         {
             return false;
+        }
+
+        if (row is IPortalCustomerOwned owned && PortalCustomer is { } grant)
+        {
+            return owned.CustomerId == grant.CustomerId; // Story 47 (D2): a portal principal reaches its own customer's rows only
         }
 
         if (row is not IOrganisationScoped scoped)

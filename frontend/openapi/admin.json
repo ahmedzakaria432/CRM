@@ -4188,7 +4188,7 @@
     "securitySchemes": {
       "Bearer": {
         "type": "http",
-        "description": "Staff access token from POST /api/Agent/Auth/login",
+        "description": "Access token: staff from POST /api/Agent/Auth/login, customer from POST /api/Portal/Auth/login",
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }

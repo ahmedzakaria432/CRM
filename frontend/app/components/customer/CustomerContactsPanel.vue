@@ -62,6 +62,14 @@
             <UiButton v-if="!contact.isPrimary" size="sm" variant="ghost" @click="makePrimary(contact)">
               {{ t('customers.contacts.setPrimary') }}
             </UiButton>
+            <UiButton
+              v-if="contact.hasPortalAccess && contact.email"
+              size="sm"
+              variant="ghost"
+              @click="openPortalPassword(contact)"
+            >
+              {{ t('customers.contacts.setPortalPassword') }}
+            </UiButton>
             <UiButton size="sm" variant="ghost" @click="askRemove(contact)">{{ t('customers.contacts.remove') }}</UiButton>
           </div>
         </li>
@@ -75,6 +83,12 @@
       :contact="editing"
       @saved="customer.publish"
       @conflict="customer.reload()"
+    />
+    <CustomerPortalPasswordModal
+      v-if="canWrite"
+      v-model:open="portalPasswordOpen"
+      :customer-id="customerId"
+      :contact="portalContact"
     />
     <UiModal
       v-if="canWrite"
@@ -121,6 +135,13 @@ const editing = ref<ContactDto | undefined>(undefined)
 const removeOpen = ref(false)
 const removing = ref<ContactDto | undefined>(undefined)
 const busy = ref(false)
+const portalPasswordOpen = ref(false)
+const portalContact = ref<ContactDto | undefined>(undefined)
+
+function openPortalPassword(contact: ContactDto): void {
+  portalContact.value = contact
+  portalPasswordOpen.value = true
+}
 
 function openAdd(): void {
   editing.value = undefined

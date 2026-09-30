@@ -19,4 +19,11 @@
   <data name="Tickets.Status.Resolved" xml:space="preserve"><value>محلولة</value></data>
   <data name="Tickets.Status.Closed" xml:space="preserve"><value>مغلقة</value></data>
   <data name="Tickets.Status.Cancelled" xml:space="preserve"><value>ملغاة</value></data>
+  <data name="Tickets.Validation.PortalTabUnsupported" xml:space="preserve"><value>يجب أن يكون التبويب مفتوحة أو مغلقة.</value></data>
+  <data name="Tickets.Validation.PortalStatusUnsupported" xml:space="preserve"><value>يجب أن تكون الحالة إحدى: مستلمة، قيد المعالجة، بانتظار ردك، تم الحل، مغلقة.</value></data>
+  <data name="Tickets.PortalStatus.Received" xml:space="preserve"><value>مستلمة</value></data>
+  <data name="Tickets.PortalStatus.InProgress" xml:space="preserve"><value>قيد المعالجة</value></data>
+  <data name="Tickets.PortalStatus.AwaitingYourReply" xml:space="preserve"><value>بانتظار ردك</value></data>
+  <data name="Tickets.PortalStatus.Resolved" xml:space="preserve"><value>تم الحل</value></data>
+  <data name="Tickets.PortalStatus.Closed" xml:space="preserve"><value>مغلقة</value></data>
 </root>

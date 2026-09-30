@@ -11,6 +11,7 @@ using Crm.Modules.Identity.Domain;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Identity.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -30,6 +31,8 @@ public sealed class IdentityModule : IModule
 
         services.AddRepository<User, UserId, IdentityDbContext>();
         services.AddRepository<RefreshTokenFamily, RefreshTokenFamilyId, IdentityDbContext>();
+        services.AddRepository<PortalAccount, PortalAccountId, IdentityDbContext>();
+        services.AddRepository<PortalSession, PortalSessionId, IdentityDbContext>();
 
         services.AddScoped<IModuleSeeder, IdentitySeeder>();
 
@@ -56,25 +59,31 @@ public sealed class IdentityModule : IModule
         services.AddSingleton<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
 
-        // The staff scheme. The host set it as the default (Program.cs); Story 47 adds the portal scheme here.
-        services.AddAuthentication().AddJwtBearer(CrmAuthenticationSchemes.Staff, options =>
+        // Staff and Portal schemes (the host set Staff as the default, Program.cs). The Staff/Portal policies authenticate
+        // with both, and the identity's AuthenticationType tells the audiences apart (Story 47, D1).
+        services.AddAuthentication()
+            .AddJwtBearer(CrmAuthenticationSchemes.Staff, options => ConfigureBearer(options, jwt, jwt.Audience, CrmAuthenticationSchemes.Staff))
+            .AddJwtBearer(CrmAuthenticationSchemes.Portal, options => ConfigureBearer(options, jwt, jwt.PortalAudience, CrmAuthenticationSchemes.Portal));
+    }
+
+    private static void ConfigureBearer(JwtBearerOptions options, JwtSettings jwt, string audience, string authenticationType)
+    {
+        options.MapInboundClaims = false; // keep "sub", "role", "membership" as issued
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            options.MapInboundClaims = false; // keep "sub", "role", "membership" as issued
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidIssuer = jwt.Issuer,
-                ValidAudience = jwt.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
-                ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateIssuerSigningKey = true,
-                ValidateLifetime = true,
-                RequireExpirationTime = true,
-                ClockSkew = jwt.ClockSkew,
-                NameClaimType = CrmClaimTypes.UserId,
-                RoleClaimType = CrmClaimTypes.Role,
-            };
-        });
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            ClockSkew = jwt.ClockSkew,
+            NameClaimType = CrmClaimTypes.UserId,
+            RoleClaimType = CrmClaimTypes.Role,
+            AuthenticationType = authenticationType,
+        };
     }
 }

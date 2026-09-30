@@ -60,3 +60,15 @@ public sealed record MeDto(
     IReadOnlyList<MeMembershipDto> Memberships,
     IReadOnlyList<string> Roles,
     IReadOnlyList<string> Permissions);
+
+public sealed record PortalMeDto(
+    Guid Id,
+    string Email,
+    string DisplayName,
+    string PreferredLocale,
+    Guid CustomerId,
+    Guid ContactId,
+    bool IsAccountAdmin,
+    IReadOnlyList<string> Permissions);
+
+public sealed record PortalAccountDto(Guid Id, Guid CustomerId, Guid ContactId, string Email, DateTimeOffset? LastSignInAtUtc);

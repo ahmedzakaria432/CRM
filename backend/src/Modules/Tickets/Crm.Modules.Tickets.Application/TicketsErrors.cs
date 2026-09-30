@@ -37,4 +37,7 @@ internal static class TicketsErrors
     public static Error AlreadyClaimed(string detail) => Error.Conflict("Tickets.AlreadyClaimed", detail);
 
     public static Error TransitionNotAllowed(string detail) => Error.Domain("Tickets.TransitionNotAllowed", detail);
+
+    public static Error PortalOnly() =>
+        Error.Unauthorized("Authorization.PortalOnly", "Sign in to the customer portal to continue.");
 }

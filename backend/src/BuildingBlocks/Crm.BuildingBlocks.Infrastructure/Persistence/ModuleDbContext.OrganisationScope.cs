@@ -13,7 +13,7 @@ namespace Crm.BuildingBlocks.Infrastructure.Persistence;
 public abstract partial class ModuleDbContext
 {
     /// <summary>Second NAMED filter next to SoftDeleteFilterName (Story 02 rule: never the unnamed overload - it
-    /// would replace the soft-delete filter). Lifted only by Specification.IgnoreOrganisationScope().</summary>
+    /// would replace the soft-delete filter). Lifted only by Specification.IgnoreOrganisationScope(), used only by the sign-in lookups (Story 06 memberships, Story 47 portal contacts).</summary>
     public const string ScopeFilterName = "OrganisationScope";
 
     // Read by EF at query time from the CURRENT context instance (R2). Never cache these in fields.
@@ -26,6 +26,8 @@ public abstract partial class ModuleDbContext
     private IReadOnlyList<BranchId> ScopeBranchIds => Scope.Branches;
 
     private IReadOnlyList<DepartmentId> ScopeDepartmentIds => Scope.Departments;
+
+    private Guid ScopePortalCustomerId => Scope.PortalCustomer?.CustomerId ?? Guid.Empty;
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -43,7 +45,8 @@ public abstract partial class ModuleDbContext
     {
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes().Where(t => !t.IsOwned()).ToList())
         {
-            string? method = typeof(IOrganisationScoped).IsAssignableFrom(entityType.ClrType) ? nameof(FilterOrganisationScoped)
+            string? method = typeof(IPortalCustomerOwned).IsAssignableFrom(entityType.ClrType) ? nameof(FilterPortalCustomerOwned)
+                : typeof(IOrganisationScoped).IsAssignableFrom(entityType.ClrType) ? nameof(FilterOrganisationScoped)
                 : typeof(ITenantScoped).IsAssignableFrom(entityType.ClrType) ? nameof(FilterTenantScoped)
                 : null;
 
@@ -63,6 +66,15 @@ public abstract partial class ModuleDbContext
             || (e.TenantId.Equals(ScopeTenantId)
                 && ScopeBranchIds.Contains(e.BranchId)
                 && ScopeDepartmentIds.Contains(e.DepartmentId)));
+
+    // Story 47 (D2): the organisation rule OR "the portal principal's own customer". ScopePortalCustomerId is Guid.Empty
+    // for every non-portal caller, and no IPortalCustomerOwned row has Guid.Empty, so staff reads are unchanged.
+    private void FilterPortalCustomerOwned<T>(ModelBuilder modelBuilder) where T : class, IPortalCustomerOwned =>
+        modelBuilder.Entity<T>().HasQueryFilter(ScopeFilterName, (T e) =>
+            ScopeIsUnrestricted
+            || (e.TenantId.Equals(ScopeTenantId)
+                && ((ScopeBranchIds.Contains(e.BranchId) && ScopeDepartmentIds.Contains(e.DepartmentId))
+                    || e.CustomerId == ScopePortalCustomerId)));
 
     private void FilterTenantScoped<T>(ModelBuilder modelBuilder) where T : class, ITenantScoped =>
         modelBuilder.Entity<T>().HasQueryFilter(ScopeFilterName, (T e) => ScopeIsUnrestricted || e.TenantId.Equals(ScopeTenantId));

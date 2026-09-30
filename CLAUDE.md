@@ -150,8 +150,11 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   from `ApiControllerBase`, carries `[Area(CrmAreas.X)]`, and inherits the `api/[area]/[controller]` route template.
   Each Area gets its own Swagger document at `/swagger/{area}/swagger.json`; the UI at `/swagger` is
   Development-only. Area purposes and policies: `Crm.BuildingBlocks.Presentation/AREAS.md`. Agent and Admin controllers require the staff JWT by convention
-  (`StaffAreaAuthorizationConvention`); `[AllowAnonymous]` only on Identity's sign-in actions and the
-  Development-only diagnostics. Portal and Public are anonymous until stories 47/55.
+  (`StaffAreaAuthorizationConvention`); Portal controllers require the portal customer JWT by convention
+  (`PortalAreaAuthorizationConvention`). A portal token is 403 on Agent/Admin and a staff token 403 on Portal (both
+  policies authenticate both schemes and assert the audience). `[AllowAnonymous]` only on Identity's sign-in actions, the
+  Portal auth actions (register, login, refresh, logout) and the Development-only diagnostics. Public is anonymous until
+  story 55.
 - **Queries** project straight to DTOs with `.Select(...)`, use `AsNoTracking()`, and never return an entity or
   a domain type across the API boundary.
 - **Results:** handlers return `Result` / `Result<T>`. Expected business failures are results, not exceptions.
@@ -168,7 +171,8 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   "Logging" is also the
   OpenTelemetry span and the `crm.request.duration` metric per request. Authorisation enforces the request's declaration: every MediatR request carries exactly one of
   `[RequirePermission(CrmPermissions.X)]`, `[RequireAuthenticatedUser]`, `[AllowAnonymousRequest]`
-  (`Crm.BuildingBlocks.Application/Authorization`); `RequestAuthorizationGuard` refuses to start the app otherwise.
+  (`Crm.BuildingBlocks.Application/Authorization`); `RequestAuthorizationGuard` refuses to start the app otherwise. `[RequireAuthenticatedUser]` means a signed-in **staff**
+  user: a portal principal gets 403 `Authorization.StaffOnly`; portal requests declare `portal.tickets` / `portal.account`.
   Permissions are a code-defined catalogue with a fixed role map; effective permissions are the roles held in the
   departments of the active scope. 401 with no user, 403 naming the permission; the handler never runs.
 - **Logging:** Serilog, compact JSON in every environment; every line carries `CorrelationId` (from
@@ -208,13 +212,15 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   scope, so the sender can hand it to another department of the same tenant (Story 15). Adding an implementer is a
   security review. An out-of-scope
   read or write returns 403 `urn:crm:problem:forbidden` (code `Organisation.OutOfScope`), never an accidental
-  404. The one permitted lift is `Specification.IgnoreOrganisationScope()`, used only by the sign-in membership
-  lookup (`Organisation`'s `MembershipsOfUserSpecification`) — it lifts only the scope filter, never soft
-  delete. `ICurrentUserService.Scope` is the caller's resolved `OrganisationScope` (tenant, memberships, and
+  404. The only permitted lift is `Specification.IgnoreOrganisationScope()`, used only by the two sign-in lookups
+  (`Organisation`'s `MembershipsOfUserSpecification`, `Customers`' `PortalContactsSpecification`) — it lifts only the
+  scope filter, never soft delete. A portal customer (Story 47) has a tenant and a `PortalCustomerGrant` but no
+  departments: it reaches `ITenantScoped` rows of its tenant and `IPortalCustomerOwned` rows (tickets) of its own customer
+  only; adding an `IPortalCustomerOwned` implementer is a security review. `ICurrentUserService.Scope` is the caller's resolved `OrganisationScope` (tenant, memberships, and
   the active scope chosen via the `X-Crm-Scope` header, which only narrows — a department the caller does not
   belong to is rejected with 403, never silently widened). Creating a scoped row resolves its target department
   with `OrganisationScope.ResolveWriteTarget`. There is no "global" read path outside explicitly authorised
-  admin endpoints. Identity's `User` is deliberately not `ITenantScoped` (sign-in precedes the scope); its admin queries compare
+  admin endpoints. Identity's `User` and `PortalAccount` are deliberately not `ITenantScoped` (sign-in precedes the scope); its admin queries compare
   `TenantId` to the caller's tenant explicitly — the one hand-written tenant filter.
 - **Patterns in use:** modular monolith, repository + specification, strategy (channel adapters, assignment rules),
   decorator (caching, retry), outbox (integration events between modules and outbound integrations), factory

@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 namespace Crm.BuildingBlocks.Presentation.Authorization;
 
 /// <summary>Every Agent/Admin endpoint requires a signed-in staff user, with no attribute to forget;
-/// [AllowAnonymous] on an action (sign-in, refresh, sign-out) wins. Portal and Public are untouched
-/// (stories 47, 55).</summary>
+/// [AllowAnonymous] on an action (sign-in, refresh, sign-out) wins. Portal: PortalAreaAuthorizationConvention (Story 47); Public is untouched
+/// (story 55).</summary>
 public sealed class StaffAreaAuthorizationConvention : IControllerModelConvention
 {
     public void Apply(ControllerModel controller)

@@ -73,7 +73,8 @@
       "otherDepartment": "قسم آخر",
       "aCategory": "تصنيف",
       "nobody": "لا أحد",
-      "recordedBy": "سجّله {name}"
+      "recordedBy": "سجّله {name}",
+      "viaPortal": "عبر البوابة"
     },
     "detail": {
       "back": "رجوع",

@@ -16,8 +16,15 @@ public static class CrmPermissions
     public const string AdminUsers = "admin.users";
     public const string AdminBranding = "admin.branding";
 
-    public static readonly IReadOnlyList<string> All =
+    public const string PortalTickets = "portal.tickets";
+    public const string PortalAccount = "portal.account";
+
+    public static readonly IReadOnlyList<string> Staff =
         [TicketsRead, TicketsWrite, TicketsAssign, CustomersRead, CustomersWrite, AdminOrganisation, AdminUsers, AdminBranding];
+
+    public static readonly IReadOnlyList<string> All = [.. Staff, PortalAccount, PortalTickets];
+
+    private static readonly IReadOnlyList<string> PortalPermissions = [PortalAccount, PortalTickets];
 
     private static readonly IReadOnlyList<string> AgentPermissions = [TicketsRead, TicketsWrite, CustomersRead, CustomersWrite];
 
@@ -25,7 +32,9 @@ public static class CrmPermissions
     {
         [CrmRoles.Agent] = AgentPermissions,
         [CrmRoles.Supervisor] = [.. AgentPermissions, TicketsAssign],
-        [CrmRoles.Administrator] = All,
+        // Staff, NOT All: a staff token must never satisfy a portal request (Story 47, D13).
+        [CrmRoles.Administrator] = Staff,
+        [CrmRoles.PortalCustomer] = PortalPermissions,
     };
 
     /// <summary>Union of the roles' permissions, ordinal-sorted. An unknown role grants nothing.</summary>

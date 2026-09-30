@@ -6,7 +6,7 @@ namespace Crm.BuildingBlocks.Application.Specifications;
 /// Reusable query intent (CLAUDE.md, "Backend", DDD rules - e.g. OverdueTicketsSpecification).
 /// Two named escape hatches, each lifting exactly one filter: <see cref="IgnoreSoftDeleteFilter"/> lifts the
 /// named soft-delete filter (Infrastructure/SpecificationEvaluator); <see cref="IgnoreOrganisationScopeFilter"/>
-/// lifts the named organisation-scope filter (Story 06) and is used only by the sign-in membership lookup.
+/// lifts the named organisation-scope filter (Story 06) and is used only by the two sign-in lookups: Organisation's MembershipsOfUserSpecification (Story 06) and Customers' PortalContactsSpecification (Story 47).
 /// Neither ever lifts every filter, so a specification can never accidentally leak another tenant's rows.
 /// </summary>
 public abstract class Specification<T>
@@ -52,8 +52,8 @@ public abstract class Specification<T>
 
     protected void IncludeSoftDeleted() => IgnoreSoftDeleteFilter = true;
 
-    /// <summary>THE ONE PERMITTED SCOPE LIFT (Story 06): used only by the sign-in membership lookup
-    /// (Organisation's MembershipsOfUserSpecification). Lifts only ModuleDbContext.ScopeFilterName - the
-    /// soft-delete filter stays. Adding a second caller is a security review, not a refactor.</summary>
+    /// <summary>THE PERMITTED SCOPE LIFT (Story 06, Story 47): used only by the two sign-in lookups
+    /// (Organisation's MembershipsOfUserSpecification, Customers' PortalContactsSpecification). Lifts only ModuleDbContext.ScopeFilterName - the
+    /// soft-delete filter stays. Adding a third caller is a security review, not a refactor.</summary>
     protected void IgnoreOrganisationScope() => IgnoreOrganisationScopeFilter = true;
 }

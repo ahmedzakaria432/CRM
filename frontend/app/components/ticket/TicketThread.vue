@@ -34,7 +34,11 @@
               <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
                 <span>{{ when(entry) }}</span>
                 <span v-if="entry.direction === 'Inbound'">
-                  {{ t('tickets.thread.recordedBy', { name: recorderOf(entry) }) }}
+                  {{
+                    entry.recordedById !== undefined && entry.recordedById === entry.authorId
+                      ? t('tickets.thread.viaPortal')
+                      : t('tickets.thread.recordedBy', { name: recorderOf(entry) })
+                  }}
                 </span>
               </div>
             </div>
@@ -74,8 +78,10 @@ interface Props {
   ticketId: string
   version?: number
   customerLabel?: string
+  /** Story 47: the ticket contact; a portal customer acts as this contact, so activities name them. */
+  contactId?: string
 }
-const props = withDefaults(defineProps<Props>(), { version: 0, customerLabel: undefined })
+const props = withDefaults(defineProps<Props>(), { version: 0, customerLabel: undefined, contactId: undefined })
 
 const { t, te, locale } = useI18n()
 const format = useFormat()
@@ -94,7 +100,15 @@ watch(data, () => {
 })
 
 const pages = computed<TicketThreadPageDto[]>(() => (data.value ? [data.value, ...morePages.value] : []))
-const lookups = computed(() => mergeLookups(pages.value))
+const lookups = computed(() => {
+  const merged = mergeLookups(pages.value)
+  if (props.contactId !== undefined && !merged.people.has(props.contactId)) {
+    const people = new Map(merged.people)
+    people.set(props.contactId, props.customerLabel ?? t('tickets.thread.customer'))
+    return { ...merged, people }
+  }
+  return merged
+})
 const entries = computed<TicketThreadEntryDto[]>(() => {
   const bySequence = new Map<number, TicketThreadEntryDto>()
   for (const page of pages.value) {

@@ -30,8 +30,9 @@ try
     builder.Services.AddCrmErrorHandling();                                            // global exception handler + problem details
     builder.Services.AddCrmRateLimiting(builder.Configuration);
 
-    // Story 07: staff sign-in is JWT bearer (scheme registered by the Identity module). It is the default scheme,
-    // so an [Authorize] challenge is always a 401 problem, never "no authenticationScheme was specified".
+    // Story 07 + 47: the staff JWT (Agent/Admin) and the portal JWT (Portal) are both registered by the Identity module.
+    // Staff stays the default scheme, so a bare [Authorize] challenge is always a 401 problem, never "no authenticationScheme
+    // was specified".
     builder.Services.AddAuthentication(CrmAuthenticationSchemes.Staff);
     builder.Services.AddCrmAuthorization();
 
@@ -50,7 +51,11 @@ try
         builder.Services.AddDiagnostics(builder.Configuration);
     }
 
-    IMvcBuilder mvc = builder.Services.AddControllers(options => options.Conventions.Add(new StaffAreaAuthorizationConvention()));
+    IMvcBuilder mvc = builder.Services.AddControllers(options =>
+    {
+        options.Conventions.Add(new StaffAreaAuthorizationConvention());
+        options.Conventions.Add(new PortalAreaAuthorizationConvention());
+    });
 
     foreach (ModuleEntry entry in ModuleCatalog.All)
     {
@@ -80,7 +85,7 @@ try
             Type = SecuritySchemeType.Http,
             Scheme = "bearer",
             BearerFormat = "JWT",
-            Description = "Staff access token from POST /api/Agent/Auth/login",
+            Description = "Access token: staff from POST /api/Agent/Auth/login, customer from POST /api/Portal/Auth/login",
         });
         options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
         {
@@ -108,7 +113,7 @@ try
     // 3. request logging outside the exception handler - it logs the final (handled) status once;
     // 4. exception handler, then status-code pages - bare 401/404/405 become problems too;
     // 5. Development-only Swagger + migrate/seed (below);
-    // 6. authentication (staff JWT), then the active-scope check (403 on a forged X-Crm-Scope), then authorisation;
+    // 6. authentication (staff by default; the Staff/Portal policies authenticate both schemes), then the active-scope check (403 on a forged X-Crm-Scope), then authorisation;
     // 7. rate limiter after routing (implicit), so the endpoint's [Area] is known.
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseCrmRequestLocalization();

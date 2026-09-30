@@ -22,3 +22,12 @@ public interface IOrganisationScoped : ITenantScoped
 /// ADDED row is judged like any other. Implement it only on an aggregate whose DepartmentId/BranchId have private
 /// setters changed by exactly one method - adding an implementer is a security review.</summary>
 public interface ITransferableOrganisationScoped : IOrganisationScoped;
+
+/// <summary>Story 47: an organisation-scoped row that belongs to exactly one customer. A portal customer principal
+/// (OrganisationScope.PortalCustomer) sees and may write such a row of its own tenant whose CustomerId equals its
+/// grant's customer id - nothing else of the module. Implemented by Ticket only. CustomerId must be set once, never
+/// Guid.Empty, and never change. Adding an implementer is a security review.</summary>
+public interface IPortalCustomerOwned : IOrganisationScoped
+{
+    Guid CustomerId { get; }
+}

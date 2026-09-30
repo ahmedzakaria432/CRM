@@ -73,7 +73,8 @@
       "otherDepartment": "another department",
       "aCategory": "a category",
       "nobody": "nobody",
-      "recordedBy": "Recorded by {name}"
+      "recordedBy": "Recorded by {name}",
+      "viaPortal": "via the portal"
     },
     "detail": {
       "back": "Back",

@@ -7,4 +7,5 @@ public enum SessionRevocationReason
     UserDeactivated,
     PasswordChanged,
     PasswordReset,
+    PortalAccessRevoked,
 }

@@ -1,0 +1,455 @@
+@host = http://localhost:5187
+
+# Story 47 - the customer portal: registration, sign-in, account, categories, tickets (submit, list, thread, reply, close,
+# reopen) and the agent-side password provisioning. Run top to bottom against a Development API (`docker compose up -d`, then
+# `dotnet run --project backend/src/Crm.Api --launch-profile http`).
+#
+# Seeded portal account: Ahmed (ahmed@example.com, Crm_Dev_2026!) - the primary contact of Ahmed Al-Qahtani (RYD-CARE, ticket
+# T-000001), so he is the account admin of his customer. Access tokens live 2 minutes in Development: re-run the login blocks
+# when a request answers 401. Portal register/login/refresh share ONE limit of 10 per minute per IP (RateLimiting:PortalSignIn);
+# when a block answers 429, wait a minute. Counts in the expected results (T-000001 only, three categories) assume a fresh
+# database; earlier story runs add tickets and categories.
+#
+# LEAK CHECK: search every portal response body for SECRET-NOTE-47, assignedAgent, departmentId, branchId, rowVersion,
+# activities and priority - none may appear (request 10 plants the note).
+#
+# Dev seed: Najd Logistics (11000000-0000-0000-0000-000000000002, RYD-CARE, ticket T-000002), Red Sea Trading
+# (11000000-0000-0000-0000-000000000003, JED-CARE, ticket T-000003, contact Fahad - portal access off).
+
+@ahmedTicket = 15000000-0000-0000-0000-000000000001
+@najdTicket = 15000000-0000-0000-0000-000000000002
+@najd = 11000000-0000-0000-0000-000000000002
+@redSea = 11000000-0000-0000-0000-000000000003
+@fahad = 11000000-0000-0000-0001-000000000004
+@general = 15000000-0000-0000-0001-000000000001
+@internal = 15000000-0000-0000-0001-000000000004
+@unknown = 00000000-0000-0000-0000-00000000dead
+
+### 1. Portal login as Ahmed - 200; Set-Cookie crm_portal_refresh=...; path=/api/Portal/Auth. Decode the token: aud crm-portal,
+### customer_id, contact_id, portal_admin "true", portal_branch, portal_department, NO membership and NO role claims.
+# @name portal
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "ahmed@example.com", "password": "Crm_Dev_2026!" }
+
+@portalToken = {{portal.response.body.accessToken}}
+@portalRefresh = {{portal.response.body.refreshToken}}
+
+### 1b. Wrong password - 401 Identity.InvalidCredentials (generic; the same for an unknown email)
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "ahmed@example.com", "password": "not-the-password-1" }
+
+### 2. Me - 200 isAccountAdmin true, permissions ["portal.account","portal.tickets"]
+GET {{host}}/api/Portal/Me
+Authorization: Bearer {{portalToken}}
+
+### 2b. Me without a token - 401
+GET {{host}}/api/Portal/Me
+
+### 3a. A PORTAL token on the staff Me - 403 urn:crm:problem:forbidden (authenticated, wrong audience)
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{portalToken}}
+
+### 3b. A portal token on the agent inbox - 403
+GET {{host}}/api/Agent/Tickets
+Authorization: Bearer {{portalToken}}
+
+### 3c. A portal token on the admin users - 403
+GET {{host}}/api/Admin/Users
+Authorization: Bearer {{portalToken}}
+
+### 3d. A portal token on the customer list and on the agent provisioning endpoint - 403
+GET {{host}}/api/Agent/Customers
+Authorization: Bearer {{portalToken}}
+
+### 4. Staff login as agent A
+# @name agentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{agentA.response.body.accessToken}}
+
+### 4a. A STAFF token on the portal Me - 403
+GET {{host}}/api/Portal/Me
+Authorization: Bearer {{agentAToken}}
+
+### 4b. A staff token on the portal tickets - 403
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{agentAToken}}
+
+### 4c. Administrator (holds no portal permission) on the portal tickets - 403
+# @name admin
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "Crm_Dev_2026!" }
+
+###
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{admin.response.body.accessToken}}
+
+### 4d. The PORTAL refresh token on the STAFF refresh endpoint - 401 (unknown there)
+POST {{host}}/api/Agent/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{portalRefresh}}" }
+
+### 5. Categories - 200: the active, customer-visible categories of RYD-CARE (General, Technical, Complaint on a fresh database;
+### never the Internal or Legacy ones, never RYD-BILL or JED-CARE categories)
+GET {{host}}/api/Portal/TicketCategories
+Authorization: Bearer {{portalToken}}
+
+### 6. My tickets - 200: T-000001 (Received) and every other ticket of the customer (Ahmed is the account admin), newest activity first
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{portalToken}}
+
+### 6b. The closed tab - 200
+GET {{host}}/api/Portal/Tickets?tab=closed
+Authorization: Bearer {{portalToken}}
+
+### 6c. Search by number - 200: T-000001 only
+GET {{host}}/api/Portal/Tickets?search=T-000001
+Authorization: Bearer {{portalToken}}
+
+### 6d. Unknown status - 400 urn:crm:problem:validation
+GET {{host}}/api/Portal/Tickets?status=Nope
+Authorization: Bearer {{portalToken}}
+
+### 6e. One portal status inside the tab - 200 (Received = New)
+GET {{host}}/api/Portal/Tickets?status=Received&pageSize=5
+Authorization: Bearer {{portalToken}}
+
+### 7a. Another customer's ticket (Najd, T-000002) - 404 Tickets.TicketNotFound (never 403: it must not confirm the ticket exists)
+GET {{host}}/api/Portal/Tickets/{{najdTicket}}
+Authorization: Bearer {{portalToken}}
+
+### 7b. ... its thread - 404
+GET {{host}}/api/Portal/Tickets/{{najdTicket}}/thread
+Authorization: Bearer {{portalToken}}
+
+### 7c. ... a reply - 404
+POST {{host}}/api/Portal/Tickets/{{najdTicket}}/replies
+Content-Type: application/json
+Authorization: Bearer {{portalToken}}
+
+{ "body": "hello" }
+
+### 7d. ... request closure - 404
+POST {{host}}/api/Portal/Tickets/{{najdTicket}}/request-closure
+Authorization: Bearer {{portalToken}}
+
+### 7e. ... reopen - 404
+POST {{host}}/api/Portal/Tickets/{{najdTicket}}/reopen
+Authorization: Bearer {{portalToken}}
+
+### 7f. An unknown id - 404 with exactly the same body shape as 7a
+GET {{host}}/api/Portal/Tickets/{{unknown}}
+Authorization: Bearer {{portalToken}}
+
+### 8. Raise a request in Arabic - 200: status Received, actions ["Reply","RequestClosure"], category General
+# @name submitted
+POST {{host}}/api/Portal/Tickets
+Content-Type: application/json
+Authorization: Bearer {{portalToken}}
+
+{
+  "subject": "لا أستطيع تتبع شحنتي",
+  "description": "رقم الشحنة لا يظهر في التطبيق.",
+  "categoryId": "{{general}}"
+}
+
+@submittedId = {{submitted.response.body.id}}
+
+### 8b. A category the customer may not pick (Internal) - 404 Tickets.CategoryNotFound
+POST {{host}}/api/Portal/Tickets
+Content-Type: application/json
+Authorization: Bearer {{portalToken}}
+
+{ "subject": "x", "description": "y", "categoryId": "{{internal}}" }
+
+### 8c. Empty subject - 400 urn:crm:problem:validation
+POST {{host}}/api/Portal/Tickets
+Content-Type: application/json
+Authorization: Bearer {{portalToken}}
+
+{ "subject": "", "description": "y" }
+
+### 9. Agent A sees it in the inbox - 200: channel Portal, department RYD-CARE, customer Ahmed, status New
+GET {{host}}/api/Agent/Tickets?queue=all&pageSize=3
+Authorization: Bearer {{agentAToken}}
+
+### 10. Agent A: an internal note (the leak bait) and a public reply - both 200
+POST {{host}}/api/Agent/Tickets/{{submittedId}}/notes
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "SECRET-NOTE-47 do not show the customer" }
+
+###
+POST {{host}}/api/Agent/Tickets/{{submittedId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "body": "مرحباً أحمد، نعمل على ذلك." }
+
+### 11. The portal thread - 200: the agent reply only (sender "Support", no staff id or name), NO SECRET-NOTE-47, no activity
+GET {{host}}/api/Portal/Tickets/{{submittedId}}/thread
+Authorization: Bearer {{portalToken}}
+
+### 11b. The portal ticket - 200: no note text, assignee, department, rowVersion or activity anywhere
+GET {{host}}/api/Portal/Tickets/{{submittedId}}
+Authorization: Bearer {{portalToken}}
+
+### 12. A customer reply - 200; then the agent's thread shows the inbound message (authorId and recordedById = Ahmed's contact id)
+POST {{host}}/api/Portal/Tickets/{{submittedId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{portalToken}}
+
+{ "body": "شكراً، بانتظاركم." }
+
+###
+GET {{host}}/api/Agent/Tickets/{{submittedId}}/thread
+Authorization: Bearer {{agentAToken}}
+
+### 13. My issue is solved - 200: status Resolved, actions ["Reply","Reopen"]
+POST {{host}}/api/Portal/Tickets/{{submittedId}}/request-closure
+Authorization: Bearer {{portalToken}}
+
+### 13b. Reopen a Resolved ticket - 200: status InProgress
+POST {{host}}/api/Portal/Tickets/{{submittedId}}/reopen
+Authorization: Bearer {{portalToken}}
+
+### 13c. Request closure again - 200: Resolved
+POST {{host}}/api/Portal/Tickets/{{submittedId}}/request-closure
+Authorization: Bearer {{portalToken}}
+
+### 13d. Agent A reads the ticket, then closes it with the rowVersion of that response - 200
+# @name agentTicket
+GET {{host}}/api/Agent/Tickets/{{submittedId}}
+Authorization: Bearer {{agentAToken}}
+
+###
+POST {{host}}/api/Agent/Tickets/{{submittedId}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Close", "rowVersion": "{{agentTicket.response.body.rowVersion}}" }
+
+### 13e. The customer reopens a CLOSED ticket - 422 Tickets.TransitionNotAllowed
+POST {{host}}/api/Portal/Tickets/{{submittedId}}/reopen
+Authorization: Bearer {{portalToken}}
+
+### 13f. A reply to a closed ticket - 422
+POST {{host}}/api/Portal/Tickets/{{submittedId}}/replies
+Content-Type: application/json
+Authorization: Bearer {{portalToken}}
+
+{ "body": "one more thing" }
+
+### 14a. Registration - an unknown email - 204 (identical to every refusal; nothing is created)
+POST {{host}}/api/Portal/Auth/register
+Content-Type: application/json
+
+{ "email": "nobody@example.com", "password": "Portal_Pass_2026" }
+
+### 14b. Ahmed's email again (already registered) - 204, nothing changes
+POST {{host}}/api/Portal/Auth/register
+Content-Type: application/json
+
+{ "email": "ahmed@example.com", "password": "Another_Pass_2026" }
+
+### 14c. ... so login with that password - 401 (the original password still works)
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "ahmed@example.com", "password": "Another_Pass_2026" }
+
+### 14d. Fahad (portal access off) registers - 204; then login - 401
+POST {{host}}/api/Portal/Auth/register
+Content-Type: application/json
+
+{ "email": "fahad@redsea.example.com", "password": "Portal_Pass_2026" }
+
+### 14e. A malformed email / weak password - 400
+POST {{host}}/api/Portal/Auth/register
+Content-Type: application/json
+
+{ "email": "not-an-email", "password": "short" }
+
+### 15. Agent B (JED-CARE) enables portal access on Fahad: read the customer for its rowVersion, then PUT the contact - 200
+# @name agentB
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+###
+# @name redSeaCustomer
+GET {{host}}/api/Agent/Customers/{{redSea}}
+Authorization: Bearer {{agentB.response.body.accessToken}}
+
+###
+PUT {{host}}/api/Agent/Customers/{{redSea}}/contacts/{{fahad}}
+Content-Type: application/json
+Authorization: Bearer {{agentB.response.body.accessToken}}
+
+{ "name": "Fahad", "email": "fahad@redsea.example.com", "hasPortalAccess": true, "rowVersion": "{{redSeaCustomer.response.body.rowVersion}}" }
+
+### 15b. Fahad registers - 204; 15c logs in - 200 (his own password); 15d lists - T-000003 only; 15e asks for Ahmed's ticket - 404
+POST {{host}}/api/Portal/Auth/register
+Content-Type: application/json
+
+{ "email": "fahad@redsea.example.com", "password": "Portal_Pass_2026" }
+
+###
+# @name fahadLogin
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "fahad@redsea.example.com", "password": "Portal_Pass_2026" }
+
+###
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{fahadLogin.response.body.accessToken}}
+
+###
+GET {{host}}/api/Portal/Tickets/{{ahmedTicket}}
+Authorization: Bearer {{fahadLogin.response.body.accessToken}}
+
+### 16. Agent provisioning: agent A for Red Sea (JED-CARE, out of scope) - 403
+POST {{host}}/api/Agent/PortalAccounts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{redSea}}", "contactId": "{{fahad}}", "password": "Layla_Portal_2026" }
+
+### 16a. Agent A adds Layla (portal access on) to Najd, then sets her password - 200 (creates the account)
+# @name najdCustomer
+GET {{host}}/api/Agent/Customers/{{najd}}
+Authorization: Bearer {{agentAToken}}
+
+###
+# @name layla
+POST {{host}}/api/Agent/Customers/{{najd}}/contacts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Layla Hassan", "email": "layla@najd.example.com", "isPrimary": false, "hasPortalAccess": true, "rowVersion": "{{najdCustomer.response.body.rowVersion}}" }
+
+@laylaId = {{layla.response.body.contacts[2].id}}
+
+###
+POST {{host}}/api/Agent/PortalAccounts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{najd}}", "contactId": "{{laylaId}}", "password": "Layla_Portal_2026" }
+
+### 16b. An unknown contact - 404 Identity.PortalContactNotFound (a real contact whose portal access is off answers 422
+### Identity.PortalAccessNotEnabled)
+POST {{host}}/api/Agent/PortalAccounts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{najd}}", "contactId": "{{unknown}}", "password": "Layla_Portal_2026" }
+
+### 16c. A weak password - 400
+POST {{host}}/api/Agent/PortalAccounts
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{najd}}", "contactId": "{{laylaId}}", "password": "short" }
+
+### 17. Layla (not the primary contact, so not the account admin) - login 200 with portal_admin "false"; her list is empty
+### (T-000002 belongs to another Najd contact) and T-000002 is 404 for her
+# @name laylaLogin
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "layla@najd.example.com", "password": "Layla_Portal_2026" }
+
+###
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{laylaLogin.response.body.accessToken}}
+
+###
+GET {{host}}/api/Portal/Tickets/{{najdTicket}}
+Authorization: Bearer {{laylaLogin.response.body.accessToken}}
+
+###
+POST {{host}}/api/Portal/Tickets
+Content-Type: application/json
+Authorization: Bearer {{laylaLogin.response.body.accessToken}}
+
+{ "subject": "Layla's request", "description": "Raised by a non-admin contact." }
+
+### 19. Refresh: a new pair - 200; the OLD refresh token again - 401 and the whole session is revoked
+# @name refreshed
+POST {{host}}/api/Portal/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{portalRefresh}}" }
+
+###
+POST {{host}}/api/Portal/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{portalRefresh}}" }
+
+### 20. Profile: rename and switch language - 200 (log in again first if the token expired)
+PUT {{host}}/api/Portal/Me
+Content-Type: application/json
+Authorization: Bearer {{refreshed.response.body.accessToken}}
+
+{ "displayName": "Ahmed Q.", "preferredLocale": "en" }
+
+### 20b. Change password: a wrong current password - 400 on CurrentPassword; the right one - 204 (run it, then log in with the new one)
+POST {{host}}/api/Portal/Me/change-password
+Content-Type: application/json
+Authorization: Bearer {{refreshed.response.body.accessToken}}
+
+{ "currentPassword": "wrong-wrong-1", "newPassword": "Brand_New_Pass_2026" }
+
+### 21. Revocation: agent A turns Layla's portal access off - her refresh and login answer 401 (until it is turned back on)
+# @name najdCustomer2
+GET {{host}}/api/Agent/Customers/{{najd}}
+Authorization: Bearer {{agentAToken}}
+
+###
+PUT {{host}}/api/Agent/Customers/{{najd}}/contacts/{{laylaId}}
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "name": "Layla Hassan", "email": "layla@najd.example.com", "hasPortalAccess": false, "rowVersion": "{{najdCustomer2.response.body.rowVersion}}" }
+
+###
+POST {{host}}/api/Portal/Auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{laylaLogin.response.body.refreshToken}}" }
+
+### 22. Logout - 204 and the cookie is cleared; the refresh token then answers 401
+POST {{host}}/api/Portal/Auth/logout
+Content-Type: application/json
+
+{ "refreshToken": "{{refreshed.response.body.refreshToken}}" }
+
+### 30. Rate limit: run this block 11 times inside a minute - the 11th is 429 with Retry-After and urn:crm:problem:rate-limited
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "nobody-rl@example.com", "password": "wrong-password-1" }
+
+### 31. Register has the same limit (shared per IP) - after a minute, run it 11 times - the 11th is 429
+POST {{host}}/api/Portal/Auth/register
+Content-Type: application/json
+
+{ "email": "rl@example.com", "password": "Portal_Pass_2026" }
+
+### 32. Lockout: five wrong passwords lock the account for the lockout window (2 minutes in Development); the right password is
+### then still 401 until the window ends or an agent resets the password (request 16a). Use a provisioned contact, not Ahmed.

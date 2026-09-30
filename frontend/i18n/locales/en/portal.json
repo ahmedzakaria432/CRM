@@ -1,0 +1,130 @@
+{
+  "portal": {
+    "nav": {
+      "label": "Customer portal",
+      "tickets": "My requests",
+      "new": "New request",
+      "account": "My account",
+      "signOut": "Sign out"
+    },
+    "login": {
+      "title": "Sign in to your support portal",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "invalid": "Wrong email or password.",
+      "rateLimited": "Too many attempts. Wait a moment and try again.",
+      "failed": "Sign-in failed. Try again.",
+      "noAccount": "New here? Create your account"
+    },
+    "register": {
+      "title": "Create your portal account",
+      "intro": "Use the email your support team has on file.",
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "10 to 128 characters, with at least one letter and one digit.",
+      "confirmPassword": "Confirm password",
+      "mismatch": "The passwords do not match.",
+      "submit": "Create account",
+      "done": "If this email belongs to a customer with portal access, your account is ready. Sign in to continue.",
+      "signIn": "Go to sign in",
+      "haveAccount": "Already have an account? Sign in",
+      "rateLimited": "Too many attempts. Wait a moment and try again.",
+      "failed": "Registration failed. Try again."
+    },
+    "status": {
+      "Received": "Received",
+      "InProgress": "In progress",
+      "AwaitingYourReply": "Awaiting your reply",
+      "Resolved": "Resolved",
+      "Closed": "Closed"
+    },
+    "tickets": {
+      "title": "My requests",
+      "newRequest": "New request",
+      "tabsLabel": "Request state",
+      "tabs": {
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "statusFilter": "Status",
+      "allStatuses": "All statuses",
+      "search": "Search by number or subject",
+      "empty": "You have no requests here yet.",
+      "emptyDescription": "Raise a request and our team will get back to you.",
+      "emptyFiltered": "No requests match your search.",
+      "emptyAction": "Raise a request",
+      "loadError": "We could not load your requests.",
+      "retry": "Try again",
+      "number": "Request",
+      "updated": "Updated {when}",
+      "noCategory": "No category",
+      "pagination": {
+        "label": "Requests pages",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page"
+      }
+    },
+    "new": {
+      "title": "New request",
+      "subject": "Subject",
+      "description": "Describe your request",
+      "category": "Category",
+      "noCategory": "No category",
+      "submit": "Send request",
+      "submitted": "Your request was sent.",
+      "failed": "We could not send your request. Try again."
+    },
+    "detail": {
+      "backToList": "Back to my requests",
+      "created": "Created {when}",
+      "updated": "Updated {when}",
+      "description": "Your request",
+      "thread": "Conversation",
+      "threadEmpty": "No messages yet. Our team will reply here.",
+      "you": "You",
+      "colleague": "Your colleague",
+      "support": "Support team",
+      "loadMore": "Show more",
+      "reply": "Reply",
+      "replyLabel": "Write a reply",
+      "send": "Send reply",
+      "requestClosure": "My issue is solved",
+      "requestClosureTitle": "Mark this request as solved?",
+      "requestClosureBody": "We will close it for you. You can reopen it later if you need more help.",
+      "requestClosureConfirm": "Yes, it is solved",
+      "cancel": "Cancel",
+      "reopen": "Reopen request",
+      "closedNote": "This request is closed. Raise a new request if you need more help.",
+      "newRequest": "New request",
+      "notFound": "We could not find this request.",
+      "conflict": "The request changed. Reload and try again.",
+      "reload": "Reload",
+      "loadError": "We could not load this request.",
+      "retry": "Try again",
+      "threadError": "We could not load the conversation."
+    },
+    "account": {
+      "title": "My account",
+      "profile": "Profile",
+      "email": "Email",
+      "displayName": "Display name",
+      "language": "Language",
+      "languages": {
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "save": "Save",
+      "saved": "Your profile was saved.",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "passwordRules": "10 to 128 characters, with at least one letter and one digit.",
+      "mismatch": "The passwords do not match.",
+      "changed": "Password changed. Your other sessions were signed out.",
+      "signOut": "Sign out"
+    }
+  }
+}

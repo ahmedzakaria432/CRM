@@ -10,6 +10,9 @@ internal static class CustomersErrors
     public static Error ContactNotFound(Guid id) =>
         Error.NotFound("Customers.ContactNotFound", $"Contact '{id}' was not found on this customer.");
 
+    public static Error PortalContactNotFound(Guid id) =>
+        Error.NotFound("Customers.PortalContactNotFound", $"Contact '{id}' has no portal access.");
+
     public static Error NoteNotFound(Guid id) =>
         Error.NotFound("Customers.NoteNotFound", $"Note '{id}' was not found on this customer.");
 

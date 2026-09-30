@@ -72,3 +72,24 @@ public sealed record TicketThreadEntryDto(
 public sealed record TicketThreadPageDto(
     IReadOnlyList<TicketThreadEntryDto> Items, int? NextCursor, IReadOnlyList<TicketPersonDto> People,
     IReadOnlyList<TicketCategoryRefDto> Categories, IReadOnlyList<TicketDepartmentRefDto> Departments);
+
+// ---- Story 47: the customer portal's view. Separate records on purpose (S7): no assignee, department, branch, priority,
+// rowVersion, note, activity or staff id can reach a customer through these.
+
+public sealed record PortalTicketCategoryDto(Guid Id, string NameAr, string NameEn);
+
+/// <summary>Status is the customer-friendly name (Received | InProgress | AwaitingYourReply | Resolved | Closed).</summary>
+public sealed record PortalTicketSummaryDto(
+    Guid Id, string Number, string Subject, string Status, PortalTicketCategoryDto? Category,
+    DateTimeOffset? CreatedAtUtc, DateTimeOffset? UpdatedAtUtc);
+
+/// <summary>Actions: what the customer may do now (Reply | RequestClosure | Reopen).</summary>
+public sealed record PortalTicketDto(
+    Guid Id, string Number, string Subject, string Description, string Status, PortalTicketCategoryDto? Category,
+    DateTimeOffset? CreatedAtUtc, DateTimeOffset? UpdatedAtUtc, DateTimeOffset? ResolvedAtUtc, DateTimeOffset? ClosedAtUtc,
+    IReadOnlyList<string> Actions);
+
+/// <summary>A public message. Sender: Customer | Support. IsYou: the caller own contact wrote it. No staff id or name.</summary>
+public sealed record PortalThreadMessageDto(int Sequence, Guid Id, string Sender, bool IsYou, string Body, DateTimeOffset OccurredAtUtc);
+
+public sealed record PortalThreadPageDto(IReadOnlyList<PortalThreadMessageDto> Items, int? NextCursor);

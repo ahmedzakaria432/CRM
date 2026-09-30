@@ -1,6 +1,8 @@
 using Crm.Modules.Customers.Application.Queries.FindContactsByEmail;
 using Crm.Modules.Customers.Application.Queries.GetCustomerById;
+using Crm.Modules.Customers.Application.Queries.FindPortalContactsByEmail;
 using Crm.Modules.Customers.Application.Queries.GetCustomerNames;
+using Crm.Modules.Customers.Application.Queries.GetPortalContact;
 using Crm.Modules.Customers.Contracts;
 using Crm.Modules.Customers.Domain;
 using Crm.SharedKernel.Results;
@@ -27,6 +29,12 @@ public sealed class CustomersModuleApi(ISender sender) : ICustomersModuleApi
 
     public Task<Result<IReadOnlyList<CustomerContactMatch>>> FindContactByEmailAsync(string email, CancellationToken cancellationToken = default) =>
         sender.Send(new FindContactsByEmailQuery(email), cancellationToken);
+
+    public Task<Result<IReadOnlyList<PortalContactMatch>>> FindPortalContactsByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        sender.Send(new FindPortalContactsByEmailQuery(email), cancellationToken);
+
+    public Task<Result<PortalContactMatch>> GetPortalContactAsync(Guid contactId, CancellationToken cancellationToken = default) =>
+        sender.Send(new GetPortalContactQuery(contactId), cancellationToken);
 
     private static CustomerSummary ToSummary(CustomerDto c) => new(
         c.Id, c.Number, c.DisplayName.Ar, c.DisplayName.En, c.Type, c.Status == nameof(CustomerStatus.Active),

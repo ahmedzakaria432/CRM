@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
+using Crm.BuildingBlocks.Application.Abstractions;
 using Crm.BuildingBlocks.Application.Localization;
 using Crm.BuildingBlocks.Presentation.ErrorHandling;
 using Microsoft.AspNetCore.Builder;
@@ -17,6 +18,7 @@ public sealed record PublicRateLimitSettings(int PermitLimit, TimeSpan Window);
 public static class CrmRateLimitPolicies
 {
     public const string SignIn = "sign-in";
+    public const string PortalSignIn = "portal-sign-in";
 }
 
 public static class RateLimitingServiceCollectionExtensions
@@ -25,7 +27,8 @@ public static class RateLimitingServiceCollectionExtensions
     /// Rate-limits every controller in the Public Area per client IP, with 429 + Retry-After and a
     /// <see cref="ProblemTypes.RateLimited"/> problem. The global limiter reads the endpoint's [Area] metadata
     /// (verified by probe while planning Story 03), so a Public controller in any module is covered with no
-    /// attribute to forget. Other Areas are not limited here.
+    /// attribute to forget. The Portal Area is limited globally too, per account when signed in and per IP otherwise (Story 47).
+    /// Other Areas are not limited here.
     /// </summary>
     public static IServiceCollection AddCrmRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -35,25 +38,56 @@ public static class RateLimitingServiceCollectionExtensions
         PublicRateLimitSettings signIn = configuration.GetSection("RateLimiting:SignIn").Get<PublicRateLimitSettings>()
             ?? throw new InvalidOperationException("RateLimiting:SignIn is not configured.");
 
+        PublicRateLimitSettings portal = configuration.GetSection("RateLimiting:Portal").Get<PublicRateLimitSettings>()
+            ?? throw new InvalidOperationException("RateLimiting:Portal is not configured.");
+
+        PublicRateLimitSettings portalSignIn = configuration.GetSection("RateLimiting:PortalSignIn").Get<PublicRateLimitSettings>()
+            ?? throw new InvalidOperationException("RateLimiting:PortalSignIn is not configured.");
+
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
             // Behind a reverse proxy RemoteIpAddress is the proxy's; UseForwardedHeaders must come first then.
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-                context.GetEndpoint()?.Metadata.GetMetadata<AreaAttribute>()?.RouteValue == CrmAreas.Public
-                    ? RateLimitPartition.GetFixedWindowLimiter(
+            {
+                string? area = context.GetEndpoint()?.Metadata.GetMetadata<AreaAttribute>()?.RouteValue;
+
+                if (string.Equals(area, CrmAreas.Public, StringComparison.Ordinal))
+                {
+                    return RateLimitPartition.GetFixedWindowLimiter(
                         $"public:{context.Connection.RemoteIpAddress}",
                         _ => new FixedWindowRateLimiterOptions
                         {
                             PermitLimit = settings.PermitLimit,
                             Window = settings.Window,
                             QueueLimit = 0,
-                        })
-                    : RateLimitPartition.GetNoLimiter("unlimited"));
+                        });
+                }
+
+                if (string.Equals(area, CrmAreas.Portal, StringComparison.Ordinal))
+                {
+                    // Story 47: per account when signed in (UseRateLimiter runs after UseAuthorization), else per IP.
+                    string key = context.User.FindFirst(CrmClaimTypes.UserId)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        $"portal:{key}",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = portal.PermitLimit,
+                            Window = portal.Window,
+                            QueueLimit = 0,
+                        });
+                }
+
+                return RateLimitPartition.GetNoLimiter("unlimited");
+            });
             options.AddPolicy(CrmRateLimitPolicies.SignIn, context => RateLimitPartition.GetFixedWindowLimiter(
                 $"sign-in:{context.Connection.RemoteIpAddress}",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = signIn.PermitLimit, Window = signIn.Window, QueueLimit = 0 }));
+
+            options.AddPolicy(CrmRateLimitPolicies.PortalSignIn, context => RateLimitPartition.GetFixedWindowLimiter(
+                $"portal-sign-in:{context.Connection.RemoteIpAddress}",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = portalSignIn.PermitLimit, Window = portalSignIn.Window, QueueLimit = 0 }));
 
             options.OnRejected = async (context, cancellationToken) =>
             {
