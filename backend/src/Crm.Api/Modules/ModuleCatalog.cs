@@ -18,6 +18,9 @@ internal static class ModuleCatalog
         new(new Crm.Modules.Identity.Infrastructure.IdentityModule(), Crm.Modules.Identity.Presentation.AssemblyReference.Assembly),
 
         new(new Crm.Modules.Customers.Infrastructure.CustomersModule(), Crm.Modules.Customers.Presentation.AssemblyReference.Assembly),
+
+        // After Customers - its seed points at customer ids.
+        new(new Crm.Modules.Tickets.Infrastructure.TicketsModule(), Crm.Modules.Tickets.Presentation.AssemblyReference.Assembly),
     ];
 }
 

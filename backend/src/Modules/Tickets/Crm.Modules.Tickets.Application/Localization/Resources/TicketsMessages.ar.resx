@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Tickets.Validation.QueueUnsupported" xml:space="preserve"><value>يجب أن تكون قائمة الانتظار إحدى القيم mine أو unassigned أو all.</value></data>
+  <data name="Tickets.Validation.SortUnsupported" xml:space="preserve"><value>يجب أن يكون الترتيب أحد القيم createdAt أو modifiedAt أو priority أو number.</value></data>
+  <data name="Tickets.Validation.StatusUnsupported" xml:space="preserve"><value>حالة التذكرة غير معروفة.</value></data>
+  <data name="Tickets.Validation.PriorityUnsupported" xml:space="preserve"><value>يجب أن تكون الأولوية Low أو Normal أو High أو Urgent.</value></data>
+  <data name="Tickets.Validation.ActionUnsupported" xml:space="preserve"><value>يجب أن يكون الإجراء أحد القيم Open أو AwaitCustomer أو PutOnHold أو Resolve أو Close أو Reopen أو Cancel.</value></data>
+  <data name="Tickets.Refusal.TransitionNotAllowed" xml:space="preserve"><value>حالة التذكرة «{0}»، ولا يُسمح بهذا الإجراء في هذه الحالة.</value></data>
+  <data name="Tickets.Refusal.AlreadyClaimed" xml:space="preserve"><value>استلم {0} هذه التذكرة بالفعل.</value></data>
+  <data name="Tickets.Status.New" xml:space="preserve"><value>جديدة</value></data>
+  <data name="Tickets.Status.Open" xml:space="preserve"><value>مفتوحة</value></data>
+  <data name="Tickets.Status.PendingCustomer" xml:space="preserve"><value>بانتظار العميل</value></data>
+  <data name="Tickets.Status.OnHold" xml:space="preserve"><value>معلّقة</value></data>
+  <data name="Tickets.Status.Resolved" xml:space="preserve"><value>محلولة</value></data>
+  <data name="Tickets.Status.Closed" xml:space="preserve"><value>مغلقة</value></data>
+  <data name="Tickets.Status.Cancelled" xml:space="preserve"><value>ملغاة</value></data>
+</root>

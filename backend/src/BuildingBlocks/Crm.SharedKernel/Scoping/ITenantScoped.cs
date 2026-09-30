@@ -15,3 +15,10 @@ public interface IOrganisationScoped : ITenantScoped
 
     DepartmentId DepartmentId { get; }
 }
+
+/// <summary>An organisation-scoped row that one intention-revealing method may hand to another department of the
+/// same tenant (Ticket.TransferTo, Story 15). The write guard judges a MODIFIED row of this kind by its ORIGINAL
+/// tenant/branch/department, so the sender can move it out of their own scope; its tenant can never change, and an
+/// ADDED row is judged like any other. Implement it only on an aggregate whose DepartmentId/BranchId have private
+/// setters changed by exactly one method - adding an implementer is a security review.</summary>
+public interface ITransferableOrganisationScoped : IOrganisationScoped;

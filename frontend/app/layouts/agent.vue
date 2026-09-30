@@ -104,6 +104,7 @@ const agentNav = computed<ReadonlyArray<AgentNavItem>>(() => [
     ? [
         { to: '/admin/branches', label: t('organisation.nav.branches') },
         { to: '/admin/departments', label: t('organisation.nav.departments') },
+        { to: '/admin/ticket-categories', label: t('tickets.nav.categories') },
       ]
     : []),
   ...(can(Permissions.AdminUsers) ? [{ to: '/admin/users', label: t('identity.nav.users') }] : []),

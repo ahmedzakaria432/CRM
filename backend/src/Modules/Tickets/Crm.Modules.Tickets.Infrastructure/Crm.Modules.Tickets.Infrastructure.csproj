@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- dotnet ef runs its design-time tooling against this project (backend/scripts/ef.ps1 -Module Tickets). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Crm.BuildingBlocks.Infrastructure\Crm.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\Crm.Modules.Tickets.Application\Crm.Modules.Tickets.Application.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -69,7 +69,8 @@ public abstract partial class ModuleDbContext
 
     /// <summary>Write guard: no Added/Modified scoped row may leave the caller's scope - covers a create that names
     /// a foreign department and a change that moves a row. Rows are never loaded out of scope, so this is the
-    /// backstop, not the main path.</summary>
+    /// backstop, not the main path. A Modified ITransferableOrganisationScoped row is judged by its original scope
+    /// (Story 15 transfer).</summary>
     private void EnsureWritesInScope()
     {
         if (Scope.IsUnrestricted)
@@ -79,12 +80,39 @@ public abstract partial class ModuleDbContext
 
         foreach (EntityEntry<ITenantScoped> entry in ChangeTracker.Entries<ITenantScoped>())
         {
-            if (entry.State is EntityState.Added or EntityState.Modified && !Scope.Allows(entry.Entity))
+            if (entry.State is not (EntityState.Added or EntityState.Modified))
+            {
+                continue;
+            }
+
+            if (entry.State == EntityState.Modified && entry.Entity is ITransferableOrganisationScoped && WasInScopeBeforeChange(entry))
+            {
+                continue; // a transfer: the row was the caller's, stays in the tenant, and may leave the caller's scope
+            }
+
+            if (!Scope.Allows(entry.Entity))
             {
                 throw new OrganisationScopeViolationException(entry.Entity.GetType().Name, "Write");
             }
         }
     }
+
+    /// <summary>Original (loaded) scope columns in the caller's scope, and the tenant unchanged. OriginalValue is the
+    /// CLR property value (TenantId/BranchId/DepartmentId), before conversion.</summary>
+    private bool WasInScopeBeforeChange(EntityEntry<ITenantScoped> entry)
+    {
+        if (entry.Property(nameof(ITenantScoped.TenantId)).OriginalValue is not TenantId originalTenant
+            || entry.Property(nameof(IOrganisationScoped.BranchId)).OriginalValue is not BranchId originalBranch
+            || entry.Property(nameof(IOrganisationScoped.DepartmentId)).OriginalValue is not DepartmentId originalDepartment)
+        {
+            return false;
+        }
+
+        return originalTenant.Equals(entry.Entity.TenantId)
+            && Scope.Allows(new OriginalScope(originalTenant, originalBranch, originalDepartment));
+    }
+
+    private sealed record OriginalScope(TenantId TenantId, BranchId BranchId, DepartmentId DepartmentId) : IOrganisationScoped;
 
     private sealed class TenantIdConverter() : ValueConverter<TenantId, Guid>(v => v.Value, v => new TenantId(v));
 

@@ -1,0 +1,782 @@
+@host = http://localhost:5187
+
+# Story 15 - the Tickets module: ticket aggregate, status machine, assignment (claim, assign, unassign, transfer), categories,
+# queues and search. Run top to bottom against a Development API (`docker compose up -d`, then
+# `dotnet run --project backend/src/Crm.Api --launch-profile http`).
+# Dev seed (Crm.Modules.Tickets.Contracts.DevSeed.TicketsDevSeed): T-000001 Ahmed (RYD-CARE, New, unassigned), T-000002 Najd
+# (RYD-CARE, Open, assigned to agent A), T-000003 Red Sea (JED-CARE, New, Urgent - invisible to agent A). On a fresh database the
+# seed takes T-000001..T-000003, so request 12 is T-000004. Request 55 creates department RYD-TKT; on a second run it answers
+# 409 Organisation.DepartmentCodeTaken - skip 55a.
+# Access tokens live 2 minutes in Development - re-run the logins when a request answers 401. Sign-in is limited to 30/min.
+# rowVersion is base64: always send the value the LAST response returned (the requests below chain it with `# @name`).
+# Every ticket is organisation-scoped (Story 06): an existing out-of-scope id is 403 Organisation.OutOfScope, an unknown id 404.
+
+@ryCare = 06000000-0000-0000-0002-000000000001
+@ryBill = 06000000-0000-0000-0002-000000000002
+@jeCare = 06000000-0000-0000-0002-000000000003
+@riyadhBranch = 06000000-0000-0000-0001-000000000001
+@ahmed = 11000000-0000-0000-0000-000000000001
+@najd = 11000000-0000-0000-0000-000000000002
+@redSea = 11000000-0000-0000-0000-000000000003
+@ahmedContact = 11000000-0000-0000-0001-000000000001
+@saraContact = 11000000-0000-0000-0001-000000000002
+@agentA = 06000000-0000-0000-0003-000000000003
+@agentB = 06000000-0000-0000-0003-000000000004
+@ryCareGeneral = 15000000-0000-0000-0001-000000000001
+@ryCareTechnical = 15000000-0000-0000-0001-000000000002
+@ryCareComplaint = 15000000-0000-0000-0001-000000000003
+@ryCareInternal = 15000000-0000-0000-0001-000000000004
+@ryCareLegacy = 15000000-0000-0000-0001-000000000005
+@ryBillInvoice = 15000000-0000-0000-0001-000000000006
+@jeCareGeneral = 15000000-0000-0000-0001-000000000007
+@ahmedNewTicket = 15000000-0000-0000-0000-000000000001
+@najdOpenTicket = 15000000-0000-0000-0000-000000000002
+@redSeaNewTicket = 15000000-0000-0000-0000-000000000003
+@unknown = 00000000-0000-0000-0000-00000000dead
+
+### Login as agent A (Agent in RYD-CARE)
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
+### Login as agent B (Agent in JED-CARE)
+# @name loginAgentB
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentBToken = {{loginAgentB.response.body.accessToken}}
+
+### Login as supervisor (Supervisor in RYD-CARE, Agent in RYD-BILL)
+# @name loginSupervisor
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "supervisor@crm.local", "password": "Crm_Dev_2026!" }
+
+@supervisorToken = {{loginSupervisor.response.body.accessToken}}
+
+### Login as administrator
+# @name loginAdmin
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "Crm_Dev_2026!" }
+
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+###############################################################################################################################
+### Categories
+###############################################################################################################################
+
+### 1. Admin: RYD-CARE categories - 200: five, including the inactive Legacy, ordered by displayOrder
+GET {{host}}/api/Admin/TicketCategories?departmentId={{ryCare}}
+Authorization: Bearer {{adminToken}}
+
+### 2. Admin: active only - 200: Legacy absent
+GET {{host}}/api/Admin/TicketCategories?departmentId={{ryCare}}&activeOnly=true
+Authorization: Bearer {{adminToken}}
+
+### 3. Admin: create a category - 200 (@refund)
+# @name refund
+POST {{host}}/api/Admin/TicketCategories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "departmentId": "{{ryCare}}", "nameAr": "استرداد", "nameEn": "Refund", "displayOrder": 50, "isCustomerVisible": true }
+
+@refundId = {{refund.response.body.id}}
+
+### 4a. Admin: empty Arabic name - 400 urn:crm:problem:validation: errors.NameAr
+POST {{host}}/api/Admin/TicketCategories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "departmentId": "{{ryCare}}", "nameAr": "", "nameEn": "Refund", "displayOrder": 50, "isCustomerVisible": true }
+
+### 4b. Admin: display order 10000 - 400: errors.DisplayOrder
+POST {{host}}/api/Admin/TicketCategories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "departmentId": "{{ryCare}}", "nameAr": "استرداد", "nameEn": "Refund", "displayOrder": 10000, "isCustomerVisible": true }
+
+### 5. Admin: unknown department - 404 Organisation.DepartmentNotFound
+POST {{host}}/api/Admin/TicketCategories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "departmentId": "{{unknown}}", "nameAr": "استرداد", "nameEn": "Refund", "displayOrder": 50, "isCustomerVisible": true }
+
+### 6a. Admin: rename with the current rowVersion - 200
+# @name refundRenamed
+PUT {{host}}/api/Admin/TicketCategories/{{refundId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "nameAr": "المبالغ المستردة", "nameEn": "Refunds", "displayOrder": 55, "isCustomerVisible": true, "rowVersion": "{{refund.response.body.rowVersion}}" }
+
+### 6b. Admin: stale rowVersion - 409 Persistence.ConcurrencyConflict
+PUT {{host}}/api/Admin/TicketCategories/{{refundId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "nameAr": "المبالغ المستردة", "nameEn": "Refunds", "displayOrder": 55, "isCustomerVisible": true, "rowVersion": "AAAAAAAAB9E=" }
+
+### 7a. Admin: deactivate - 200 isActive: false
+# @name refundOff
+POST {{host}}/api/Admin/TicketCategories/{{refundId}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{refundRenamed.response.body.rowVersion}}" }
+
+### 7b. Admin: deactivate again - 422 Tickets.CategoryAlreadyInactive
+POST {{host}}/api/Admin/TicketCategories/{{refundId}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{refundOff.response.body.rowVersion}}" }
+
+### 7c. Admin: reactivate - 200 isActive: true
+# @name refundOn
+POST {{host}}/api/Admin/TicketCategories/{{refundId}}/reactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{refundOff.response.body.rowVersion}}" }
+
+### 7d. Admin: reactivate again - 422 Tickets.CategoryAlreadyActive
+POST {{host}}/api/Admin/TicketCategories/{{refundId}}/reactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{refundOn.response.body.rowVersion}}" }
+
+### 8. Agent A on the admin endpoint - 403 naming admin.organisation
+GET {{host}}/api/Admin/TicketCategories
+Authorization: Bearer {{agentAToken}}
+
+### 9. Agent picker for RYD-CARE - 200: active only (no Legacy), both name languages
+GET {{host}}/api/Agent/TicketCategories?departmentId={{ryCare}}
+Authorization: Bearer {{agentAToken}}
+
+### 10. Agent picker without a filter - 200: RYD-CARE categories only (agent A's scope)
+GET {{host}}/api/Agent/TicketCategories
+Authorization: Bearer {{agentAToken}}
+
+### 11. Same in Arabic - 200: identical body (culture-neutral)
+GET {{host}}/api/Agent/TicketCategories
+Authorization: Bearer {{agentAToken}}
+Accept-Language: ar
+
+###############################################################################################################################
+### Create
+###############################################################################################################################
+
+### 12. Create a ticket for Ahmed - 200 (@t1): number T-000004 on a fresh DB, status New, one Created activity, allowedActions has
+### Open, Resolve, Cancel, Claim, Assign but not Close/Unassign. EF log: SELECT NEXT VALUE FOR [tickets].[TicketNumbers] between
+### BEGIN TRANSACTION and INSERT INTO [tickets].[Tickets]; one INSERT INTO [tickets].[outbox_messages].
+# @name t1
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{
+  "customerId": "{{ahmed}}",
+  "contactId": "{{ahmedContact}}",
+  "subject": "طلب استرداد مبلغ",
+  "description": "أرغب في استرداد المبلغ المدفوع عن الطلب الأخير.",
+  "priority": "High",
+  "categoryId": "{{ryCareGeneral}}"
+}
+
+@t1Id = {{t1.response.body.id}}
+
+### 13. Create for Red Sea (JED-CARE) as agent A - 403 Organisation.OutOfScope
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{redSea}}", "subject": "Out of scope", "description": "Should be refused." }
+
+### 14. Create for an unknown customer - 404 Customers.CustomerNotFound
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{unknown}}", "subject": "Unknown customer", "description": "Should be refused." }
+
+### 15. Create for Najd with Ahmed's contact - 422 Tickets.ContactNotOfCustomer
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{najd}}", "contactId": "{{ahmedContact}}", "subject": "Wrong contact", "description": "Should be refused." }
+
+### 16. Create with the inactive Legacy category - 422 Tickets.CategoryInactive
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{ahmed}}", "subject": "Legacy category", "description": "Should be refused.", "categoryId": "{{ryCareLegacy}}" }
+
+### 17. Create with a RYD-BILL category in RYD-CARE - 422 Tickets.CategoryDepartmentMismatch
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{ahmed}}", "subject": "Wrong department category", "description": "Should be refused.", "categoryId": "{{ryBillInvoice}}" }
+
+### 18a. Empty subject - 400 urn:crm:problem:validation: errors.Subject
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{ahmed}}", "subject": "", "description": "No subject." }
+
+### 18b. Unknown priority - 400: errors.Priority (custom text)
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{ahmed}}", "subject": "Bad priority", "description": "Priority Critical does not exist.", "priority": "Critical" }
+
+### 19a. Create a customer to deactivate (customers.http request 6 body, new email) - 200
+# @name tmpCustomer
+POST {{host}}/api/Agent/Customers
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{
+  "displayNameEn": "Inactive Ian",
+  "type": "Individual",
+  "preferredLanguage": "en",
+  "contacts": [ { "name": "Inactive Ian", "email": "ian.inactive@example.com" } ]
+}
+
+### 19b. Deactivate it - 200
+# @name tmpCustomerOff
+POST {{host}}/api/Agent/Customers/{{tmpCustomer.response.body.customer.id}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "rowVersion": "{{tmpCustomer.response.body.customer.rowVersion}}" }
+
+### 19c. Create a ticket for it - 422 Tickets.CustomerInactive
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{tmpCustomer.response.body.customer.id}}", "subject": "Inactive customer", "description": "Should be refused." }
+
+### 20. Supervisor, no X-Crm-Scope header, create without departmentId - 400 Organisation.DepartmentRequired
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "customerId": "{{ahmed}}", "subject": "Which department?", "description": "Supervisor has two departments." }
+
+###############################################################################################################################
+### Status machine on @t1 (New -> Open -> PendingCustomer -> OnHold -> Open -> Resolved -> Open -> Resolved -> Closed -> Open -> Cancelled)
+###############################################################################################################################
+
+### 21a. Close a New ticket in English - 422 Tickets.TransitionNotAllowed, detail "The ticket is New; that action is not allowed in this status."
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+Accept-Language: en
+
+{ "action": "Close", "rowVersion": "{{t1.response.body.rowVersion}}" }
+
+### 21b. Same in Arabic - 422, Arabic detail naming the status between guillemets
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+Accept-Language: ar
+
+{ "action": "Close", "rowVersion": "{{t1.response.body.rowVersion}}" }
+
+### 22. AwaitCustomer on New - 422 Tickets.TransitionNotAllowed
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "AwaitCustomer", "rowVersion": "{{t1.response.body.rowVersion}}" }
+
+### 23. Open - 200 Open, activity Opened from New to Open. EF log: INSERT INTO [tickets].[TicketActivities] and
+### UPDATE [tickets].[Tickets] SET ... [Revision] = @..., [Status] = @... WHERE [Id] = @... AND [RowVersion] = @... in one transaction
+# @name s23
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Open", "rowVersion": "{{t1.response.body.rowVersion}}" }
+
+### 24. Open again - 422
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Open", "rowVersion": "{{s23.response.body.rowVersion}}" }
+
+### 25. AwaitCustomer - 200 PendingCustomer
+# @name s25
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "AwaitCustomer", "rowVersion": "{{s23.response.body.rowVersion}}" }
+
+### 26. PutOnHold - 200 OnHold
+# @name s26
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "PutOnHold", "rowVersion": "{{s25.response.body.rowVersion}}" }
+
+### 27. Open (resume) - 200 Open
+# @name s27
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Open", "rowVersion": "{{s26.response.body.rowVersion}}" }
+
+### 28. Resolve - 200 Resolved, resolvedAtUtc set, allowedActions = Close, Reopen
+# @name s28
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Resolve", "rowVersion": "{{s27.response.body.rowVersion}}" }
+
+### 29a. PutOnHold on Resolved - 422 Tickets.TransitionNotAllowed
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "PutOnHold", "rowVersion": "{{s28.response.body.rowVersion}}" }
+
+### 29b. Change priority on Resolved - 422 Tickets.TransitionNotAllowed
+PUT {{host}}/api/Agent/Tickets/{{t1Id}}/priority
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "priority": "Low", "rowVersion": "{{s28.response.body.rowVersion}}" }
+
+### 29c. Claim on Resolved - 422 Tickets.TransitionNotAllowed
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/claim
+Authorization: Bearer {{agentAToken}}
+
+### 30. Reopen - 200 Open, resolvedAtUtc null
+# @name s30
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Reopen", "rowVersion": "{{s28.response.body.rowVersion}}" }
+
+### 31a. Resolve - 200
+# @name s31a
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Resolve", "rowVersion": "{{s30.response.body.rowVersion}}" }
+
+### 31b. Close - 200 Closed, closedAtUtc set
+# @name s31b
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Close", "rowVersion": "{{s31a.response.body.rowVersion}}" }
+
+### 32a. Resolve on Closed - 422
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Resolve", "rowVersion": "{{s31b.response.body.rowVersion}}" }
+
+### 32b. Cancel on Closed - 422
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Cancel", "rowVersion": "{{s31b.response.body.rowVersion}}" }
+
+### 33. Reopen from Closed - 200 Open, closedAtUtc null
+# @name s33
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Reopen", "rowVersion": "{{s31b.response.body.rowVersion}}" }
+
+### 34. Cancel - 200 Cancelled, allowedActions empty
+# @name s34
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Cancel", "rowVersion": "{{s33.response.body.rowVersion}}" }
+
+### 35a. Reopen a Cancelled ticket - 422
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Reopen", "rowVersion": "{{s34.response.body.rowVersion}}" }
+
+### 35b. Open a Cancelled ticket - 422
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Open", "rowVersion": "{{s34.response.body.rowVersion}}" }
+
+### 36. Unknown action - 400 errors.Action
+POST {{host}}/api/Agent/Tickets/{{t1Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Explode", "rowVersion": "{{s34.response.body.rowVersion}}" }
+
+### 37. (send it after 39a, on a ticket in a legal state) Stale rowVersion - 409 Persistence.ConcurrencyConflict. The same
+### request on the Cancelled @t1 would answer 422 Tickets.TransitionNotAllowed: the status check comes before the save.
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/transitions
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "action": "Open", "rowVersion": "AAAAAAAAB9E=" }
+
+### 38. The full history of @t1 - 200: 11 activities (Created + 10 successful transitions), oldest first.
+### SQL check: SELECT COUNT(*) FROM tickets.outbox_messages WHERE Content LIKE '%<t1 id>%' -> 11 (one per ticket command).
+GET {{host}}/api/Agent/Tickets/{{t1Id}}
+Authorization: Bearer {{agentAToken}}
+
+###############################################################################################################################
+### Priority, category, assignment
+###############################################################################################################################
+
+### 39a. Create @t2 for Najd (contact Sara, no category) - 200 (created without a category)
+# @name t2
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{najd}}", "contactId": "{{saraContact}}", "subject": "Wrong invoice address", "description": "The invoice shows the old branch address." }
+
+@t2Id = {{t2.response.body.id}}
+
+### 39b. Raise the priority to Urgent - 200 activity PriorityChanged Normal -> Urgent
+# @name t2Urgent
+PUT {{host}}/api/Agent/Tickets/{{t2Id}}/priority
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "priority": "Urgent", "rowVersion": "{{t2.response.body.rowVersion}}" }
+
+### 39c. Again - 422 Tickets.PriorityUnchanged
+PUT {{host}}/api/Agent/Tickets/{{t2Id}}/priority
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "priority": "Urgent", "rowVersion": "{{t2Urgent.response.body.rowVersion}}" }
+
+### 40a. Set the Technical category - 200 activity CategoryChanged
+# @name t2Tech
+PUT {{host}}/api/Agent/Tickets/{{t2Id}}/category
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "categoryId": "{{ryCareTechnical}}", "rowVersion": "{{t2Urgent.response.body.rowVersion}}" }
+
+### 40b. Set the inactive Legacy category - 422 Tickets.CategoryInactive
+PUT {{host}}/api/Agent/Tickets/{{t2Id}}/category
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "categoryId": "{{ryCareLegacy}}", "rowVersion": "{{t2Tech.response.body.rowVersion}}" }
+
+### 40c. Unknown category - 404 Tickets.CategoryNotFound
+PUT {{host}}/api/Agent/Tickets/{{t2Id}}/category
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "categoryId": "{{unknown}}", "rowVersion": "{{t2Tech.response.body.rowVersion}}" }
+
+### 41. Agent A assigns - 403 naming tickets.assign
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/assign
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "agentId": "{{agentA}}", "rowVersion": "{{t2Tech.response.body.rowVersion}}" }
+
+### 42. Claim - 200: assignedAgentId = agent A, assignedAgentName set, activity Claimed, allowedActions has Unassign, not Claim.
+### EF log: INSERT INTO [tickets].[TicketActivities] ... UPDATE [tickets].[Tickets] ... WHERE [Id] = @... AND [RowVersion] = @...
+# @name t2Claimed
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/claim
+Authorization: Bearer {{agentAToken}}
+
+### 43a. Supervisor claims the same ticket, English - 409 urn:crm:problem:conflict, code Tickets.AlreadyClaimed, detail names agent A
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/claim
+Authorization: Bearer {{supervisorToken}}
+Accept-Language: en
+
+### 43b. Same in Arabic - 409, Arabic detail naming agent A
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/claim
+Authorization: Bearer {{supervisorToken}}
+Accept-Language: ar
+
+### 44a. Supervisor unassigns - 200 activity Unassigned
+# @name t2Unassigned
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/unassign
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "rowVersion": "{{t2Claimed.response.body.rowVersion}}" }
+
+### 44b. Unassign again - 422 Tickets.NotAssigned (Unassign is not in allowedActions of an unassigned ticket)
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/unassign
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "rowVersion": "{{t2Unassigned.response.body.rowVersion}}" }
+
+### 45. Supervisor assigns agent B (member of JED-CARE only) - 422 Tickets.AssigneeNotInDepartment
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/assign
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "agentId": "{{agentB}}", "rowVersion": "{{t2Unassigned.response.body.rowVersion}}" }
+
+### 46a. Supervisor assigns agent A - 200 activity Assigned
+# @name t2Assigned
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/assign
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "agentId": "{{agentA}}", "rowVersion": "{{t2Unassigned.response.body.rowVersion}}" }
+
+### 46b. Assign agent A again - 422 Tickets.AssigneeUnchanged
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/assign
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "agentId": "{{agentA}}", "rowVersion": "{{t2Assigned.response.body.rowVersion}}" }
+
+### 47. Assign an unknown user - 422 Tickets.AssigneeNotInDepartment
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/assign
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "agentId": "{{unknown}}", "rowVersion": "{{t2Assigned.response.body.rowVersion}}" }
+
+### 48. Create @race - then run the claim race snippet (Verification step 4 of the plan): two simultaneous claims, one 200 and one 409
+# @name race
+POST {{host}}/api/Agent/Tickets
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "customerId": "{{ahmed}}", "subject": "Claim race", "description": "Two agents claim this ticket at the same time." }
+
+###############################################################################################################################
+### Transfer
+###############################################################################################################################
+
+### 49. Agent A transfers - 403 naming tickets.assign
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/transfer
+Content-Type: application/json
+Authorization: Bearer {{agentAToken}}
+
+{ "departmentId": "{{jeCare}}", "rowVersion": "{{t2Assigned.response.body.rowVersion}}" }
+
+### 50. Supervisor transfers to the ticket's own department - 422 Tickets.TransferToSameDepartment
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/transfer
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "departmentId": "{{ryCare}}", "rowVersion": "{{t2Assigned.response.body.rowVersion}}" }
+
+### 51. Supervisor transfers to an unknown department - 404 Organisation.DepartmentNotFound
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/transfer
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "departmentId": "{{unknown}}", "rowVersion": "{{t2Assigned.response.body.rowVersion}}" }
+
+### 52. Supervisor transfers @t2 to JED-CARE - 200: departmentId JED-CARE, branchId Jeddah, assignedAgentId null, category null, last
+### activity Transferred (from RYD-CARE to JED-CARE), every earlier activity still present. The ticket leaves the sender's scope in
+### the same transaction (write guard, plan B1).
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/transfer
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "departmentId": "{{jeCare}}", "rowVersion": "{{t2Assigned.response.body.rowVersion}}" }
+
+### 53a. Supervisor reads it afterwards - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Tickets/{{t2Id}}
+Authorization: Bearer {{supervisorToken}}
+
+### 53b. Agent A reads it afterwards - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Tickets/{{t2Id}}
+Authorization: Bearer {{agentAToken}}
+
+### 54a. Agent B reads it - 200, same history
+GET {{host}}/api/Agent/Tickets/{{t2Id}}
+Authorization: Bearer {{agentBToken}}
+
+### 54b. Agent B claims it - 200
+POST {{host}}/api/Agent/Tickets/{{t2Id}}/claim
+Authorization: Bearer {{agentBToken}}
+
+### 55a. Admin creates department RYD-TKT - 200 (409 Organisation.DepartmentCodeTaken on a second run)
+# @name ticketDesk
+POST {{host}}/api/Admin/Departments
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "branchId": "{{riyadhBranch}}", "code": "RYD-TKT", "nameAr": "قسم التذاكر", "nameEn": "Ticket Desk" }
+
+### 55b. Admin deactivates it - 200
+# @name ticketDeskOff
+POST {{host}}/api/Admin/Departments/{{ticketDesk.response.body.id}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{ticketDesk.response.body.rowVersion}}" }
+
+### 55c. Supervisor transfers @race to the inactive department - 422 Tickets.TargetDepartmentInactive
+POST {{host}}/api/Agent/Tickets/{{race.response.body.id}}/transfer
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{ "departmentId": "{{ticketDesk.response.body.id}}", "rowVersion": "{{race.response.body.rowVersion}}" }
+
+###############################################################################################################################
+### Queues and search
+###############################################################################################################################
+
+### 56. Queue counts - 200 { mine, unassigned, all } consistent with 57-59
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{agentAToken}}
+
+### 57. Mine - 200: T-000002 was transferred away; the seeded ticket is gone from A's scope. EF log: SELECT lists only [t].[...]
+### columns of [tickets].[Tickets] (no TicketActivities join) with [t].[TenantId] = @..., [t].[BranchId] IN ..., [t].[DepartmentId] IN ...
+### and [t].[IsDeleted] = CAST(0 AS bit)
+GET {{host}}/api/Agent/Tickets?queue=mine
+Authorization: Bearer {{agentAToken}}
+
+### 58. Unassigned - 200: T-000001 and other unassigned working tickets; never T-000003 (JED-CARE)
+GET {{host}}/api/Agent/Tickets?queue=unassigned
+Authorization: Bearer {{agentAToken}}
+
+### 59. All, status Cancelled - 200: @t1. EF log: [t].[Status] IN (N'Cancelled') (or OPENJSON) with the converted value
+GET {{host}}/api/Agent/Tickets?queue=all&status=Cancelled
+Authorization: Bearer {{agentAToken}}
+
+### 60a. Search by number fragment - 200
+GET {{host}}/api/Agent/Tickets?search=T-00000
+Authorization: Bearer {{agentAToken}}
+
+### 60b. Search by Arabic subject fragment (استرداد, percent-encoded) - 200: @t1
+GET {{host}}/api/Agent/Tickets?search=%D8%A7%D8%B3%D8%AA%D8%B1%D8%AF%D8%A7%D8%AF
+Authorization: Bearer {{agentAToken}}
+
+### 61a. High and Urgent, by priority descending, page 1 of size 2 - 200. EF log: [t].[Priority] IN (3, 4), ORDER BY [t].[Priority] DESC,
+### [t].[Number] and OFFSET ... FETCH
+GET {{host}}/api/Agent/Tickets?priority=High&priority=Urgent&sort=priority&descending=true&page=1&pageSize=2
+Authorization: Bearer {{agentAToken}}
+
+### 61b. Page 2 - 200: distinct items; total = the unpaged count
+GET {{host}}/api/Agent/Tickets?priority=High&priority=Urgent&sort=priority&descending=true&page=2&pageSize=2
+Authorization: Bearer {{agentAToken}}
+
+### 62a. By customer - 200
+GET {{host}}/api/Agent/Tickets?customerId={{ahmed}}&queue=all
+Authorization: Bearer {{agentAToken}}
+
+### 62b. By category - 200. EF log: [t].[CategoryId] = @...
+GET {{host}}/api/Agent/Tickets?categoryId={{ryCareGeneral}}
+Authorization: Bearer {{agentAToken}}
+
+### 62c. By assignee - 200
+GET {{host}}/api/Agent/Tickets?assigneeId={{agentA}}
+Authorization: Bearer {{agentAToken}}
+
+### 62d. By a department outside the caller's scope - 200 with an EMPTY page, not 403
+GET {{host}}/api/Agent/Tickets?departmentId={{jeCare}}
+Authorization: Bearer {{agentAToken}}
+
+### 63a. Bad queue - 400 errors.Queue
+GET {{host}}/api/Agent/Tickets?queue=bogus
+Authorization: Bearer {{agentAToken}}
+
+### 63b. Bad sort - 400 errors.Sort
+GET {{host}}/api/Agent/Tickets?sort=bogus
+Authorization: Bearer {{agentAToken}}
+
+### 63c. Bad status - 400 errors.Statuses[0]
+GET {{host}}/api/Agent/Tickets?status=Bogus
+Authorization: Bearer {{agentAToken}}
+
+### 63d. Bad page size - 400 errors.PageSize
+GET {{host}}/api/Agent/Tickets?pageSize=0
+Authorization: Bearer {{agentAToken}}
+
+### 64. Agent B lists everything - 200: only JED-CARE tickets (T-000003, @t2 after the transfer)
+GET {{host}}/api/Agent/Tickets?queue=all
+Authorization: Bearer {{agentBToken}}
+
+### 65a-0. Read the Technical category for its rowVersion - 200
+# @name ryCareTechnicalVersion
+GET {{host}}/api/Admin/TicketCategories/{{ryCareTechnical}}
+Authorization: Bearer {{adminToken}}
+
+### 65a. Admin deactivates the Technical category - 200
+# @name techOff
+POST {{host}}/api/Admin/TicketCategories/{{ryCareTechnical}}/deactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{ryCareTechnicalVersion.response.body.rowVersion}}" }
+
+### 65b. Read the seeded Najd ticket T-000002 as agent A - 200 with category.isActive false and its name still present
+### (only if T-000002 is still in RYD-CARE: it was transferred by 52 when that request ran first)
+GET {{host}}/api/Agent/Tickets/{{najdOpenTicket}}
+Authorization: Bearer {{agentAToken}}
+
+### 65c. Agent picker - 200: Technical absent
+GET {{host}}/api/Agent/TicketCategories
+Authorization: Bearer {{agentAToken}}
+
+### 65d. Admin reactivates it - 200
+POST {{host}}/api/Admin/TicketCategories/{{ryCareTechnical}}/reactivate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{techOff.response.body.rowVersion}}" }
+
+###############################################################################################################################
+### Authentication and not-found
+###############################################################################################################################
+
+### 66. No token - 401
+GET {{host}}/api/Agent/Tickets
+
+### 67a. Unknown ticket - 404 Tickets.TicketNotFound
+GET {{host}}/api/Agent/Tickets/{{unknown}}
+Authorization: Bearer {{agentAToken}}
+
+### 67b. The JED-CARE seeded ticket as agent A - 403 Organisation.OutOfScope
+GET {{host}}/api/Agent/Tickets/{{redSeaNewTicket}}
+Authorization: Bearer {{agentAToken}}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Tickets.Validation.QueueUnsupported" xml:space="preserve"><value>Queue must be one of mine, unassigned, all.</value></data>
+  <data name="Tickets.Validation.SortUnsupported" xml:space="preserve"><value>Sort must be one of createdAt, modifiedAt, priority, number.</value></data>
+  <data name="Tickets.Validation.StatusUnsupported" xml:space="preserve"><value>Unknown ticket status.</value></data>
+  <data name="Tickets.Validation.PriorityUnsupported" xml:space="preserve"><value>Priority must be Low, Normal, High or Urgent.</value></data>
+  <data name="Tickets.Validation.ActionUnsupported" xml:space="preserve"><value>Action must be one of Open, AwaitCustomer, PutOnHold, Resolve, Close, Reopen, Cancel.</value></data>
+  <data name="Tickets.Refusal.TransitionNotAllowed" xml:space="preserve"><value>The ticket is {0}; that action is not allowed in this status.</value></data>
+  <data name="Tickets.Refusal.AlreadyClaimed" xml:space="preserve"><value>This ticket is already claimed by {0}.</value></data>
+  <data name="Tickets.Status.New" xml:space="preserve"><value>New</value></data>
+  <data name="Tickets.Status.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Tickets.Status.PendingCustomer" xml:space="preserve"><value>Pending customer</value></data>
+  <data name="Tickets.Status.OnHold" xml:space="preserve"><value>On hold</value></data>
+  <data name="Tickets.Status.Resolved" xml:space="preserve"><value>Resolved</value></data>
+  <data name="Tickets.Status.Closed" xml:space="preserve"><value>Closed</value></data>
+  <data name="Tickets.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+</root>

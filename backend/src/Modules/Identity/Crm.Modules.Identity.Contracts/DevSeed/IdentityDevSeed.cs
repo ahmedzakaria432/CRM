@@ -2,7 +2,7 @@ namespace Crm.Modules.Identity.Contracts.DevSeed;
 
 /// <summary>Well-known Development sign-in emails (the seeded users share the ids in Organisation's
 /// OrganisationDevSeed). The password is Identity:DevSeed:Password in appsettings.Development.json. Never used
-/// outside Development. No module API in Story 07 - no other module needs one yet.</summary>
+/// outside Development. Story 15 added IIdentityModuleApi (staff display names).</summary>
 public static class IdentityDevSeed
 {
     public const string AdminEmail = "admin@crm.local";

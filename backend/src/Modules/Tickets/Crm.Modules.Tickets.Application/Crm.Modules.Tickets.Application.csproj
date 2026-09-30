@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Crm.BuildingBlocks.Application\Crm.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\Crm.Modules.Tickets.Domain\Crm.Modules.Tickets.Domain.csproj" />
+    <ProjectReference Include="..\Crm.Modules.Tickets.Contracts\Crm.Modules.Tickets.Contracts.csproj" />
+    <!-- Synchronous reads across modules - rule 1 allowed. -->
+    <ProjectReference Include="..\..\Customers\Crm.Modules.Customers.Contracts\Crm.Modules.Customers.Contracts.csproj" />
+    <ProjectReference Include="..\..\Organisation\Crm.Modules.Organisation.Contracts\Crm.Modules.Organisation.Contracts.csproj" />
+    <ProjectReference Include="..\..\Identity\Crm.Modules.Identity.Contracts\Crm.Modules.Identity.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

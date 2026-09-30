@@ -6,6 +6,7 @@ using Crm.BuildingBlocks.Application.Localization;
 using Crm.BuildingBlocks.Infrastructure.Modules;
 using Crm.Modules.Identity.Application;
 using Crm.Modules.Identity.Application.Abstractions;
+using Crm.Modules.Identity.Contracts;
 using Crm.Modules.Identity.Domain;
 using Crm.Modules.Identity.Infrastructure.Persistence;
 using Crm.Modules.Identity.Infrastructure.Security;
@@ -31,6 +32,9 @@ public sealed class IdentityModule : IModule
         services.AddRepository<RefreshTokenFamily, RefreshTokenFamilyId, IdentityDbContext>();
 
         services.AddScoped<IModuleSeeder, IdentitySeeder>();
+
+        // The module's public face (Story 15).
+        services.AddScoped<IIdentityModuleApi, IdentityModuleApi>();
 
         // Validation messages that are server text (password rules, unsupported language) follow Accept-Language.
         services.AddLocalizationResource(new ResourceManager(

@@ -5,13 +5,13 @@
 Entry point for the **Ticket Management** feature. This is **feature 4 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
-**Backend modules:** creates `Tickets` (15; also 16–19). 20 and 21 are frontend only. See the module catalogue in `CLAUDE.md`.
+**Backend modules:** creates `Tickets` (15; also 16–19). 15 also adds read-only Contracts APIs to `Organisation` (department reference, membership check) and `Identity` (staff names), and the `ITransferableOrganisationScoped` write-guard exception in the building blocks. 20 and 21 are frontend only. See the module catalogue in `CLAUDE.md`.
 
 ## Stories
 
 | NN | Intake | Title | Plan file | Depends on |
 |----|--------|-------|-----------|------------|
-| 15 | [`ticket-aggregate-and-lifecycle`](../../stories/ticket-management/ticket-aggregate-and-lifecycle/intake.md) | Ticket aggregate and lifecycle | _not planned yet_ | CRM-02, CRM-06, CRM-09, CRM-11 |
+| 15 | [`ticket-aggregate-and-lifecycle`](../../stories/ticket-management/ticket-aggregate-and-lifecycle/intake.md) | Ticket aggregate lifecycle taxonomy and assignment | [`15-story-ticket-aggregate-lifecycle-taxonomy-and-assignment.md`](15-story-ticket-aggregate-lifecycle-taxonomy-and-assignment.md) | CRM-06, CRM-07, CRM-11 (16 and 17 merged in, reduced) |
 | 16 | [`ticket-taxonomy-categories-priorities-and-types`](../../../next-steps-stories/stories/ticket-management/ticket-taxonomy-categories-priorities-and-types/intake.md) | Ticket taxonomy categories priorities and types | _not planned yet_ | CRM-15, CRM-09 |
 | 17 | [`ticket-assignment-ownership-and-queues`](../../../next-steps-stories/stories/ticket-management/ticket-assignment-ownership-and-queues/intake.md) | Ticket assignment ownership and queues | _not planned yet_ | CRM-15, CRM-08, CRM-06 |
 | 18 | [`ticket-conversation-thread-messages-and-internal-notes`](../../stories/ticket-management/ticket-conversation-thread-messages-and-internal-notes/intake.md) | Ticket conversation thread messages and internal notes | _not planned yet_ | CRM-15, CRM-12 |

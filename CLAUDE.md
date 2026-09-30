@@ -203,7 +203,10 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   `IOrganisationScoped : ITenantScoped` (tenant + branch + department). `ModuleDbContext` applies
   `ModuleDbContext.ScopeFilterName`, a second **named** query filter next to the soft-delete filter, to every
   such entity in every module automatically — nothing to opt into. The write guard in
-  `ModuleDbContext.OrganisationScope.cs` refuses to save a row outside the caller's scope. An out-of-scope
+  `ModuleDbContext.OrganisationScope.cs` refuses to save a row outside the caller's scope. The one exception is a transfer: a Modified
+  `ITransferableOrganisationScoped` row (only `Ticket`, moved only by `Ticket.TransferTo`) is judged by its original
+  scope, so the sender can hand it to another department of the same tenant (Story 15). Adding an implementer is a
+  security review. An out-of-scope
   read or write returns 403 `urn:crm:problem:forbidden` (code `Organisation.OutOfScope`), never an accidental
   404. The one permitted lift is `Specification.IgnoreOrganisationScope()`, used only by the sign-in membership
   lookup (`Organisation`'s `MembershipsOfUserSpecification`) — it lifts only the scope filter, never soft

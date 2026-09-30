@@ -188,6 +188,9 @@ See "Error responses" below.
   from the command handler; it is written to your outbox in your transaction and delivered after commit. The other
   module subscribes with an `IIntegrationEventConsumer<T>` in its Application project and handles it in its own
   transaction. See "Integration events and the outbox" below and `CustomerCreatedIntegrationEvent` for the shape.
+- **In-tenant reference reads (Story 15):** `IOrganisationModuleApi.GetDepartmentAsync`/`IsDepartmentMemberAsync` and
+  `IIdentityModuleApi.GetStaffUsersAsync` are the reads other modules use for departments, department membership and
+  staff display names. Call them before `IEventBus.Publish` in a command handler (a nested query after `Publish` throws).
 - **Never** reference another module's Domain/Application/Infrastructure, read its schema, or mutate its state
   inside your own transaction.
 
@@ -302,6 +305,9 @@ Story 06 adds multi-department, multi-branch data isolation, enforced once at th
   (`ModuleDbContext.ScopeFilterName`) to every such entity in every module, automatically. A write outside the
   caller's scope is refused; a read of an existing out-of-scope row returns 403 `Organisation.OutOfScope`, never
   an accidental 404.
+- **Transfer exception**: a Modified `ITransferableOrganisationScoped` row (only `Ticket`, moved only by
+  `Ticket.TransferTo`) is judged by its original scope, so the sender can hand it to another department of the same
+  tenant (Story 15). Adding an implementer is a security review.
 - **`X-Crm-Scope` header** narrows the caller's effective departments to one (a department id) or leaves them at
   `all` (absent, empty, or `all`). It can never widen: a department the caller does not belong to is rejected
   with 403 `Organisation.ActiveScopeRejected`, logged as a Warning.

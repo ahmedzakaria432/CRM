@@ -1,0 +1,30 @@
+{
+  "tickets": {
+    "nav": {
+      "categories": "Ticket categories"
+    },
+    "categories": {
+      "title": "Ticket categories",
+      "create": "New category",
+      "edit": "Edit category",
+      "empty": "No categories yet",
+      "allDepartments": "All departments",
+      "fields": {
+        "department": "Department",
+        "displayOrder": "Display order",
+        "customerVisible": "Visible to customers"
+      },
+      "visibility": {
+        "visible": "Customers see it",
+        "internal": "Internal"
+      },
+      "actions": {
+        "edit": "Edit",
+        "reactivate": "Reactivate"
+      },
+      "confirm": {
+        "deactivate": "Deactivate {name}? It disappears from pickers; tickets that use it keep it."
+      }
+    }
+  }
+}

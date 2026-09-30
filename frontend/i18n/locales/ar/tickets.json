@@ -1,0 +1,30 @@
+{
+  "tickets": {
+    "nav": {
+      "categories": "تصنيفات التذاكر"
+    },
+    "categories": {
+      "title": "تصنيفات التذاكر",
+      "create": "تصنيف جديد",
+      "edit": "تعديل التصنيف",
+      "empty": "لا توجد تصنيفات بعد",
+      "allDepartments": "جميع الأقسام",
+      "fields": {
+        "department": "القسم",
+        "displayOrder": "ترتيب العرض",
+        "customerVisible": "مرئي للعملاء"
+      },
+      "visibility": {
+        "visible": "يراه العملاء",
+        "internal": "داخلي"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "reactivate": "إعادة التفعيل"
+      },
+      "confirm": {
+        "deactivate": "تعطيل {name}؟ سيختفي من قوائم الاختيار، وتحتفظ به التذاكر التي تستخدمه."
+      }
+    }
+  }
+}
