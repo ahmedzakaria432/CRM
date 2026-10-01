@@ -15,7 +15,7 @@ every later feature's intake references contracts the earlier ones establish.
 
 | # | Feature | Slug | Stories (NN) | Phase | Why it sits here |
 |---|---------|------|--------------|-------|------------------|
-| 1 | Platform Foundation | `platform-foundation` | 01–06 | MVP | Nothing compiles or runs before this. Every other story depends on the solution skeleton, persistence baseline, RTL shell, and org scoping. |
+| 1 | Platform Foundation | `platform-foundation` | 01–06, 59 | MVP | Nothing compiles or runs before this. Every other story depends on the solution skeleton, persistence baseline, RTL shell, and org scoping. |
 | 2 | Identity and Access | `identity-access` | 07 (08, 09 merged in; 10 deferred) | MVP | Every endpoint from here on declares a permission against story 09's catalogue and is scoped by story 06. |
 | 3 | Customer Management | `customer-management` | 11, 14 (12 notes and 13 merged in) | MVP | A ticket cannot exist without a customer. The `Customer` aggregate is the first real domain model. |
 | 4 | Ticket Management | `ticket-management` | 15, 18, 20 (16, 17, 19, 21 merged in) | MVP | The core aggregate of the product. Channels, SLA, AI, portal, and reports all read or write it. |

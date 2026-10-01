@@ -15,7 +15,8 @@
       "invalid": "Wrong email or password.",
       "rateLimited": "Too many attempts. Wait a moment and try again.",
       "failed": "Sign-in failed. Try again.",
-      "noAccount": "New here? Create your account"
+      "noAccount": "New here? Create your account",
+      "backHome": "Back to the home page"
     },
     "register": {
       "title": "Create your portal account",
@@ -64,7 +65,8 @@
         "previous": "Previous",
         "next": "Next",
         "page": "Page"
-      }
+      },
+      "greeting": "Hello, {name}"
     },
     "new": {
       "title": "New request",

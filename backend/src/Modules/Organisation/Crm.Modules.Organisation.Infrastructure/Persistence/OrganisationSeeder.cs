@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Crm.Modules.Organisation.Infrastructure.Persistence;
 
-/// <summary>Development seed: one organisation, two branches, three departments, and memberships for the four
+/// <summary>Development seed: one organisation, two branches, three departments, and memberships for the seven
 /// well-known user ids Story 07's user seed reuses. Idempotent per row - keyed on the well-known ids, never on
 /// a freshly generated Guid.</summary>
 public sealed class OrganisationSeeder(OrganisationDbContext context) : IModuleSeeder
@@ -79,6 +79,10 @@ public sealed class OrganisationSeeder(OrganisationDbContext context) : IModuleS
         await EnsureMembershipAsync(riyadhBilling, OrganisationDevSeed.SupervisorUserId, SystemRole.Agent, OrganisationDevSeed.SupervisorBillingMembershipId, cancellationToken);
         await EnsureMembershipAsync(riyadhCare, OrganisationDevSeed.AgentAUserId, SystemRole.Agent, OrganisationDevSeed.AgentACareMembershipId, cancellationToken);
         await EnsureMembershipAsync(jeddahCare, OrganisationDevSeed.AgentBUserId, SystemRole.Agent, OrganisationDevSeed.AgentBJeddahCareMembershipId, cancellationToken);
+        await EnsureMembershipAsync(riyadhBilling, OrganisationDevSeed.AgentCUserId, SystemRole.Agent, OrganisationDevSeed.AgentCBillingMembershipId, cancellationToken);
+        await EnsureMembershipAsync(riyadhCare, OrganisationDevSeed.SupervisorBUserId, SystemRole.Supervisor, OrganisationDevSeed.SupervisorBCareMembershipId, cancellationToken);
+        await EnsureMembershipAsync(jeddahCare, OrganisationDevSeed.SupervisorBUserId, SystemRole.Supervisor, OrganisationDevSeed.SupervisorBJeddahCareMembershipId, cancellationToken);
+        await EnsureMembershipAsync(riyadhCare, OrganisationDevSeed.InactiveAgentUserId, SystemRole.Agent, OrganisationDevSeed.InactiveAgentCareMembershipId, cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 

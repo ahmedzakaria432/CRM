@@ -1,8 +1,9 @@
 <template>
   <div>
+    <p v-if="greeting" class="mb-1 text-sm text-fg-muted">{{ greeting }}</p>
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-2xl font-bold text-fg">{{ t('portal.tickets.title') }}</h1>
-      <UiButton @click="goToNew()">{{ t('portal.tickets.newRequest') }}</UiButton>
+      <UiButton size="lg" @click="goToNew()">{{ t('portal.tickets.newRequest') }}</UiButton>
     </div>
 
     <UiTabs class="mt-4" :model-value="filters.tab" :tabs="tabs" :label="t('portal.tickets.tabsLabel')" @update:model-value="changeTab">
@@ -93,6 +94,9 @@ import {
 definePageMeta({ layout: 'portal' })
 
 const { t, locale } = useI18n()
+const portal = usePortalAuthStore()
+// Rendered only after the session is restored, so the server HTML and the hydration render are identical (D12).
+const greeting = computed(() => (portal.me?.displayName ? t('portal.tickets.greeting', { name: portal.me.displayName }) : null))
 const format = useFormat()
 const { filters, update, data, status, error, refresh } = usePortalTicketList()
 

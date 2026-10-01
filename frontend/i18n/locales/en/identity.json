@@ -7,7 +7,8 @@
       "password": "Password",
       "invalid": "Email or password is incorrect.",
       "rateLimited": "Too many attempts. Wait a moment and try again.",
-      "failed": "Sign-in failed. Try again."
+      "failed": "Sign-in failed. Try again.",
+      "customerPortal": "Are you a customer? Go to the customer portal"
     },
     "nav": {
       "users": "Users"

@@ -1,0 +1,244 @@
+@host = http://localhost:5187
+
+# Story 59 - the Development demo accounts: one block per seeded account (what it signs in as and what it shows).
+# Password for every account: Crm_Dev_2026! (Identity:DevSeed:Password). Run against a Development API on a FRESH database
+# (`docker compose -f backend/docker-compose.yml up -d`, then `dotnet run --project backend/src/Crm.Api --launch-profile http`);
+# counts below assume the seed alone (T-000001..T-000015, C-000001..C-000006). Earlier story runs add tickets and customers.
+# Staff sign-in is limited to 30/min, portal sign-in to 10/min per IP (RateLimiting:SignIn / PortalSignIn): run the staff half
+# (1-7), then wait a minute before the portal half (8-12) if a block answers 429. Access tokens live 2 minutes in Development.
+# The two refused accounts (agent.inactive, huda) send the RIGHT password and get the same generic 401 as a wrong one.
+#
+# Queue counts {mine, unassigned, all} at scope "all" (mine/unassigned count working statuses only):
+#   admin {0,5,15}  supervisor {1,3,11}  agent.a {3,2,9}  agent.b {1,2,4}  agent.c {0,1,2}  supervisor.b {1,4,13}
+###############################################################################################################################
+
+### 1. admin@crm.local - 200: Administrator in RYD-CARE, RYD-BILL, JED-CARE
+# @name login_admin
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "Crm_Dev_2026!" }
+
+@token_admin = {{login_admin.response.body.accessToken}}
+
+### 1a. admin - Me: displayName, roles and memberships as in the README table
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{token_admin}}
+
+### 1b. admin - MyScope: the departments of the memberships
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{token_admin}}
+
+### 1c. admin - queue counts: queues {0,5,15}
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{token_admin}}
+
+### 2. supervisor@crm.local - 200: Supervisor RYD-CARE + Agent RYD-BILL
+# @name login_supervisor
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "supervisor@crm.local", "password": "Crm_Dev_2026!" }
+
+@token_supervisor = {{login_supervisor.response.body.accessToken}}
+
+### 2a. supervisor - Me: displayName, roles and memberships as in the README table
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{token_supervisor}}
+
+### 2b. supervisor - MyScope: the departments of the memberships
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{token_supervisor}}
+
+### 2c. supervisor - queue counts: queues {1,3,11}
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{token_supervisor}}
+
+### 3. agent.a@crm.local - 200: Agent RYD-CARE
+# @name login_agent_a
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@token_agent_a = {{login_agent_a.response.body.accessToken}}
+
+### 3a. agent.a - Me: displayName, roles and memberships as in the README table
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{token_agent_a}}
+
+### 3b. agent.a - MyScope: the departments of the memberships
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{token_agent_a}}
+
+### 3c. agent.a - queue counts: queues {3,2,9}; recent T-000005, T-000004, T-000002
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{token_agent_a}}
+
+### 3d. agent.a - my newest 5: T-000005, T-000004, T-000002
+GET {{host}}/api/Agent/Tickets?queue=mine&sort=createdAt&descending=true&page=1&pageSize=5
+Authorization: Bearer {{token_agent_a}}
+
+### 4. agent.b@crm.local - 200: Agent JED-CARE
+# @name login_agent_b
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.b@crm.local", "password": "Crm_Dev_2026!" }
+
+@token_agent_b = {{login_agent_b.response.body.accessToken}}
+
+### 4a. agent.b - Me: displayName, roles and memberships as in the README table
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{token_agent_b}}
+
+### 4b. agent.b - MyScope: the departments of the memberships
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{token_agent_b}}
+
+### 4c. agent.b - queue counts: queues {1,2,4}
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{token_agent_b}}
+
+### 4d. agent.b - Al-Noor customer (RYD-CARE) - 403 urn:crm:problem:forbidden (Organisation.OutOfScope): branch isolation
+GET {{host}}/api/Agent/Customers/11000000-0000-0000-0000-000000000004
+Authorization: Bearer {{token_agent_b}}
+
+### 5. agent.c@crm.local - 200: Agent RYD-BILL, no tickets assigned
+# @name login_agent_c
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.c@crm.local", "password": "Crm_Dev_2026!" }
+
+@token_agent_c = {{login_agent_c.response.body.accessToken}}
+
+### 5a. agent.c - Me: displayName, roles and memberships as in the README table
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{token_agent_c}}
+
+### 5b. agent.c - MyScope: the departments of the memberships
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{token_agent_c}}
+
+### 5c. agent.c - queue counts: queues {0,1,2}; recent list empty
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{token_agent_c}}
+
+### 5d. agent.c - my newest 5: items: []
+GET {{host}}/api/Agent/Tickets?queue=mine&sort=createdAt&descending=true&page=1&pageSize=5
+Authorization: Bearer {{token_agent_c}}
+
+### 6. supervisor.b@crm.local - 200: Supervisor RYD-CARE + JED-CARE
+# @name login_supervisor_b
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "supervisor.b@crm.local", "password": "Crm_Dev_2026!" }
+
+@token_supervisor_b = {{login_supervisor_b.response.body.accessToken}}
+
+### 6a. supervisor.b - Me: displayName, roles and memberships as in the README table
+GET {{host}}/api/Agent/Me
+Authorization: Bearer {{token_supervisor_b}}
+
+### 6b. supervisor.b - MyScope: the departments of the memberships
+GET {{host}}/api/Agent/MyScope
+Authorization: Bearer {{token_supervisor_b}}
+
+### 6c. supervisor.b - queue counts: queues {1,4,13}
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{token_supervisor_b}}
+
+### 6d. supervisor.b - narrowed to JED-CARE with X-Crm-Scope - 200: only the Jeddah counts {0,2,4} (his one ticket, T-000009, is in RYD-CARE)
+GET {{host}}/api/Agent/Tickets/queues
+Authorization: Bearer {{token_supervisor_b}}
+X-Crm-Scope: 06000000-0000-0000-0002-000000000003
+
+### 7. agent.inactive@crm.local - 401: deactivated user, same body as a wrong password (auth.http 13/14)
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.inactive@crm.local", "password": "Crm_Dev_2026!" }
+
+### 8. ahmed@example.com - 200: primary contact, isAccountAdmin true
+# @name login_ahmed
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "ahmed@example.com", "password": "Crm_Dev_2026!" }
+
+@ptoken_ahmed = {{login_ahmed.response.body.accessToken}}
+
+### 8a. ahmed - portal Me
+GET {{host}}/api/Portal/Me
+Authorization: Bearer {{ptoken_ahmed}}
+
+### 8b. ahmed - my requests (open tab by default): T-000001 only
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{ptoken_ahmed}}
+
+### 9. mona@alnoor.example.com - 200: primary contact, isAccountAdmin true
+# @name login_mona
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "mona@alnoor.example.com", "password": "Crm_Dev_2026!" }
+
+@ptoken_mona = {{login_mona.response.body.accessToken}}
+
+### 9a. mona - portal Me
+GET {{host}}/api/Portal/Me
+Authorization: Bearer {{ptoken_mona}}
+
+### 9b. mona - my requests (open tab by default): open tab 4 (T-000009, T-000006, T-000005, T-000004); closed tab 3 (T-000010, T-000008, T-000007)
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{ptoken_mona}}
+
+### 9c. mona - closed tab: T-000010, T-000008, T-000007 (cancelled shows as Closed)
+GET {{host}}/api/Portal/Tickets?tab=closed
+Authorization: Bearer {{ptoken_mona}}
+
+### 10. yousef@alnoor.example.com - 200: non-primary, isAccountAdmin false
+# @name login_yousef
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "yousef@alnoor.example.com", "password": "Crm_Dev_2026!" }
+
+@ptoken_yousef = {{login_yousef.response.body.accessToken}}
+
+### 10a. yousef - portal Me
+GET {{host}}/api/Portal/Me
+Authorization: Bearer {{ptoken_yousef}}
+
+### 10b. yousef - my requests (open tab by default): T-000006 (open) and T-000007 (closed tab) only
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{ptoken_yousef}}
+
+### 10c. yousef - closed tab: T-000007
+GET {{host}}/api/Portal/Tickets?tab=closed
+Authorization: Bearer {{ptoken_yousef}}
+
+### 11. faisal@example.com - 200: primary contact, isAccountAdmin true
+# @name login_faisal
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "faisal@example.com", "password": "Crm_Dev_2026!" }
+
+@ptoken_faisal = {{login_faisal.response.body.accessToken}}
+
+### 11a. faisal - portal Me
+GET {{host}}/api/Portal/Me
+Authorization: Bearer {{ptoken_faisal}}
+
+### 11b. faisal - my requests (open tab by default): no requests: items []
+GET {{host}}/api/Portal/Tickets
+Authorization: Bearer {{ptoken_faisal}}
+
+### 12. huda@alnoor.example.com - 401: the contact's portal access is off (the log line says portal-access-revoked), generic body
+POST {{host}}/api/Portal/Auth/login
+Content-Type: application/json
+
+{ "email": "huda@alnoor.example.com", "password": "Crm_Dev_2026!" }

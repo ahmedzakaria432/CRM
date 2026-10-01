@@ -5,7 +5,7 @@
 Entry point for the **Platform Foundation** feature. This is **feature 1 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
-**Backend modules:** BuildingBlocks and the `Sample` template module (01–03); creates the `Organisation` module (06). Frontend only: 04, 05. See the module catalogue in `CLAUDE.md`.
+**Backend modules:** BuildingBlocks and the `Sample` template module (01–03); creates the `Organisation` module (06). Frontend only: 04, 05. Story 59 is frontend plus Development seed data in Organisation, Identity, Customers and Tickets. See the module catalogue in `CLAUDE.md`.
 
 ## Stories
 
@@ -17,6 +17,7 @@ Entry point for the **Platform Foundation** feature. This is **feature 1 of 12**
 | 04 | [`frontend-scaffold-with-nuxt-typescript-and-tailwind`](../../stories/platform-foundation/frontend-scaffold-with-nuxt-typescript-and-tailwind/intake.md) | Frontend scaffold with Nuxt TypeScript and Tailwind | [`04-story-frontend-scaffold-with-nuxt-typescript-and-tailwind.md`](04-story-frontend-scaffold-with-nuxt-typescript-and-tailwind.md) | CRM-01, for the OpenAPI document |
 | 05 | [`bilingual-arabic-and-english-support-with-rtl-layout`](../../stories/platform-foundation/bilingual-arabic-and-english-support-with-rtl-layout/intake.md) | Bilingual Arabic and English support with RTL layout | [`05-story-bilingual-arabic-and-english-support-with-rtl-layout.md`](05-story-bilingual-arabic-and-english-support-with-rtl-layout.md) | CRM-03, CRM-04 |
 | 06 | [`multi-department-and-multi-branch-organisation-scoping`](../../stories/platform-foundation/multi-department-and-multi-branch-organisation-scoping/intake.md) | Multi department and multi branch organisation scoping | [`06-story-multi-department-and-multi-branch-organisation-scoping.md`](06-story-multi-department-and-multi-branch-organisation-scoping.md) | CRM-02, CRM-03, CRM-04, CRM-05 |
+| 59 | [`home-and-navigation-flow`](../../stories/platform-foundation/home-and-navigation-flow/intake.md) | Home and navigation flow | [`59-story-home-and-navigation-flow.md`](59-story-home-and-navigation-flow.md) | CRM-15, CRM-20, CRM-47, CRM-58 (added after the MVP; frontend + dev seed) |
 
 ## Dependency notes
 

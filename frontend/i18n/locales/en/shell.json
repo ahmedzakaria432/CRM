@@ -29,13 +29,6 @@
       "previous": "Previous",
       "next": "Next",
       "page": "Page"
-    },
-    "home": {
-      "tagline": "A multi-department, multi-branch, bilingual customer support CRM."
-    },
-    "agentHome": {
-      "emptyTitle": "Nothing here yet",
-      "emptyDescription": "Ticket, customer, and queue screens arrive in later stories."
     }
   }
 }

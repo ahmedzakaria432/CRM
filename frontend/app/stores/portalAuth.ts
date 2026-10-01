@@ -1,5 +1,6 @@
 import type { components } from '~/api/generated/portal'
 import type { ApiResult } from '~/composables/useApi'
+import { portalSessionHintCookie, sessionHintCookieOptions } from '~/utils/sessionHint'
 
 export type PortalMeDto = components['schemas']['PortalMeDto']
 
@@ -25,10 +26,19 @@ export const usePortalAuthStore = defineStore('portalAuth', () => {
   const isAuthenticated = computed(() => accessToken.value !== null && me.value !== null)
   const isAccountAdmin = computed(() => me.value?.isAccountAdmin === true)
 
+  /** Story 59 (D2): the non-secret hint the `/` redirect reads. Not exported - only sign-in, restore and clear write it. */
+  function setSessionHint(signedIn: boolean): void {
+    nuxtApp.runWithContext(() => {
+      const cookie = useCookie<boolean | null>(portalSessionHintCookie, sessionHintCookieOptions)
+      cookie.value = signedIn ? true : null
+    })
+  }
+
   function clear(): void {
     accessToken.value = null
     me.value = null
     status.value = 'anonymous'
+    setSessionHint(false)
   }
 
   async function loadMe(): Promise<ApiResult<PortalMeDto>> {
@@ -58,6 +68,8 @@ export const usePortalAuthStore = defineStore('portalAuth', () => {
       clear()
       return loaded
     }
+
+    setSessionHint(true)
 
     // The profile language is applied at sign-in only; the switcher changes the cookie for the session.
     await applyPreferredLocale(loaded.data.preferredLocale ?? '')
@@ -111,6 +123,7 @@ export const usePortalAuthStore = defineStore('portalAuth', () => {
           clear()
           return false
         }
+        setSessionHint(true)
         return true
       } finally {
         restoring = null

@@ -23,9 +23,12 @@
       <p v-if="alertMessage" role="alert" class="text-sm text-danger-600">{{ alertMessage }}</p>
       <UiButton type="submit" :loading="submitting" block>{{ t('portal.login.submit') }}</UiButton>
     </form>
-    <p class="mt-4 text-sm">
+    <p class="mt-4 flex flex-col gap-2 text-sm">
       <NuxtLink to="/portal/register" class="text-primary-600 underline focus-visible:focus-ring">
         {{ t('portal.login.noAccount') }}
+      </NuxtLink>
+      <NuxtLink to="/" class="text-primary-600 underline focus-visible:focus-ring">
+        {{ t('portal.login.backHome') }}
       </NuxtLink>
     </p>
   </div>

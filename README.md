@@ -21,6 +21,7 @@ Then open **http://localhost:8080**:
 
 | URL | What |
 |---|---|
+| `/` | Landing: choose staff sign-in or the customer portal |
 | `/login` | Staff sign-in (agent workspace and admin screens) |
 | `/portal/login` | Customer portal |
 | `/swagger` | API documentation, one document per Area |
@@ -70,13 +71,30 @@ More detail: [`backend/README.md`](backend/README.md) (database, migrations, tel
 
 Seeded in Development only. Every password is `Crm_Dev_2026!`.
 
-| Account | Role |
-|---|---|
-| `admin@crm.local` | Administrator: users, memberships, ticket categories, branding |
-| `supervisor@crm.local` | Supervisor in two departments: can assign and transfer tickets |
-| `agent.a@crm.local` | Agent in the Riyadh customer-care department |
-| `agent.b@crm.local` | Agent in the Jeddah department; cannot see Riyadh data |
-| `ahmed@example.com` | Customer portal account (sign in at `/portal/login`) |
+Staff sign in at `/login`:
+
+| Email | Role: department (branch) | Demonstrates |
+|---|---|---|
+| `admin@crm.local` | Administrator: RYD-CARE, RYD-BILL (Riyadh), JED-CARE (Jeddah) | Admin nav and home quick links (Branding, Users); every department |
+| `supervisor@crm.local` | Supervisor: RYD-CARE; Agent: RYD-BILL | Two roles in two departments: assign in Care, not in Billing; scope switcher |
+| `agent.a@crm.local` | Agent: RYD-CARE (Riyadh) | A busy agent: My tickets and recent list; no admin links; cannot assign |
+| `agent.b@crm.local` | Agent: JED-CARE (Jeddah) | Branch isolation: sees none of Riyadh's customers or tickets |
+| `agent.c@crm.local` | Agent: RYD-BILL (Riyadh) | Department isolation in the same branch; no tickets assigned, so the home and inbox empty states |
+| `supervisor.b@crm.local` | Supervisor: RYD-CARE (Riyadh) and JED-CARE (Jeddah) | Supervisor across two branches: scope switcher, assign and transfer in both |
+| `agent.inactive@crm.local` | Agent: RYD-CARE (Riyadh), deactivated | Sign-in refused (401); shown inactive in Admin, Users |
+
+Customers sign in at `/portal/login`:
+
+| Email | Customer and contact | Demonstrates |
+|---|---|---|
+| `ahmed@example.com` | Customer Ahmed Al-Qahtani (primary contact) | Original portal account; account admin of his own requests |
+| `mona@alnoor.example.com` | Al-Noor Clinics, primary contact | Account admin: sees all Al-Noor requests, including Yousef's |
+| `yousef@alnoor.example.com` | Al-Noor Clinics, non-primary contact | Sees only his own requests |
+| `huda@alnoor.example.com` | Al-Noor Clinics, portal access revoked | Sign-in refused (401) |
+| `faisal@example.com` | Customer Faisal Al-Dosari (primary contact) | No requests: the portal empty state with New request |
+
+All passwords: `Crm_Dev_2026!` (Development seed only; re-running the API never duplicates a row). Worked sign-ins for
+every account are in [`backend/requests/demo-accounts.http`](backend/requests/demo-accounts.http).
 
 Demo walkthrough: sign in to the portal as Ahmed and submit a request in Arabic. Then sign in as `agent.a`, find it
 under **Tickets → Unassigned**, claim it, reply, add an internal note and resolve it. Back in the portal, Ahmed sees

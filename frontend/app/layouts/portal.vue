@@ -13,7 +13,9 @@
         <NuxtLink v-if="isPortalRoute" to="/portal" class="text-lg font-semibold text-fg focus-visible:focus-ring">
           <ShellBrandMark />
         </NuxtLink>
-        <ShellBrandMark v-else />
+        <NuxtLink v-else to="/" class="text-lg font-semibold text-fg focus-visible:focus-ring">
+          <ShellBrandMark />
+        </NuxtLink>
         <div class="flex flex-wrap items-center gap-2">
           <nav v-if="isPortalRoute && portal.isAuthenticated" :aria-label="t('portal.nav.label')">
             <ul class="flex flex-wrap items-center gap-1">
@@ -81,6 +83,7 @@ const branding = useBrandingStore()
 const brandName = computed(() => branding.displayName(locale.value) ?? t('shell.appName'))
 
 // The customer portal nav shows on /portal/** for a signed-in customer; the staff /login page shares this layout.
+// The brand links to /portal on portal routes and to / on the landing and the staff /login page (Story 59).
 const isPortalRoute = computed(() => route.path === '/portal' || route.path.startsWith('/portal/'))
 
 // Never render a 5xx's real message in production; import.meta.dev only, and never the stack.

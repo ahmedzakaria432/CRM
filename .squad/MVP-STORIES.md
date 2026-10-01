@@ -27,8 +27,9 @@ Plan and implement top to bottom: `/squad-plan <intake>` → `/squad-implement <
 | 12 | 20 | Ticket inbox and ticket detail workspace UI | **Ticket Management** | ✅ Done | [intake](stories/ticket-management/ticket-inbox-ui-with-filters-and-bulk-actions/intake.md) | [plan](plans/ticket-management/20-story-ticket-inbox-and-ticket-detail-workspace-ui.md) | 14, 15, 18 |
 | 13 | 47 | Customer portal accounts ticket submission tracking and history | **Customer Portal** | ✅ Done | [intake](stories/customer-portal/portal-authentication-registration-and-account/intake.md) | [plan](plans/customer-portal/47-story-customer-portal-accounts-ticket-submission-tracking-and-history.md) | 07, 11, 15, 18 |
 | 14 | 58 | Custom branding theming and tenant configuration | **Custom branding** | ✅ Done | [intake](stories/integrations-platform/custom-branding-theming-and-tenant-configuration/intake.md) | [plan](plans/integrations-platform/58-story-custom-branding-theming-and-tenant-configuration.md) | 06, 47 |
+| 15 | 59 | Home and navigation flow | Ties the MVP together (owner feedback 2026-10-01) | ✅ Done | [intake](stories/platform-foundation/home-and-navigation-flow/intake.md) | [plan](plans/platform-foundation/59-story-home-and-navigation-flow.md) | 15, 20, 47, 58 |
 
-**Remaining: 0 stories — MVP complete.** Folder names keep the original slugs, so a
+**Remaining: 0 stories — MVP complete** (story 59 was added after the MVP and is done). Folder names keep the original slugs, so a
 merged story's intake folder name can be narrower than its new title (e.g. story 20's folder is
 `ticket-inbox-ui-…` but it now also covers the ticket detail page).
 

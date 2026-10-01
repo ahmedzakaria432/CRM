@@ -4,7 +4,8 @@
 # Development API (`docker compose up -d`, then `dotnet run --project backend/src/Crm.Api --launch-profile http`).
 # Dev seed (Crm.Modules.Customers.Contracts.DevSeed.CustomersDevSeed): Ahmed Al-Qahtani (individual, RYD-CARE, portal access),
 # Najd Logistics (organisation, RYD-CARE, two contacts, one pinned note), Red Sea Trading (organisation, JED-CARE - invisible
-# to agent A). On a fresh database the seed takes C-000001..C-000003, so request 6 is C-000004.
+# to agent A); Story 59 adds Al-Noor Clinics, Faisal Al-Dosari (both RYD-CARE) and Gulf Retail (RYD-BILL). On a fresh database the
+# seed takes C-000001..C-000006, so request 6 is C-000007.
 # Access tokens live 2 minutes in Development - re-run the logins when a request answers 401. Sign-in is limited to 30/min.
 # rowVersion is base64: always send the value the LAST response returned (the requests below chain it with `# @name`).
 # Every customer row is organisation-scoped (Story 06): an out-of-scope id is 403 Organisation.OutOfScope, an unknown id 404.
@@ -57,7 +58,7 @@ Authorization: Bearer {{agentAToken}}
 GET {{host}}/api/Agent/Customers?search=Najd
 Authorization: Bearer {{agentAToken}}
 
-### 3b. Search by customer number - 200: both (C-000001, C-000002)
+### 3b. Search by customer number - 200: four rows visible to agent A (C-000001, C-000002, C-000004, C-000005; C-000003 is Jeddah and C-000006 is Billing, so not visible)
 GET {{host}}/api/Agent/Customers?search=C-00000
 Authorization: Bearer {{agentAToken}}
 
@@ -85,7 +86,7 @@ Authorization: Bearer {{agentAToken}}
 GET {{host}}/api/Agent/Customers/lookup?search=na&take=5
 Authorization: Bearer {{agentAToken}}
 
-### 6. Create an individual with two contacts - 200 created: true, number C-000004 on a fresh DB, contact 1 primary automatically,
+### 6. Create an individual with two contacts - 200 created: true, number C-000007 on a fresh DB, contact 1 primary automatically,
 ### email stored lower-case, phone +966550001111 (separators stripped), contact 2 email: null (phone-only)
 # @name layla
 POST {{host}}/api/Agent/Customers

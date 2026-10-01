@@ -9,7 +9,9 @@
     <div class="flex min-h-dvh">
       <aside class="hidden w-64 shrink-0 border-e border-border md:block">
         <!-- Story 58: from md up the header row is full (scope switcher, locale, theme, account), so the brand lives here. -->
-        <div class="flex min-w-0 px-7 pt-4"><ShellBrandMark /></div>
+        <div class="flex min-w-0 px-7 pt-4">
+          <NuxtLink to="/agent" class="flex min-w-0 rounded-md focus-visible:focus-ring"><ShellBrandMark /></NuxtLink>
+        </div>
         <nav :aria-label="t('shell.nav.main')" class="flex flex-col gap-1 p-4">
           <NuxtLink
             v-for="item in agentNav"
@@ -36,7 +38,7 @@
             >
               <span aria-hidden="true">☰</span>
             </button>
-            <ShellBrandMark class="md:hidden" />
+            <NuxtLink to="/agent" class="flex min-w-0 rounded-md focus-visible:focus-ring md:hidden"><ShellBrandMark /></NuxtLink>
           </div>
           <div class="flex items-center gap-3">
             <ShellScopeSwitcher />

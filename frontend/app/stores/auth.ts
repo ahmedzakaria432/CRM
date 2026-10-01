@@ -1,5 +1,6 @@
 import type { components } from '~/api/generated/agent'
 import type { ApiResult } from '~/composables/useApi'
+import { staffSessionHintCookie, sessionHintCookieOptions } from '~/utils/sessionHint'
 import { scopeCookieName } from '~/utils/scope'
 
 export type MeDto = components['schemas']['MeDto']
@@ -23,10 +24,19 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => accessToken.value !== null && me.value !== null)
   const permissions = computed(() => new Set(me.value?.permissions ?? []))
 
+  /** Story 59 (D2): the non-secret hint the `/` redirect reads. Not exported - only sign-in, restore and clear write it. */
+  function setSessionHint(signedIn: boolean): void {
+    nuxtApp.runWithContext(() => {
+      const cookie = useCookie<boolean | null>(staffSessionHintCookie, sessionHintCookieOptions)
+      cookie.value = signedIn ? true : null
+    })
+  }
+
   function clear(): void {
     accessToken.value = null
     me.value = null
     status.value = 'anonymous'
+    setSessionHint(false)
   }
 
   function resetScope(): void {
@@ -59,6 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
       return loaded
     }
 
+    setSessionHint(true)
     resetScope()
 
     // The profile language is applied at sign-in only; the switcher changes the cookie for the session.
@@ -98,6 +109,7 @@ export const useAuthStore = defineStore('auth', () => {
           clear()
           return false
         }
+        setSessionHint(true)
         return true
       } finally {
         restoring = null

@@ -4,8 +4,8 @@
 # queues and search. Run top to bottom against a Development API (`docker compose up -d`, then
 # `dotnet run --project backend/src/Crm.Api --launch-profile http`).
 # Dev seed (Crm.Modules.Tickets.Contracts.DevSeed.TicketsDevSeed): T-000001 Ahmed (RYD-CARE, New, unassigned), T-000002 Najd
-# (RYD-CARE, Open, assigned to agent A), T-000003 Red Sea (JED-CARE, New, Urgent - invisible to agent A). On a fresh database the
-# seed takes T-000001..T-000003, so request 12 is T-000004. Request 55 creates department RYD-TKT; on a second run it answers
+# (RYD-CARE, Open, assigned to agent A), T-000003 Red Sea (JED-CARE, New, Urgent - invisible to agent A). Story 59 adds T-000004..T-000015 (every
+# status, priority and department, see demo-accounts.http). On a fresh database the seed takes T-000001..T-000015, so request 12 is T-000016. Request 55 creates department RYD-TKT; on a second run it answers
 # 409 Organisation.DepartmentCodeTaken - skip 55a.
 # Access tokens live 2 minutes in Development - re-run the logins when a request answers 401. Sign-in is limited to 30/min.
 # rowVersion is base64: always send the value the LAST response returned (the requests below chain it with `# @name`).
@@ -179,7 +179,7 @@ Accept-Language: ar
 ### Create
 ###############################################################################################################################
 
-### 12. Create a ticket for Ahmed - 200 (@t1): number T-000004 on a fresh DB, status New, one Created activity, allowedActions has
+### 12. Create a ticket for Ahmed - 200 (@t1): number T-000016 on a fresh DB, status New, one Created activity, allowedActions has
 ### Open, Resolve, Cancel, Claim, Assign, Reply, AddNote (Story 18) but not Close/Unassign. EF log: SELECT NEXT VALUE FOR [tickets].[TicketNumbers] between
 ### BEGIN TRANSACTION and INSERT INTO [tickets].[Tickets]; one INSERT INTO [tickets].[outbox_messages].
 # @name t1

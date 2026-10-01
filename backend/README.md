@@ -312,7 +312,7 @@ Story 06 adds multi-department, multi-branch data isolation, enforced once at th
   `all` (absent, empty, or `all`). It can never widen: a department the caller does not belong to is rejected
   with 403 `Organisation.ActiveScopeRejected`, logged as a Warning.
 - **Sign-in (Story 07):** staff sign in with `POST /api/Agent/Auth/login` (email + password) and send the access
-  token as `Authorization: Bearer <token>`. The Development seed creates four users, all with the password in
+  token as `Authorization: Bearer <token>`. The Development seed creates seven users and five portal accounts (Story 59 added the demo accounts for every role and scope case; worked sign-ins in [`requests/demo-accounts.http`](requests/demo-accounts.http)), all with the password in
   `Identity:DevSeed:Password` (`appsettings.Development.json`; missing → no users are seeded):
 
   | User | Email | Memberships |
@@ -321,6 +321,19 @@ Story 06 adds multi-department, multi-branch data isolation, enforced once at th
   | Supervisor (`…003-000000000002`) | `supervisor@crm.local` | Supervisor in Riyadh Customer Care, Agent in Riyadh Billing |
   | Agent A (`…003-000000000003`) | `agent.a@crm.local` | Agent in Riyadh Customer Care |
   | Agent B (`…003-000000000004`) | `agent.b@crm.local` | Agent in Jeddah Customer Care (a different branch and department) |
+  | Agent C (`…003-000000000005`) | `agent.c@crm.local` | Agent in Riyadh Billing; no tickets assigned |
+  | Supervisor B (`…003-000000000006`) | `supervisor.b@crm.local` | Supervisor in Riyadh Customer Care and Jeddah Customer Care (two branches) |
+  | Inactive agent (`…003-000000000007`) | `agent.inactive@crm.local` | Agent in Riyadh Customer Care, deactivated: sign-in is refused (401) |
+
+  Portal accounts (`POST /api/Portal/Auth/login`, ids `47000000-0000-0000-0000-…`):
+
+  | Account | Email | Customer / contact | Case |
+  |---|---|---|---|
+  | `…000000000001` | `ahmed@example.com` | Ahmed Al-Qahtani / Ahmed | Original account, primary contact |
+  | `…000000000002` | `mona@alnoor.example.com` | Al-Noor Clinics / Mona | Primary contact: account admin, sees all Al-Noor requests |
+  | `…000000000003` | `yousef@alnoor.example.com` | Al-Noor Clinics / Yousef | Non-primary: sees only his own requests |
+  | `…000000000004` | `huda@alnoor.example.com` | Al-Noor Clinics / Huda | Contact portal access is off: sign-in refused (401) |
+  | `…000000000005` | `faisal@example.com` | Faisal Al-Dosari / Faisal | No requests: the portal empty state |
 
   The access token is a short-lived HS256 JWT (claims `sub`, `name`, `tenant_id`, `sid`, one `membership` per
   membership, one `role` per distinct role); the refresh token rotates on every use and is also set as the HttpOnly

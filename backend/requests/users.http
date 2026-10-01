@@ -28,11 +28,11 @@ Content-Type: application/json
 
 @agentAToken = {{loginAgentA.response.body.accessToken}}
 
-### 1. List users as admin - 200: items (the four seeded users, ordered by display name), total, page 1, pageSize 20
+### 1. List users as admin - 200: items (the seven seeded users, ordered by display name), total, page 1, pageSize 20
 GET {{host}}/api/Admin/Users
 Authorization: Bearer {{adminToken}}
 
-### 2. Search and page - on a fresh database: 1 item, total 2 ("agent" matches agent A and agent B)
+### 2. Search and page - on a fresh database: 1 item, total 4 ("agent" matches agent A, B, C and agent.inactive)
 GET {{host}}/api/Admin/Users?search=agent&page=1&pageSize=1
 Authorization: Bearer {{adminToken}}
 

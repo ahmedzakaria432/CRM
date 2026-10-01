@@ -1,0 +1,45 @@
+{
+  "home": {
+    "landing": {
+      "title": "Welcome to {name}",
+      "intro": "Get help from our support team, or sign in to work on customer requests.",
+      "entryLabel": "Choose how to continue",
+      "staff": {
+        "title": "Staff sign-in",
+        "description": "For agents, supervisors and administrators: the ticket inbox, customers and settings.",
+        "action": "Sign in as staff"
+      },
+      "portal": {
+        "title": "Customer portal",
+        "description": "Submit a request and follow its progress.",
+        "signIn": "Sign in",
+        "register": "Create an account"
+      }
+    },
+    "agent": {
+      "greeting": "Welcome back, {name}",
+      "greetingNoName": "Welcome back",
+      "scope": "Working in {scope}",
+      "actions": {
+        "title": "Quick actions",
+        "newTicket": "New ticket",
+        "findCustomer": "Find a customer"
+      },
+      "queues": {
+        "title": "Your queues",
+        "loadError": "The ticket counts could not be loaded",
+        "retry": "Try again",
+        "empty": "There are no tickets in your scope yet."
+      },
+      "recent": {
+        "title": "My recent tickets",
+        "viewAll": "View all my tickets",
+        "empty": "No tickets are assigned to you",
+        "emptyDescription": "Pick one up from the unassigned queue.",
+        "emptyAction": "Show unassigned",
+        "loadError": "Your tickets could not be loaded",
+        "retry": "Try again"
+      }
+    }
+  }
+}

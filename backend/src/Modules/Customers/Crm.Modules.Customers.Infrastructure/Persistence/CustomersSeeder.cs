@@ -17,6 +17,7 @@ public sealed class CustomersSeeder(CustomersDbContext context, ICustomerNumberG
         var tenant = new TenantId(OrganisationDevSeed.TenantId);
         var riyadhBranch = new BranchId(OrganisationDevSeed.RiyadhBranchId);
         var riyadhCare = new DepartmentId(OrganisationDevSeed.RiyadhCareDepartmentId);
+        var riyadhBilling = new DepartmentId(OrganisationDevSeed.RiyadhBillingDepartmentId);
         var jeddahBranch = new BranchId(OrganisationDevSeed.JeddahBranchId);
         var jeddahCare = new DepartmentId(OrganisationDevSeed.JeddahCareDepartmentId);
 
@@ -71,6 +72,57 @@ public sealed class CustomersSeeder(CustomersDbContext context, ICustomerNumberG
                 isPrimary: true, hasPortalAccess: false, CustomersDevSeed.RedSeaFahadContactId);
 
             await SaveAsync(redSea, cancellationToken);
+        }
+
+        if (!await ExistsAsync(CustomersDevSeed.AlNoorClinicsCustomerId, cancellationToken))
+        {
+            Customer alNoor = Customer.Create(
+                await numbers.NextAsync(cancellationToken),
+                LocalizedText.Create("مجمع النور الطبي", "Al-Noor Clinics"),
+                CustomerType.Organisation, "Al-Noor Medical Clinics Co.", PreferredLanguage.Arabic, tenant, riyadhBranch, riyadhCare,
+                new CustomerId(CustomersDevSeed.AlNoorClinicsCustomerId));
+
+            alNoor.AddContact(
+                "Mona Al-Saleh", "Operations Manager", EmailAddress.Create(CustomersDevSeed.AlNoorMonaEmail), null,
+                isPrimary: true, hasPortalAccess: true, CustomersDevSeed.AlNoorMonaContactId);
+            alNoor.AddContact(
+                "Yousef Al-Amri", "Front desk", EmailAddress.Create(CustomersDevSeed.AlNoorYousefEmail), PhoneNumber.Create("+966503334455"),
+                isPrimary: false, hasPortalAccess: true, CustomersDevSeed.AlNoorYousefContactId);
+            alNoor.AddContact(
+                "Huda Al-Shehri", "Accounts", EmailAddress.Create(CustomersDevSeed.AlNoorHudaEmail), null,
+                isPrimary: false, hasPortalAccess: false, CustomersDevSeed.AlNoorHudaContactId);
+
+            await SaveAsync(alNoor, cancellationToken);
+        }
+
+        if (!await ExistsAsync(CustomersDevSeed.FaisalCustomerId, cancellationToken))
+        {
+            Customer faisal = Customer.Create(
+                await numbers.NextAsync(cancellationToken),
+                LocalizedText.Create("فيصل الدوسري", "Faisal Al-Dosari"),
+                CustomerType.Individual, null, PreferredLanguage.English, tenant, riyadhBranch, riyadhCare,
+                new CustomerId(CustomersDevSeed.FaisalCustomerId));
+
+            faisal.AddContact(
+                "Faisal Al-Dosari", null, EmailAddress.Create(CustomersDevSeed.FaisalEmail), PhoneNumber.Create("+966505556677"),
+                isPrimary: true, hasPortalAccess: true, CustomersDevSeed.FaisalContactId);
+
+            await SaveAsync(faisal, cancellationToken);
+        }
+
+        if (!await ExistsAsync(CustomersDevSeed.GulfRetailCustomerId, cancellationToken))
+        {
+            Customer gulfRetail = Customer.Create(
+                await numbers.NextAsync(cancellationToken),
+                LocalizedText.Create("الخليج للتجزئة", "Gulf Retail"),
+                CustomerType.Organisation, "Gulf Retail Trading Co.", PreferredLanguage.English, tenant, riyadhBranch, riyadhBilling,
+                new CustomerId(CustomersDevSeed.GulfRetailCustomerId));
+
+            gulfRetail.AddContact(
+                "Nasser Al-Qahtani", "Finance", EmailAddress.Create("nasser@gulfretail.example.com"), null,
+                isPrimary: true, hasPortalAccess: false, CustomersDevSeed.GulfRetailNasserContactId);
+
+            await SaveAsync(gulfRetail, cancellationToken);
         }
     }
 

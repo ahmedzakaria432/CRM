@@ -4,6 +4,7 @@
 # reopen) and the agent-side password provisioning. Run top to bottom against a Development API (`docker compose up -d`, then
 # `dotnet run --project backend/src/Crm.Api --launch-profile http`).
 #
+# Story 59 seeds four more portal accounts (Mona, Yousef, Huda - revoked, Faisal - no requests): see demo-accounts.http.
 # Seeded portal account: Ahmed (ahmed@example.com, Crm_Dev_2026!) - the primary contact of Ahmed Al-Qahtani (RYD-CARE, ticket
 # T-000001), so he is the account admin of his customer. Access tokens live 2 minutes in Development: re-run the login blocks
 # when a request answers 401. Portal register/login/refresh share ONE limit of 10 per minute per IP (RateLimiting:PortalSignIn);

@@ -42,7 +42,7 @@ Content-Type: application/json
 
 ###############################################################################################################################
 
-### 1. Agent A lists every ticket in scope - 200; each RYD-CARE row has customer { number: "C-00000n", nameAr, nameEn } (T-000001 Ahmed, T-000002 Najd)
+### 1. Agent A lists every ticket in scope - 200; each RYD-CARE row has customer { number: "C-00000n", nameAr, nameEn } (T-000001 Ahmed, T-000002 Najd; Story 59 adds the Al-Noor rows T-000004..T-000010)
 GET {{host}}/api/Agent/Tickets?queue=all
 Authorization: Bearer {{agentAToken}}
 

@@ -23,6 +23,11 @@
       <p v-if="alertMessage" role="alert" class="text-sm text-danger-600">{{ alertMessage }}</p>
       <UiButton type="submit" :loading="submitting" block>{{ t('identity.login.submit') }}</UiButton>
     </form>
+    <p class="mt-4 text-sm">
+      <NuxtLink to="/portal/login" class="text-primary-600 underline focus-visible:focus-ring">
+        {{ t('identity.login.customerPortal') }}
+      </NuxtLink>
+    </p>
   </div>
 </template>
 
