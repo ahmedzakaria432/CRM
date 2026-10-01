@@ -27,7 +27,17 @@
         "BranchAlreadyInactive": "غير نشط بالفعل.",
         "DepartmentAlreadyInactive": "غير نشط بالفعل.",
         "MembershipExists": "المستخدم عضو في هذا القسم بالفعل.",
-        "NoMemberships": "لست عضواً في أي قسم بعد."
+        "NoMemberships": "لست عضواً في أي قسم بعد.",
+        "BrandingContrastTooLow": "الألوان لا تحقق تباين WCAG AA.",
+        "NoPreviousBranding": "لا توجد هوية سابقة للرجوع إليها.",
+        "BrandLogoNotFound": "لم يتم العثور على الشعار. ارفعه مرة أخرى.",
+        "LogoEmpty": "ملف الشعار فارغ.",
+        "LogoTooLarge": "حجم الشعار أكبر من 512 كيلوبايت.",
+        "LogoTypeNotAllowed": "يجب أن يكون الشعار صورة PNG أو SVG.",
+        "DarkLogoWithoutLight": "أضف شعار المظهر الفاتح قبل شعار المظهر الداكن.",
+        "ArabicFontUnsupported": "اختر أحد الخطوط العربية المدرجة.",
+        "BrandColourInvalid": "أدخل لوناً مثل #1A2B3C.",
+        "OrganisationNotFound": "لم يتم العثور على المنشأة."
       },
       "Identity": {
         "InvalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",

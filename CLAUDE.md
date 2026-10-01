@@ -248,6 +248,9 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   name; `pnpm lint` fails on diverging key sets and on bare template strings outside `/_dev`.
 - Format dates, numbers, currency, and sizes only through `useFormat()` (`Intl`, Gregorian, `Asia/Riyadh`).
   Identifiers inside Arabic text go in `<bdi dir="ltr">`.
+- Branding (Story 58): `tokens.css` holds the defaults; `plugins/branding.ts` writes the organisation's
+  `--crm-primary-*`/`--crm-accent-*` overrides and Arabic font into `<style id="crm-brand">` (SSR on portal pages).
+  No literal colour in `app/components/` or `app/layouts/` (lint).
 
 ## Testing policy — automated tests are out of scope
 

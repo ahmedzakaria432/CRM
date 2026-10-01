@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(2)</script><a href="javascript:alert(3)"><rect width="10" height="10"/></a><foreignObject/><rect width="20" height="20" style="fill:red" onclick="x()"/></svg>

@@ -31,6 +31,18 @@
   --color-primary-900: var(--crm-primary-900);
   --color-primary-950: var(--crm-primary-950);
 
+  --color-accent-50: var(--crm-accent-50);
+  --color-accent-100: var(--crm-accent-100);
+  --color-accent-200: var(--crm-accent-200);
+  --color-accent-300: var(--crm-accent-300);
+  --color-accent-400: var(--crm-accent-400);
+  --color-accent-500: var(--crm-accent-500);
+  --color-accent-600: var(--crm-accent-600);
+  --color-accent-700: var(--crm-accent-700);
+  --color-accent-800: var(--crm-accent-800);
+  --color-accent-900: var(--crm-accent-900);
+  --color-accent-950: var(--crm-accent-950);
+
   --color-neutral-50: var(--crm-neutral-50);
   --color-neutral-100: var(--crm-neutral-100);
   --color-neutral-200: var(--crm-neutral-200);

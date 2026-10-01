@@ -17,13 +17,22 @@ export default defineNuxtConfig({
     '@fontsource/ibm-plex-sans-arabic/500.css',
     '@fontsource/ibm-plex-sans-arabic/600.css',
     '@fontsource/ibm-plex-sans-arabic/700.css',
+    '@fontsource/noto-kufi-arabic/400.css',
+    '@fontsource/noto-kufi-arabic/500.css',
+    '@fontsource/noto-kufi-arabic/600.css',
+    '@fontsource/noto-kufi-arabic/700.css',
+    '@fontsource/tajawal/400.css', // Tajawal has no 600 weight: the browser uses 700
+    '@fontsource/tajawal/500.css',
+    '@fontsource/tajawal/700.css',
     '~/assets/css/main.css',
   ],
   vite: { plugins: [tailwindcss()] },
   typescript: { strict: true, typeCheck: false }, // typecheck is its own command; build stays fast
   runtimeConfig: {
     apiBase: 'http://localhost:5187', // server-side (SSR) API origin; NUXT_API_BASE overrides
-    public: { apiBase: '' }, // browser: same-origin /api (dev proxy in dev, reverse proxy in production)
+    // browser: same-origin /api (dev proxy in dev, reverse proxy in production). organisationCode (Story 58, D5) is the
+    // organisation this host brands before sign-in; NUXT_PUBLIC_ORGANISATION_CODE overrides.
+    public: { apiBase: '', organisationCode: 'DEMO' },
   },
   routeRules: {
     '/agent/**': { ssr: false }, // agent workspace is an SPA (Probe 10)

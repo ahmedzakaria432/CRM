@@ -1,4 +1,5 @@
 using Crm.Modules.Organisation.Domain;
+using Crm.Modules.Organisation.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -24,6 +25,11 @@ public sealed class OrganisationConfiguration : IEntityTypeConfiguration<Domain.
             name.Property(p => p.Arabic).HasColumnName("NameAr").HasMaxLength(200).IsRequired();
             name.Property(p => p.English).HasColumnName("NameEn").HasMaxLength(200).IsRequired();
         });
+
+        // Story 58 (D1): the branding value objects as JSON; NULL = product defaults.
+        builder.Property(x => x.Branding).HasConversion(new BrandingConverter()).HasColumnName("Branding").HasMaxLength(4000);
+        builder.Property(x => x.PreviousBranding).HasConversion(new BrandingConverter()).HasColumnName("PreviousBranding").HasMaxLength(4000);
+        builder.Property(x => x.CanRevertBranding).IsRequired();
 
         builder.Property(x => x.RowVersion).IsRowVersion();
 

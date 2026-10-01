@@ -1,0 +1,291 @@
+@host = http://localhost:5187
+@org = DEMO
+
+# Story 58 - custom branding, theming and tenant configuration (Organisation module). Run against a Development API
+# (`docker compose up -d` first, then `dotnet run --project backend/src/Crm.Api --launch-profile http`).
+# Access tokens expire after 2 minutes in Development - re-run the logins when a request answers 401.
+# Password: Identity:DevSeed:Password in appsettings.Development.json.
+# The Development seed brands the DEMO organisation ("Demo Support Centre", primary #0E6655, accent #B7791F, Tajawal,
+# a light and a dark SVG logo). Requests 11-15 change it and finish by restoring it - run them top to bottom.
+
+### Login - admin (holds admin.branding) and agent A (does not)
+# @name loginAdmin
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "admin@crm.local", "password": "Crm_Dev_2026!" }
+
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+# @name loginAgentA
+POST {{host}}/api/Agent/Auth/login
+Content-Type: application/json
+
+{ "email": "agent.a@crm.local", "password": "Crm_Dev_2026!" }
+
+@agentAToken = {{loginAgentA.response.body.accessToken}}
+
+### 1. Public branding by organisation code (anonymous) - 200: displayName.en "Demo Support Centre", tokens.light["--crm-primary-600"] "#0E6655", tokens.dark present, arabicFont "Tajawal"
+GET {{host}}/api/Public/Branding?organisation={{org}}
+
+### 2. The same in Arabic - 200: a body identical to request 1 (the response is culture-neutral and cached)
+GET {{host}}/api/Public/Branding?organisation={{org}}
+Accept-Language: ar
+
+### 3a. Unknown organisation code - 404 code Organisation.OrganisationNotFound
+GET {{host}}/api/Public/Branding?organisation=NOPE
+
+### 3b. Malformed organisation code - 400 errors.Organisation (English)
+GET {{host}}/api/Public/Branding?organisation=@@
+
+### 3c. The same in Arabic - 400 errors.Organisation (Arabic text)
+GET {{host}}/api/Public/Branding?organisation=@@
+Accept-Language: ar
+
+### 4a. A published logo (anonymous) - 200 image/svg+xml; headers Cache-Control "public, max-age=31536000, immutable", X-Content-Type-Options nosniff, Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+GET {{host}}/api/Public/Branding/logos/06000000-0000-0000-0005-000000000001
+
+### 4b. Unknown logo id - 404 code Organisation.BrandLogoNotFound
+GET {{host}}/api/Public/Branding/logos/11111111-1111-1111-1111-111111111111
+
+### 5a. The signed-in staff user's own tenant branding (agent A) - 200: the same body as request 1
+GET {{host}}/api/Agent/Branding
+Authorization: Bearer {{agentAToken}}
+
+### 5b. No token - 401
+GET {{host}}/api/Agent/Branding
+
+### 6a. Admin settings as agent A - 403 naming admin.branding
+GET {{host}}/api/Admin/Branding
+Authorization: Bearer {{agentAToken}}
+
+### 6b. Admin settings as admin - 200: isCustom true, canRevert true, previous null (the first save came from the defaults); capture rowVersion
+# @name settings
+GET {{host}}/api/Admin/Branding
+Authorization: Bearer {{adminToken}}
+
+@rowVersion = {{settings.response.body.rowVersion}}
+
+### 7a. Preview #777777 - 200: PrimaryText ratio 4.48, passes false
+GET {{host}}/api/Admin/Branding/preview?primaryColour=%23777777&accentColour=%230F766E
+Authorization: Bearer {{adminToken}}
+
+### 7b. Preview #767676 - 200: PrimaryText ratio 4.54, passes true
+GET {{host}}/api/Admin/Branding/preview?primaryColour=%23767676&accentColour=%230F766E
+Authorization: Bearer {{adminToken}}
+
+### 7c. Preview with a colour name - 400 errors.PrimaryColour
+GET {{host}}/api/Admin/Branding/preview?primaryColour=blue&accentColour=%230F766E
+Authorization: Bearer {{adminToken}}
+
+### 8a. Upload a PNG - 200 contentType image/png
+# @name uploadPng
+POST {{host}}/api/Admin/Branding/logos
+Content-Type: multipart/form-data; boundary=CrmBoundary
+Authorization: Bearer {{adminToken}}
+
+--CrmBoundary
+Content-Disposition: form-data; name="file"; filename="branding-logo.png"
+Content-Type: image/png
+
+< ./data/branding-logo.png
+--CrmBoundary--
+
+### 8b. Upload the light SVG - 200 contentType image/svg+xml; capture the id
+# @name uploadLight
+POST {{host}}/api/Admin/Branding/logos
+Content-Type: multipart/form-data; boundary=CrmBoundary
+Authorization: Bearer {{adminToken}}
+
+--CrmBoundary
+Content-Disposition: form-data; name="file"; filename="branding-logo-light.svg"
+Content-Type: image/svg+xml
+
+< ./data/branding-logo-light.svg
+--CrmBoundary--
+
+@lightLogoId = {{uploadLight.response.body.id}}
+
+### 8c. Upload the dark SVG - 200; capture the id
+# @name uploadDark
+POST {{host}}/api/Admin/Branding/logos
+Content-Type: multipart/form-data; boundary=CrmBoundary
+Authorization: Bearer {{adminToken}}
+
+--CrmBoundary
+Content-Disposition: form-data; name="file"; filename="branding-logo-dark.svg"
+Content-Type: image/svg+xml
+
+< ./data/branding-logo-dark.svg
+--CrmBoundary--
+
+@darkLogoId = {{uploadDark.response.body.id}}
+
+### 8d. Upload a malicious SVG - 200 (accepted, stored sanitised)
+# @name uploadEvil
+POST {{host}}/api/Admin/Branding/logos
+Content-Type: multipart/form-data; boundary=CrmBoundary
+Authorization: Bearer {{adminToken}}
+
+--CrmBoundary
+Content-Disposition: form-data; name="file"; filename="branding-logo-evil.svg"
+Content-Type: image/svg+xml
+
+< ./data/branding-logo-evil.svg
+--CrmBoundary--
+
+### 8e. Fetch it back - 200: no script, onload, onclick, javascript:, foreignObject or style anywhere in the body
+GET {{host}}/api/Public/Branding/logos/{{uploadEvil.response.body.id}}
+
+### 8f. Text renamed .png - 422 code Organisation.LogoTypeNotAllowed (content is sniffed, never the name)
+POST {{host}}/api/Admin/Branding/logos
+Content-Type: multipart/form-data; boundary=CrmBoundary
+Authorization: Bearer {{adminToken}}
+
+--CrmBoundary
+Content-Disposition: form-data; name="file"; filename="branding-not-an-image.png"
+Content-Type: image/png
+
+< ./data/branding-not-an-image.png
+--CrmBoundary--
+
+### 8g. A 600 KiB PNG - 422 code Organisation.LogoTooLarge
+POST {{host}}/api/Admin/Branding/logos
+Content-Type: multipart/form-data; boundary=CrmBoundary
+Authorization: Bearer {{adminToken}}
+
+--CrmBoundary
+Content-Disposition: form-data; name="file"; filename="branding-too-large.png"
+Content-Type: image/png
+
+< ./data/branding-too-large.png
+--CrmBoundary--
+
+### 9a. Save primary #FFD400 (white text 1.4:1) - 422 code Organisation.BrandingContrastTooLow, English detail naming the check, ratio and 4.5
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#FFD400", "accentColour": "#0F766E", "arabicFont": "NotoKufiArabic",
+  "lightLogoId": null, "darkLogoId": null, "rowVersion": "{{rowVersion}}"
+}
+
+### 9b. The same in Arabic - 422 with an Arabic detail
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Accept-Language: ar
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#FFD400", "accentColour": "#0F766E", "arabicFont": "NotoKufiArabic",
+  "lightLogoId": null, "darkLogoId": null, "rowVersion": "{{rowVersion}}"
+}
+
+### 10. Save accent #F5F5F5 (1.1:1 against the page) - 422 code Organisation.BrandingContrastTooLow (AccentOnSurface, needs 3.0)
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#1D4ED8", "accentColour": "#F5F5F5", "arabicFont": "NotoKufiArabic",
+  "lightLogoId": null, "darkLogoId": null, "rowVersion": "{{rowVersion}}"
+}
+
+### 11a. Save a valid branding - 200: current.primaryColour #1D4ED8, previous = the seeded DEMO branding, canRevert true; capture the new rowVersion
+# @name save
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#1D4ED8", "accentColour": "#0F766E", "arabicFont": "NotoKufiArabic",
+  "lightLogoId": "{{lightLogoId}}", "darkLogoId": "{{darkLogoId}}", "rowVersion": "{{rowVersion}}"
+}
+
+@rowVersion2 = {{save.response.body.rowVersion}}
+
+### 11b. Public branding again - 200: tokens.light["--crm-primary-600"] is now "#1D4ED8" (the cache was invalidated by the save)
+GET {{host}}/api/Public/Branding?organisation={{org}}
+
+### 12a. A dark logo without a light one - 422 code Organisation.DarkLogoWithoutLight
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#1D4ED8", "accentColour": "#0F766E", "arabicFont": "NotoKufiArabic",
+  "lightLogoId": null, "darkLogoId": "{{darkLogoId}}", "rowVersion": "{{rowVersion2}}"
+}
+
+### 12b. A logo id that does not exist - 404 code Organisation.BrandLogoNotFound
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#1D4ED8", "accentColour": "#0F766E", "arabicFont": "NotoKufiArabic",
+  "lightLogoId": "22222222-2222-2222-2222-222222222222", "darkLogoId": null, "rowVersion": "{{rowVersion2}}"
+}
+
+### 12c. A font outside the list - 400 errors.ArabicFont
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#1D4ED8", "accentColour": "#0F766E", "arabicFont": "Arial",
+  "lightLogoId": null, "darkLogoId": null, "rowVersion": "{{rowVersion2}}"
+}
+
+### 13. A stale rowVersion (the one read at request 6b) - 409 code Persistence.ConcurrencyConflict
+PUT {{host}}/api/Admin/Branding
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "displayNameAr": "شركة أكمي", "displayNameEn": "Acme Support",
+  "primaryColour": "#1D4ED8", "accentColour": "#0F766E", "arabicFont": "NotoKufiArabic",
+  "lightLogoId": null, "darkLogoId": null, "rowVersion": "{{rowVersion}}"
+}
+
+### 14a. Revert - 200: current is the seeded DEMO branding again (#0E6655), previous is #1D4ED8; capture the new rowVersion
+# @name revert1
+POST {{host}}/api/Admin/Branding/revert
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{rowVersion2}}" }
+
+@rowVersion3 = {{revert1.response.body.rowVersion}}
+
+### 14b. Revert again - 200: current is #1D4ED8 again (reverting twice re-applies)
+# @name revert2
+POST {{host}}/api/Admin/Branding/revert
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{rowVersion3}}" }
+
+@rowVersion4 = {{revert2.response.body.rowVersion}}
+
+### 14c. Revert with a stale rowVersion - 409 code Persistence.ConcurrencyConflict
+POST {{host}}/api/Admin/Branding/revert
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{rowVersion}}" }
+
+### 15. Restore the demo - revert once more so the seeded DEMO branding is current again - 200: current.primaryColour #0E6655
+POST {{host}}/api/Admin/Branding/revert
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "rowVersion": "{{rowVersion4}}" }

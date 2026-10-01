@@ -8,12 +8,16 @@
     </a>
     <div class="flex min-h-dvh">
       <aside class="hidden w-64 shrink-0 border-e border-border md:block">
+        <!-- Story 58: from md up the header row is full (scope switcher, locale, theme, account), so the brand lives here. -->
+        <div class="flex min-w-0 px-7 pt-4"><ShellBrandMark /></div>
         <nav :aria-label="t('shell.nav.main')" class="flex flex-col gap-1 p-4">
           <NuxtLink
             v-for="item in agentNav"
             :key="item.to"
             :to="item.to"
-            class="rounded-md px-3 py-2 text-sm font-medium text-fg ui-focus:focus-ring ui-hover:bg-surface-raised"
+            class="rounded-md border-s-4 border-transparent px-3 py-2 text-sm font-medium text-fg ui-focus:focus-ring ui-hover:bg-surface-raised"
+            :active-class="item.to === '/agent' ? '' : 'border-accent-600! bg-surface-raised'"
+            exact-active-class="border-accent-600! bg-surface-raised"
           >
             {{ item.label }}
           </NuxtLink>
@@ -32,7 +36,7 @@
             >
               <span aria-hidden="true">☰</span>
             </button>
-            <span class="truncate text-lg font-semibold">{{ t('shell.appName') }}</span>
+            <ShellBrandMark class="md:hidden" />
           </div>
           <div class="flex items-center gap-3">
             <ShellScopeSwitcher />
@@ -71,7 +75,9 @@
           v-for="item in agentNav"
           :key="item.to"
           :to="item.to"
-          class="rounded-md px-3 py-2 text-sm font-medium text-fg ui-focus:focus-ring ui-hover:bg-surface-raised"
+          class="rounded-md border-s-4 border-transparent px-3 py-2 text-sm font-medium text-fg ui-focus:focus-ring ui-hover:bg-surface-raised"
+          :active-class="item.to === '/agent' ? '' : 'border-accent-600! bg-surface-raised'"
+          exact-active-class="border-accent-600! bg-surface-raised"
           @click="drawerOpen = false"
         >
           {{ item.label }}
@@ -89,6 +95,8 @@ import { Permissions } from '~/utils/permissions'
 
 const { t } = useI18n()
 useMyScope()
+// Story 58 (D5): the shell re-themes from the signed-in staff user's own tenant; the layout mounts once per session.
+void useBrandingStore().loadForTenant()
 const auth = useAuthStore()
 const { can } = useCan()
 
@@ -109,6 +117,7 @@ const agentNav = computed<ReadonlyArray<AgentNavItem>>(() => [
       ]
     : []),
   ...(can(Permissions.AdminUsers) ? [{ to: '/admin/users', label: t('identity.nav.users') }] : []),
+  ...(can(Permissions.AdminBranding) ? [{ to: '/admin/branding', label: t('branding.nav.branding') }] : []),
   { to: '/agent/account', label: t('identity.menu.account') },
 ])
 

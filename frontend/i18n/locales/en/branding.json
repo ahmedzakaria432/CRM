@@ -1,0 +1,68 @@
+{
+  "branding": {
+    "nav": { "branding": "Branding" },
+    "title": "Branding",
+    "intro": "Your organisation's name, logo, colours and Arabic font on the agent workspace and the customer portal.",
+    "defaultNote": "The product's default branding is in use.",
+    "fields": {
+      "displayNameEn": "Display name (English)",
+      "displayNameAr": "Display name (Arabic)",
+      "primary": "Primary colour",
+      "accent": "Accent colour",
+      "arabicFont": "Arabic font",
+      "lightLogo": "Logo (light theme)",
+      "darkLogo": "Logo (dark theme)",
+      "logoHint": "PNG or SVG, up to 512 KB.",
+      "chooseFile": "Choose file",
+      "removeLogo": "Remove",
+      "uploading": "Uploading…"
+    },
+    "fonts": {
+      "IbmPlexSansArabic": "IBM Plex Sans Arabic",
+      "NotoKufiArabic": "Noto Kufi Arabic",
+      "Tajawal": "Tajawal"
+    },
+    "preview": {
+      "title": "Preview",
+      "agent": "Agent workspace",
+      "portal": "Customer portal",
+      "light": "Light",
+      "dark": "Dark",
+      "themeLabel": "Preview theme",
+      "navTickets": "Tickets",
+      "navCustomers": "Customers",
+      "heading": "Today's queue",
+      "body": "Three tickets are waiting for a reply.",
+      "badge": "New",
+      "link": "View all tickets",
+      "action": "Reply",
+      "signInTitle": "Sign in to your support portal",
+      "email": "Email",
+      "password": "Password",
+      "signIn": "Sign in",
+      "register": "New here? Create your account"
+    },
+    "contrast": {
+      "title": "Contrast (WCAG AA)",
+      "primaryText": "Text on the primary colour",
+      "accentOnSurface": "Accent colour on the page background",
+      "ratio": "{ratio}:1 (needs {required}:1)",
+      "pass": "Passes",
+      "fail": "Too low"
+    },
+    "actions": {
+      "save": "Save branding",
+      "saved": "Branding saved. Other open tabs show it after a refresh.",
+      "revert": "Revert to previous version",
+      "revertConfirm": "Restore the previous branding? The current one becomes the previous version.",
+      "reverted": "Previous branding restored.",
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "load": {
+      "error": "The branding settings could not be loaded.",
+      "retry": "Try again"
+    },
+    "conflict": "Someone else changed the branding. Reload and try again."
+  }
+}

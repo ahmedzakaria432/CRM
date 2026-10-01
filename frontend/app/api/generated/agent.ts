@@ -180,6 +180,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/Agent/Branding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicBrandingDto"];
+                        "application/json": components["schemas"]["PublicBrandingDto"];
+                        "text/json": components["schemas"]["PublicBrandingDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/Agent/Customers": {
         parameters: {
             query?: never;
@@ -3402,6 +3472,14 @@ export interface components {
             /** Format: byte */
             rowVersion?: string | null;
         };
+        BrandTokensDto: {
+            light?: {
+                [key: string]: string;
+            } | null;
+            dark?: {
+                [key: string]: string;
+            } | null;
+        };
         ChangePasswordRequest: {
             currentPassword?: string | null;
             newPassword?: string | null;
@@ -3638,6 +3716,16 @@ export interface components {
             /** Format: uuid */
             contactId?: string;
             password?: string | null;
+        };
+        /** @description Anonymous view (S1). Tokens null = keep tokens.css. */
+        PublicBrandingDto: {
+            displayName?: components["schemas"]["LocalizedTextDto"];
+            /** Format: uuid */
+            lightLogoId?: string | null;
+            /** Format: uuid */
+            darkLogoId?: string | null;
+            arabicFont?: string | null;
+            tokens?: components["schemas"]["BrandTokensDto"];
         };
         /** @description Both fields optional: the browser sends an empty body and the cookie carries the token. */
         RefreshRequest: {

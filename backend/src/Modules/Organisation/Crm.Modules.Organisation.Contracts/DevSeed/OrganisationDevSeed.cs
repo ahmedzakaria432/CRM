@@ -5,6 +5,10 @@ public static class OrganisationDevSeed
 {
     public static readonly Guid TenantId = Guid.Parse("06000000-0000-0000-0000-000000000001");
 
+    /// <summary>Story 58: the DEMO organisation light and dark brand logos.</summary>
+    public static readonly Guid DemoLightLogoId = Guid.Parse("06000000-0000-0000-0005-000000000001");
+    public static readonly Guid DemoDarkLogoId = Guid.Parse("06000000-0000-0000-0005-000000000002");
+
     public static readonly Guid RiyadhBranchId = Guid.Parse("06000000-0000-0000-0001-000000000001");
     public static readonly Guid JeddahBranchId = Guid.Parse("06000000-0000-0000-0001-000000000002");
 

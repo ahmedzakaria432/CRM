@@ -19,4 +19,6 @@ public sealed class OrganisationDbContext(DbContextOptions<OrganisationDbContext
     public DbSet<Domain.Department> Departments => Set<Domain.Department>();
 
     public DbSet<Domain.Membership> Memberships => Set<Domain.Membership>();
+
+    public DbSet<Domain.BrandLogo> BrandLogos => Set<Domain.BrandLogo>();
 }

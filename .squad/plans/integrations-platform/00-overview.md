@@ -5,7 +5,7 @@
 Entry point for the **Integrations and Platform** feature. This is **feature 12 of 12** in the project planning order
 (see [`../00-index.md`](../00-index.md)). Stories execute in `NN` order.
 
-**Backend modules:** creates `Integrations` (55–57); 58 extends `Organisation`. See the module catalogue in `CLAUDE.md`.
+**Backend modules:** creates `Integrations` (55–57); 58 extends `Organisation` (Branding value object on `Organisation`, new `BrandLogo` aggregate, one `organisation` migration, Admin/Agent/Public `BrandingController`s; no Contracts change, no other module). See the module catalogue in `CLAUDE.md`.
 
 ## Stories
 
@@ -14,7 +14,7 @@ Entry point for the **Integrations and Platform** feature. This is **feature 12 
 | 55 | [`public-api-versioning-and-api-key-management`](../../../next-steps-stories/stories/integrations-platform/public-api-versioning-and-api-key-management/intake.md) | Public API versioning and API key management | _not planned yet_ | CRM-09, CRM-03, CRM-11, CRM-15, CRM-37 |
 | 56 | [`outbound-webhooks-and-integration-events`](../../../next-steps-stories/stories/integrations-platform/outbound-webhooks-and-integration-events/intake.md) | Outbound webhooks and integration events | _not planned yet_ | CRM-55, CRM-02, CRM-03 |
 | 57 | [`erp-and-external-system-integration`](../../../next-steps-stories/stories/integrations-platform/erp-and-external-system-integration/intake.md) | ERP and external system integration | _not planned yet_ | CRM-11, CRM-32, CRM-03, CRM-55 |
-| 58 | [`custom-branding-theming-and-tenant-configuration`](../../stories/integrations-platform/custom-branding-theming-and-tenant-configuration/intake.md) | Custom branding theming and tenant configuration | _not planned yet_ | CRM-04, CRM-05, CRM-06, CRM-40, CRM-47 |
+| 58 | [`custom-branding-theming-and-tenant-configuration`](../../stories/integrations-platform/custom-branding-theming-and-tenant-configuration/intake.md) | Custom branding theming and tenant configuration | [`58-story-custom-branding-theming-and-tenant-configuration.md`](58-story-custom-branding-theming-and-tenant-configuration.md) | CRM-04, CRM-05, CRM-06, CRM-47 (CRM-40 help centre deferred; org-level only) |
 
 ## Dependency notes
 

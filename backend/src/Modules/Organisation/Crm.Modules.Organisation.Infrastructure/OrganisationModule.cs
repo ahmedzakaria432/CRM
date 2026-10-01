@@ -1,6 +1,10 @@
 using System.Reflection;
+using System.Resources;
+using Crm.BuildingBlocks.Application.Localization;
 using Crm.BuildingBlocks.Infrastructure.Modules;
 using Crm.Modules.Organisation.Application;
+using Crm.Modules.Organisation.Application.Theming;
+using Crm.Modules.Organisation.Infrastructure.Theming;
 using Crm.Modules.Organisation.Contracts;
 using Crm.Modules.Organisation.Domain;
 using Crm.Modules.Organisation.Infrastructure.Persistence;
@@ -25,6 +29,13 @@ public sealed class OrganisationModule : IModule
         services.AddRepository<Branch, BranchId, OrganisationDbContext>();
         services.AddRepository<Department, DepartmentId, OrganisationDbContext>();
         services.AddRepository<Membership, MembershipId, OrganisationDbContext>();
+
+        services.AddRepository<BrandLogo, BrandLogoId, OrganisationDbContext>();
+        services.AddSingleton<ISvgSanitizer, SvgSanitizer>();
+
+        // Story 58: branding validation and refusal messages follow Accept-Language.
+        services.AddLocalizationResource(new ResourceManager(
+            "Crm.Modules.Organisation.Application.Localization.Resources.OrganisationMessages", ApplicationAssembly));
 
         services.AddScoped<IModuleSeeder, OrganisationSeeder>();
 

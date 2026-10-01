@@ -8,6 +8,11 @@ const physical = String.raw`(^|\s|:)-?(ml|mr|pl|pr|left|right|border-l|border-r|
 const message =
   'Physical direction utility: use the logical form (ms-/me-/ps-/pe-/start-/end-/border-s/border-e/rounded-s/rounded-e/text-start/text-end).'
 
+// Story 58: no literal colour in a class - components and layouts use the --crm-* token utilities only. neutral is not
+// listed: it is a token scale here (main.css).
+const literalColour = String.raw`(^|:)(bg|text|border(-[setbxy])?|ring(-offset)?|outline|fill|stroke|from|via|to|shadow|decoration|divide|placeholder|caret|accent)-(white|black|slate|gray|zinc|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(-|\/|$)`
+const arbitraryColour = String.raw`\[(#|rgba?\(|hsla?\(|oklch\(|oklab\(|color\()`
+
 export default withNuxt(
   { ignores: ['app/api/generated/**', 'openapi/**'] },
   {
@@ -18,7 +23,7 @@ export default withNuxt(
         'error',
         { 'ts-ignore': true, 'ts-nocheck': true, 'ts-expect-error': true },
       ],
-      'vue/no-restricted-class': ['error', `/${physical}/`],
+      'vue/no-restricted-class': ['error', `/${physical}/`, `/${literalColour}/`, `/${arbitraryColour}/`],
       'no-restricted-syntax': [
         'error',
         { selector: `Literal[value=/${physical}/]`, message },
@@ -30,7 +35,14 @@ export default withNuxt(
     // The kit uses ui-hover:/ui-focus: so /_dev/ui can force those states (Task 4, Probe 6).
     files: ['app/components/ui/**/*.vue'],
     rules: {
-      'vue/no-restricted-class': ['error', `/${physical}/`, '/(^|:)hover:/', '/(^|:)focus-visible:/'],
+      'vue/no-restricted-class': [
+        'error',
+        `/${physical}/`,
+        '/(^|:)hover:/',
+        '/(^|:)focus-visible:/',
+        `/${literalColour}/`,
+        `/${arbitraryColour}/`,
+      ],
     },
   },
   {

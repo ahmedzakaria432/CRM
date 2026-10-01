@@ -6,14 +6,14 @@
     >
       {{ t('shell.skipToContent') }}
     </a>
-    <header class="border-b border-border">
+    <header class="border-b border-t-4 border-border border-t-accent-600">
       <div
         class="mx-auto flex max-w-5xl flex-col items-start gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
       >
         <NuxtLink v-if="isPortalRoute" to="/portal" class="text-lg font-semibold text-fg focus-visible:focus-ring">
-          {{ t('shell.appName') }}
+          <ShellBrandMark />
         </NuxtLink>
-        <span v-else class="text-lg font-semibold">{{ t('shell.appName') }}</span>
+        <ShellBrandMark v-else />
         <div class="flex flex-wrap items-center gap-2">
           <nav v-if="isPortalRoute && portal.isAuthenticated" :aria-label="t('portal.nav.label')">
             <ul class="flex flex-wrap items-center gap-1">
@@ -68,15 +68,17 @@
       </NuxtErrorBoundary>
     </main>
     <footer class="border-t border-border">
-      <div class="mx-auto max-w-5xl px-4 py-4 text-sm text-fg-muted">{{ t('shell.appName') }}</div>
+      <div class="mx-auto max-w-5xl px-4 py-4 text-sm text-fg-muted">{{ brandName }}</div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const portal = usePortalAuthStore()
+const branding = useBrandingStore()
+const brandName = computed(() => branding.displayName(locale.value) ?? t('shell.appName'))
 
 // The customer portal nav shows on /portal/** for a signed-in customer; the staff /login page shares this layout.
 const isPortalRoute = computed(() => route.path === '/portal' || route.path.startsWith('/portal/'))

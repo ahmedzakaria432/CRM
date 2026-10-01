@@ -11,7 +11,7 @@ public sealed class RequirePermissionAttribute(string permission) : Attribute
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class RequireAuthenticatedUserAttribute : Attribute;
 
-/// <summary>No user needed: sign-in, refresh, sign-out, and in-process sign-in lookups (Story 06 memberships, Story 47 portal contacts in Customers). Never on a request an HTTP
+/// <summary>No user needed: sign-in, refresh, sign-out, and in-process sign-in lookups (Story 06 memberships, Story 47 portal contacts in Customers, and Story 58 published branding - GetPublicBrandingQuery and GetBrandLogoQuery - which is public by design). Never on a request an HTTP
 /// endpoint exposes for data that belongs to someone.</summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class AllowAnonymousRequestAttribute : Attribute;

@@ -232,6 +232,95 @@
         }
       }
     },
+    "/api/Agent/Branding": {
+      "get": {
+        "tags": [
+          "Branding"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrandingDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrandingDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrandingDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Agent/Customers": {
       "get": {
         "tags": [
@@ -5384,6 +5473,26 @@
         },
         "additionalProperties": false
       },
+      "BrandTokensDto": {
+        "type": "object",
+        "properties": {
+          "light": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "dark": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ChangePasswordRequest": {
         "type": "object",
         "properties": {
@@ -6103,6 +6212,33 @@
         },
         "additionalProperties": false
       },
+      "PublicBrandingDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          },
+          "lightLogoId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "darkLogoId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "arabicFont": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/BrandTokensDto"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Anonymous view (S1). Tokens null = keep tokens.css."
+      },
       "RefreshRequest": {
         "type": "object",
         "properties": {
@@ -6818,6 +6954,9 @@
   "tags": [
     {
       "name": "Auth"
+    },
+    {
+      "name": "Branding"
     },
     {
       "name": "Customers"

@@ -27,7 +27,17 @@
         "BranchAlreadyInactive": "It is already inactive.",
         "DepartmentAlreadyInactive": "It is already inactive.",
         "MembershipExists": "The user already belongs to this department.",
-        "NoMemberships": "You are not a member of any department yet."
+        "NoMemberships": "You are not a member of any department yet.",
+        "BrandingContrastTooLow": "The colours do not meet WCAG AA contrast.",
+        "NoPreviousBranding": "There is no previous branding to revert to.",
+        "BrandLogoNotFound": "The logo was not found. Upload it again.",
+        "LogoEmpty": "The logo file is empty.",
+        "LogoTooLarge": "The logo is larger than 512 KB.",
+        "LogoTypeNotAllowed": "The logo must be a PNG or SVG image.",
+        "DarkLogoWithoutLight": "Add a light-theme logo before a dark-theme one.",
+        "ArabicFontUnsupported": "Choose one of the listed Arabic fonts.",
+        "BrandColourInvalid": "Enter a colour like #1A2B3C.",
+        "OrganisationNotFound": "The organisation was not found."
       },
       "Identity": {
         "InvalidCredentials": "Email or password is incorrect.",

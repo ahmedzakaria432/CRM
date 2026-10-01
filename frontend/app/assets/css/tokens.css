@@ -1,6 +1,7 @@
 /*
- * Brand tokens. Story 58 (branding) overrides this file only — no component or layout names a raw colour,
- * every visual value in the app traces back to a `--crm-*` variable declared here.
+ * Brand tokens: the product defaults. Story 58 overrides the primary/accent scales and the Arabic font at runtime
+ * (plugins/branding.ts writes one <style id="crm-brand">) - no component or layout names a raw colour, every
+ * visual value in the app traces back to a `--crm-*` variable declared here.
  *
  * Colour scales use oklch() for perceptually even steps and predictable contrast across light/dark.
  */
@@ -19,6 +20,19 @@
   --crm-primary-800: oklch(0.35 0.12 260);
   --crm-primary-900: oklch(0.28 0.09 261);
   --crm-primary-950: oklch(0.19 0.06 262);
+
+  /* Accent (Story 58, D8): an indicator colour only - the active nav bar and the portal header strip. */
+  --crm-accent-50: #eef7f6;
+  --crm-accent-100: #d8edea;
+  --crm-accent-200: #b8ded9;
+  --crm-accent-300: #93c8c1;
+  --crm-accent-400: #6bafa7;
+  --crm-accent-500: #39938b;
+  --crm-accent-600: #0f766e;
+  --crm-accent-700: #005d56;
+  --crm-accent-800: #034741;
+  --crm-accent-900: #07322e;
+  --crm-accent-950: #031917;
 
   /* Neutral (surfaces, borders, text) */
   --crm-neutral-50: oklch(0.985 0.002 260);
@@ -79,7 +93,22 @@
 }
 
 [data-theme='dark'] {
-  /* Scales stay put; only the semantic roles and status 500/600 steps move to different points on them. */
+  /* Primary stays put; the accent scale and the semantic roles move. */
+
+  /* The default accent already sits inside the dark luminance window (>= 3:1 on the dark surface), so its dark
+     scale equals the light one; a branded accent gets its own dark scale from the server. */
+  --crm-accent-50: #eef7f6;
+  --crm-accent-100: #d8edea;
+  --crm-accent-200: #b8ded9;
+  --crm-accent-300: #93c8c1;
+  --crm-accent-400: #6bafa7;
+  --crm-accent-500: #39938b;
+  --crm-accent-600: #0f766e;
+  --crm-accent-700: #005d56;
+  --crm-accent-800: #034741;
+  --crm-accent-900: #07322e;
+  --crm-accent-950: #031917;
+
   --crm-success-500: oklch(0.68 0.15 150);
   --crm-success-600: oklch(0.58 0.15 150);
 

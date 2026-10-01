@@ -1,3 +1,4 @@
+using System.Text;
 using Crm.BuildingBlocks.Infrastructure.Modules;
 using Crm.BuildingBlocks.Infrastructure.Persistence;
 using Crm.Modules.Organisation.Contracts.DevSeed;
@@ -80,6 +81,48 @@ public sealed class OrganisationSeeder(OrganisationDbContext context) : IModuleS
         await EnsureMembershipAsync(jeddahCare, OrganisationDevSeed.AgentBUserId, SystemRole.Agent, OrganisationDevSeed.AgentBJeddahCareMembershipId, cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await EnsureDemoBrandingAsync(tenantId, cancellationToken);
+    }
+
+    private const string LightLogoSvg =
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 40\" width=\"160\" height=\"40\">" +
+        "<rect x=\"2\" y=\"6\" width=\"28\" height=\"28\" rx=\"7\" fill=\"#0E6655\"/>" +
+        "<path d=\"M10 26 L16 12 L22 26 Z\" fill=\"#FFFFFF\"/>" +
+        "<text x=\"40\" y=\"28\" font-family=\"sans-serif\" font-size=\"22\" font-weight=\"700\" fill=\"#0E6655\">DEMO</text></svg>";
+
+    private const string DarkLogoSvg =
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 160 40\" width=\"160\" height=\"40\">" +
+        "<rect x=\"2\" y=\"6\" width=\"28\" height=\"28\" rx=\"7\" fill=\"#B7791F\"/>" +
+        "<path d=\"M10 26 L16 12 L22 26 Z\" fill=\"#FFFFFF\"/>" +
+        "<text x=\"40\" y=\"28\" font-family=\"sans-serif\" font-size=\"22\" font-weight=\"700\" fill=\"#FFFFFF\">DEMO</text></svg>";
+
+    // Story 58 (D11): the MVP demo wants a branded portal. Applied only while the DEMO organisation was never
+    // branded, so an administrator's revert to the defaults is never overwritten on restart.
+    private async Task EnsureDemoBrandingAsync(TenantId tenantId, CancellationToken cancellationToken)
+    {
+        foreach ((Guid id, string svg) in new[] { (OrganisationDevSeed.DemoLightLogoId, LightLogoSvg), (OrganisationDevSeed.DemoDarkLogoId, DarkLogoSvg) })
+        {
+            var logoId = new BrandLogoId(id);
+            if (!await context.BrandLogos.AnyAsync(l => l.Id == logoId, cancellationToken))
+            {
+                context.BrandLogos.Add(BrandLogo.Create(tenantId, Encoding.UTF8.GetBytes(svg), logoId));
+            }
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        Domain.Organisation organisation = await context.Organisations.SingleAsync(o => o.Id == tenantId, cancellationToken);
+        if (organisation.Branding is null && !organisation.CanRevertBranding)
+        {
+            organisation.ChangeBranding(Branding.Create(
+                LocalizedText.Create("مركز الدعم التجريبي", "Demo Support Centre"),
+                BrandPalette.Create(BrandColour.Create("#0E6655"), BrandColour.Create("#B7791F")),
+                ArabicFont.Tajawal,
+                new BrandLogoId(OrganisationDevSeed.DemoLightLogoId),
+                new BrandLogoId(OrganisationDevSeed.DemoDarkLogoId)));
+            await context.SaveChangesAsync(cancellationToken);
+        }
     }
 
     // A removed seed membership stays soft-deleted at its well-known id (the filtered unique index would allow

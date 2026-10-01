@@ -142,6 +142,72 @@
         </DevStateRow>
       </DevSection>
 
+      <!-- ColorField (Story 58) -->
+      <DevSection anchor-id="color-field" title="ColorField">
+        <DevStateRow label="default">
+          <UiColorField v-model="colorDefault" label="Primary colour" hint="Pick a colour or type #RRGGBB." class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="hover">
+          <span class="text-xs text-fg-muted">n/a — no distinct hover state</span>
+        </DevStateRow>
+        <DevStateRow label="focus">
+          <UiColorField v-model="colorFocus" label="Primary colour" data-force="focus" class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="disabled">
+          <UiColorField v-model="colorDefault" label="Primary colour" disabled class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="loading">
+          <span class="text-xs text-fg-muted">n/a — ColorField has no loading state</span>
+        </DevStateRow>
+        <DevStateRow label="error">
+          <UiColorField v-model="colorError" label="Primary colour" error="Text on this colour has a contrast of 1.43:1." class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="long content">
+          <UiColorField v-model="colorDefault" :label="longSentence" class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="Arabic">
+          <UiColorField v-model="colorDefault" label="اللون الأساسي" hint="اختر لوناً أو اكتب #RRGGBB." class="w-64" />
+        </DevStateRow>
+      </DevSection>
+
+      <!-- FileField (Story 58) -->
+      <DevSection anchor-id="file-field" title="FileField">
+        <DevStateRow label="default">
+          <UiFileField
+            label="Logo (light theme)"
+            button-label="Choose file"
+            accept="image/png,image/svg+xml"
+            hint="PNG or SVG, up to 512 KB."
+            class="w-64"
+            @select="fileName = $event.name"
+          />
+        </DevStateRow>
+        <DevStateRow label="hover">
+          <span class="text-xs text-fg-muted">n/a — the button is a UiButton, see Button</span>
+        </DevStateRow>
+        <DevStateRow label="focus">
+          <span class="text-xs text-fg-muted">n/a — the button is a UiButton, see Button</span>
+        </DevStateRow>
+        <DevStateRow label="disabled">
+          <UiFileField label="Logo (light theme)" button-label="Choose file" disabled class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="loading">
+          <UiFileField label="Logo (light theme)" button-label="Uploading…" busy class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="error">
+          <UiFileField label="Logo (light theme)" button-label="Choose file" error="The logo is larger than 512 KB." class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="long content">
+          <UiFileField :label="longSentence" button-label="Choose file" class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="Arabic">
+          <UiFileField label="الشعار (المظهر الفاتح)" button-label="اختر ملفاً" hint="PNG أو SVG، بحد أقصى 512 كيلوبايت." class="w-64" />
+        </DevStateRow>
+        <DevStateRow label="picked">
+          <span class="text-xs text-fg-muted">Last picked file: {{ fileName || '—' }}</span>
+        </DevStateRow>
+      </DevSection>
+
       <!-- Checkbox -->
       <DevSection anchor-id="checkbox" title="Checkbox">
         <DevStateRow label="default">
@@ -571,6 +637,8 @@ const sections: ReadonlyArray<{ id: string; title: string }> = [
   { id: 'input', title: 'Input' },
   { id: 'textarea', title: 'Textarea' },
   { id: 'select', title: 'Select' },
+  { id: 'color-field', title: 'ColorField' },
+  { id: 'file-field', title: 'FileField' },
   { id: 'checkbox', title: 'Checkbox' },
   { id: 'modal', title: 'Modal' },
   { id: 'drawer', title: 'Drawer' },
@@ -599,6 +667,11 @@ const selectOptions = [
 ]
 const longSelectOptions = [{ value: 'long', label: longSentence }, ...selectOptions]
 const selectDefault = ref('medium')
+
+const colorDefault = ref('#145EC1')
+const colorFocus = ref('#0F766E')
+const colorError = ref('#FFD400')
+const fileName = ref('')
 
 const checkboxOff = ref(false)
 const checkboxOn = ref(true)
