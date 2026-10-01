@@ -118,3 +118,9 @@ the customer sees the reply and the new status on their phone.
 /squad-implement .squad/plans/<feature>/NN-story-*.md  # execute it in a fresh scoped session
 /squad-status                                          # where the backlog stands
 ```
+
+## Post-MVP restore (2026-10-01, owner decision)
+
+The deferred stories 10, 22–40, 50, and 51–54 are back in `.squad/stories/`, in the build order of
+[`MVP-STORIES.md`](MVP-STORIES.md), "Post-MVP build order". AI (41–46) and Integrations (55–57) stay in
+`next-steps-stories/`. The merged stories (08, 09, 12, 13, 16, 17, 19, 21, 48, 49) also stay there.

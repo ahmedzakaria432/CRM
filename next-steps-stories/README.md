@@ -32,6 +32,8 @@ next-steps-stories/
   | 48 | Portal ticket submission and tracking | 47 |
   | 49 | Portal request history and self service knowledge access | 47 |
 
+> **2026-10-01:** 10, 22–40, 50 and 51–54 moved back to `.squad/` (see `.squad/MVP-STORIES.md`, "Post-MVP build order"). Still here: AI 41–46, Integrations 55–57, and the merged stories.
+
 - **Deferred** — untouched by the MVP: 10 (audit log), 22–27 (channels), 28–31 (agent workspace), 32–36 (SLA and
   automation), 37–40 (knowledge base), 41–46 (AI), 50 (surveys), 51–54 (reports), 55–57 (integrations). Each
   intake starts with a "deferred post-MVP" banner.
