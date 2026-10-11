@@ -80,6 +80,10 @@ src/
       Crm.Modules.Customers.Contracts/
       Crm.Modules.Customers.Infrastructure/
       Crm.Modules.Customers.Presentation/
+tests/
+  Crm.SharedKernel.Tests/                  the shared kernel (Result, Entity, value objects, scope ids)
+  Crm.BuildingBlocks.Tests/                pipeline behaviours, scoping, persistence, outbox, error handling, middleware
+  Crm.Modules.Organisation.Tests/          one test project per module (Identity, Customers and Tickets alike)
 ```
 
 ## Add a module
@@ -117,7 +121,8 @@ of `src/Modules/Customers/`:
 
 Every module project must be named `Crm.Modules.<Module>.<Layer>` — the rules key off the name. The Presentation
 projects also set `DisableTransitiveProjectReferences`, so the module's Domain types are not even visible to a
-controller (`CS0234` if you try).
+controller (`CS0234` if you try). A `Crm.Modules.<Module>.Tests` unit-test project is a module project too: it may
+reference its own module's Domain, Application and Infrastructure, and another module only through its Contracts (rule 1).
 
 ## Migrations — one set per module
 
@@ -146,10 +151,13 @@ production data — true today, false from Story 11 onward.
 
 ## Verify
 
-There is **no test project in this repository** — see "No automated tests" below. Verification is:
+Verification is the build, the unit tests, and the `.http` files:
 
 ```bash
 dotnet build backend/Crm.sln   # must be clean, zero warnings, no CRM0001
+cd backend
+dotnet test --solution Crm.sln   # xUnit v3 on Microsoft.Testing.Platform (opted in by global.json)
+dotnet test --project tests/Crm.BuildingBlocks.Tests   # one project (see "Unit tests" below)
 ```
 
 ...plus exercising the `.http` files under `backend/requests/` against a running API (VS Code's REST Client
@@ -377,12 +385,29 @@ the command's transaction. `OutboxDispatcher` polls every `Outbox:PollingInterva
 - **Rate limiting behind a proxy:** the Public-Area limiter partitions on `RemoteIpAddress`; add
   `UseForwardedHeaders` with known proxies before deploying behind one.
 
-## No automated tests
+## Unit tests
 
-This project ships without automated tests — a deliberate decision recorded in `CLAUDE.md` ("Testing policy").
-Do not create a `tests/` folder, a `*.Tests.csproj`, or add xUnit/NUnit/FluentAssertions/Testcontainers/
-NetArchTest to any project file. The compiler (`TreatWarningsAsErrors`, nullable, the banned-API analyzer), the
-`CRM0001` module boundary rules, and the `.http` request files under `backend/requests/` take a test suite's place.
+The backend has a unit-test suite (the testing policy in `CLAUDE.md`); the frontend has none.
+
+- **Stack.** xUnit v3 (`xunit.v3` 4.0.2), NSubstitute 6.2.0 with its analyzers, plain `Assert`, and the EF Core
+  InMemory provider only for query and persistence logic. FluentAssertions is not used: 8+ is a paid licence.
+- **Layout.** `tests/Crm.SharedKernel.Tests`, `tests/Crm.BuildingBlocks.Tests` and one `tests/Crm.Modules.<Module>.Tests`
+  per module (it references that module's Domain, Application and Infrastructure; another module only through its
+  Contracts - the same CRM0001 rule 1 as any module project). Folders mirror the production project, one test class per
+  production type, PascalCase names without underscores. Shared fixtures live in each project's `Support/` folder; the
+  settings every test project shares are in `tests/Directory.Build.props`.
+- **Run.** From `backend/`: `dotnet test --solution Crm.sln` for everything, `dotnet test --project tests/<Project>`
+  for one. `global.json` opts the repository into Microsoft.Testing.Platform because xunit.v3 4.x refuses the old VSTest
+  runner on the .NET 10 SDK. A module test project that has no tests yet carries
+  `--ignore-exit-code 8` in its `.csproj` so the empty project does not fail the solution run; remove it with the first test.
+- **Rules.** The analyzers, the banned-API lists and warnings-as-errors apply to tests exactly as to production code:
+  no suppression, no `!`, no `DateTime`/`DateTimeOffset.UtcNow`/`TimeProvider` (use fixed timestamps and a substituted
+  `IDateTime`), no `System.Console`. Tests never edit `src/`.
+- **A running API.** A developer's `Crm.Api` can lock `src/Crm.Api/bin`; build and run the test project alone rather
+  than stopping the API.
+
+Alongside the tests, the compiler, the `CRM0001` module boundary rules, and the `.http` request files under
+`backend/requests/` stay the other checks.
 
 ## Notable pinned versions
 
@@ -392,6 +417,9 @@ NetArchTest to any project file. The compiler (`TreatWarningsAsErrors`, nullable
 - **EF Core 10.0.11** (`Microsoft.EntityFrameworkCore`, `.SqlServer`, `.Relational`, `.Design`) — kept in
   lockstep with the `dotnet-ef` tool below. A tool older than the packages errors rather than warns.
 - **`dotnet-ef` 10.0.11** via the local tool manifest at `.config/dotnet-tools.json` (repository root).
+- **Test stack:** `xunit.v3` 4.0.2, `NSubstitute` 6.2.0, `NSubstitute.Analyzers.CSharp` 1.0.17 and
+  `Microsoft.EntityFrameworkCore.InMemory` 10.0.11 (in lockstep with EF Core). FluentAssertions is not used (8+ is a
+  paid licence).
 - **Swashbuckle.AspNetCore 10.2.3** — this is OpenAPI.NET v2: `OpenApiInfo` lives in `Microsoft.OpenApi`, not
   `Microsoft.OpenApi.Models`. Every pre-2025 Swashbuckle sample online has the old import.
 - **Story 03 observability stack:** `Serilog.AspNetCore` 10.0.0, `Serilog.Sinks.OpenTelemetry` 4.2.0, OpenTelemetry

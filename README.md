@@ -232,12 +232,13 @@ CLAUDE.md                       binding engineering conventions
 
 ## Quality gates
 
-The project deliberately has no automated test suite. The compiler, the analyzers, the boundary rules and
-always-valid aggregates stand in for it, together with checking every story by hand against the real API and UI in
-both languages.
+The backend has a unit-test suite (xUnit v3 + NSubstitute); the frontend deliberately has none. The compiler, the
+analyzers, the boundary rules and always-valid aggregates sit alongside the backend tests, and every story is still
+checked by hand against the real API and UI in both languages.
 
 ```bash
 dotnet build backend/Crm.sln          # zero warnings (warnings are errors), no CRM0001
+dotnet test --solution backend/Crm.sln   # or: cd backend && dotnet test --solution Crm.sln
 pnpm --dir frontend typecheck
 pnpm --dir frontend lint              # includes RTL and locale key checks
 pnpm --dir frontend build

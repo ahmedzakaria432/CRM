@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- No tests yet: MTP exits 8 ("zero tests ran") and would fail the solution run. Remove this once the module story adds tests. -->
+    <TestingPlatformCommandLineArguments>--ignore-exit-code 8</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Modules\Customers\Crm.Modules.Customers.Domain\Crm.Modules.Customers.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customers\Crm.Modules.Customers.Application\Crm.Modules.Customers.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customers\Crm.Modules.Customers.Infrastructure\Crm.Modules.Customers.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

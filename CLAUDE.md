@@ -11,7 +11,10 @@ backend/
   Directory.Build.props      shared build settings + banned-API lists wired for every project
   Directory.Build.targets    module boundary rules (fails the build with CRM0001)
   build/                     BannedSymbols.*.txt
+  global.json                SDK pin + opt-in to Microsoft.Testing.Platform (xunit.v3 4.x does not run on VSTest)
   scripts/ef.ps1             dotnet ef wrapper, one module at a time (-Module <Name>)
+  tests/                     unit tests (xUnit v3 + NSubstitute): Crm.SharedKernel.Tests, Crm.BuildingBlocks.Tests,
+                             Crm.Modules.<Module>.Tests
   src/
     Crm.Api/                 host: composition root, Swagger, health checks, ModuleCatalog, Development-only
                              Diagnostics controllers   (-> modules' Infrastructure + Presentation)
@@ -252,30 +255,37 @@ frontend/                    Nuxt 4 app (Vue 3 + TypeScript + Tailwind)
   `--crm-primary-*`/`--crm-accent-*` overrides and Arabic font into `<style id="crm-brand">` (SSR on portal pages).
   No literal colour in `app/components/` or `app/layouts/` (lint).
 
-## Testing policy — automated tests are out of scope
+## Testing policy — backend unit tests are required, the frontend has none
 
-**This project ships without automated tests.** No unit test projects, no integration test projects, no Vitest
-suites. Do not create `tests/` folders, `*.Tests.csproj`, `*.spec.ts`, or `*.test.ts` files, and do not add a
-test framework (xUnit, NUnit, FluentAssertions, Testcontainers, Vitest, Playwright) to any project file. That
-includes architecture-test libraries (NetArchTest, ArchUnitNET): module boundaries are enforced by
-`Directory.Build.targets` instead.
+- **Backend.** Every new or changed backend behaviour ships with unit tests in `backend/tests/`. The stack is
+  xUnit v3 (`xunit.v3` 4.0.2) + NSubstitute 6.2.0 + plain `Assert`; EF Core InMemory only for query and persistence
+  logic that cannot be isolated. **FluentAssertions is never added** (8+ is a paid licence). Package versions live in
+  `backend/Directory.Packages.props`.
+- **Layout.** `backend/tests/Crm.SharedKernel.Tests`, `Crm.BuildingBlocks.Tests`, and one
+  `Crm.Modules.<Module>.Tests` per module (it references its own module's Domain, Application and Infrastructure;
+  another module only through its Contracts - CRM0001 rule 1). One test class per production type, folders mirror the
+  production project, PascalCase test names without underscores. Shared helpers live in the project's `Support/` folder.
+- **Rules that still bind tests.** Analyzers, the banned-API lists and `TreatWarningsAsErrors` apply to test code. No
+  suppression, no `!`, no `DateTime`/`DateTimeOffset.UtcNow`/`TimeProvider` (fixed timestamps and a substituted
+  `IDateTime`), no `System.Console`. A test project never edits `backend/src/`: a bug or an untestable seam found while
+  testing is recorded as a follow-up, not fixed in the test change.
+- **Run.** From `backend/`: `dotnet test --project tests/<Project>` for one project, `dotnet test --solution Crm.sln`
+  for all (`global.json` opts into Microsoft.Testing.Platform; xunit.v3 4.x refuses VSTest). A running `Crm.Api` can
+  lock `src/Crm.Api/bin`: build and run the test project alone.
+- **Not covered, still manual.** The frontend ships without automated tests (no Vitest, no Playwright - an owner
+  decision, so do not add `*.spec.ts`/`*.test.ts` files or a frontend test framework). Integration tests against SQL
+  Server, API end-to-end tests, architecture-test libraries (NetArchTest, ArchUnitNET) and CI coverage gates are not
+  part of the suite. Every story is still verified against the real endpoint (Swagger UI or the feature's `.http`
+  file) and the real screen in a browser, in both `en` and `ar`.
 
-This is a deliberate decision by the project owner, recorded here so no story or agent re-introduces a suite out
-of habit. Worth knowing what it costs: regressions surface in manual verification or in production rather than in
-CI, so refactors across the CQRS handlers, the aggregate invariants, and the RTL layouts carry more risk than
-they otherwise would. If that trade stops being acceptable, the cheapest recovery is a thin integration suite
-over the API endpoints — it does not require retrofitting unit tests first.
+These stay non-negotiable alongside the tests:
 
-Because there is no test net, these take its place and are non-negotiable:
-
-- **The compiler is the test.** `TreatWarningsAsErrors`, nullable reference types, and TypeScript `strict` stay
-  on. Never silence an analyzer, and never add `!`, `any`, or a ts-ignore to make something compile.
+- **The compiler is a test.** `TreatWarningsAsErrors`, nullable reference types, and TypeScript `strict` stay on.
+  Never silence an analyzer, and never add `!`, `any`, or a ts-ignore to make something compile.
 - **The build is the architecture test.** The `CRM0001` module boundary rules, the banned-API lists, and the
   Presentation project's hidden Domain reference stay on. Never bypass them.
-- **The domain model is the test.** Invariants enforced in aggregate constructors and methods are what a unit
-  test would otherwise assert. An always-valid aggregate is worth more here than it is on a tested project.
-- **Verify by running.** Every story is verified against the real endpoint (Swagger UI or the feature's `.http`
-  file) and the real screen in a browser, in both `en` and `ar`.
+- **The domain model is enforced where it lives.** Invariants belong in aggregate constructors and methods; the unit
+  tests then assert them. An always-valid aggregate is still worth more than a handler-side check.
 - **Commit request samples.** Each feature keeps `backend/requests/<feature>.http` with a worked request per
   endpoint, so the next agent can re-verify without guessing payloads.
 
@@ -303,6 +313,7 @@ Every plan names the module (or modules) its story touches, using the module cat
 ```
 # backend
 dotnet build backend/Crm.sln          # clean, zero warnings, no CRM0001
+dotnet test --solution backend/Crm.sln   # all green, zero skipped (or: cd backend && dotnet test --solution Crm.sln)
 
 # frontend
 pnpm --dir frontend typecheck         # clean
@@ -312,4 +323,4 @@ pnpm --dir frontend build             # succeeds
 
 Then verify by hand: run the API, exercise the story's endpoints from its `.http` file, and walk the story's
 screens in the browser in both `en` (LTR) and `ar` (RTL). Do not report a story done until the commands above
-pass, the manual walkthrough is done, and the intake's acceptance criteria are met.
+pass, the backend tests pass, the manual walkthrough is done, and the intake's acceptance criteria are met.

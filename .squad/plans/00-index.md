@@ -27,6 +27,7 @@ every later feature's intake references contracts the earlier ones establish.
 | 10 | Customer Portal | `customer-portal` | 47 (48, 49 merged in; 50 deferred) | **MVP** | Reuses identity (07), tickets (15–18), and the help centre (40). Its read model must be built after they settle. |
 | 11 | Reports and Analytics | `reports-analytics` | 51–54 | **Deferred** | Projects over everything operational. Building it early means rebuilding it. |
 | 12 | Integrations and Platform | `integrations-platform` | 58 only (55–57 deferred) | **MVP** (58) | Publishes a contract over the finished domain, and story 58 themes every surface the previous eleven features built. |
+| 13 | Backend Unit Tests | `backend-unit-tests` | 60–64 | Post-MVP | Retro-fits the backend with an automated unit-test suite; 60 is the foundation and building blocks, 61–64 are one story per module (Organisation, Identity, Customers, Tickets). |
 
 The full story-level map, with per-story dependencies and phases, is in [`.squad/BACKLOG.md`](../BACKLOG.md).
 

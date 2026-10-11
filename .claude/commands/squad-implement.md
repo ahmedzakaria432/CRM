@@ -15,19 +15,20 @@ Implement the story plan at `$ARGUMENTS` (a file under `.squad/plans/<feature>/N
 2. Read the story's `intake.md` (same feature/slug under `.squad/stories/`) for acceptance criteria.
 3. Restate the plan's task list as a todo list, then work it in order.
 4. Verify after each vertical slice, not once at the end.
-5. Backend done means: `dotnet build backend/Crm.sln` clean with zero warnings, an EF migration added if the
-   schema moved, and every new endpoint exercised through `backend/requests/<feature>.http`.
+5. Backend done means: `dotnet build backend/Crm.sln` clean with zero warnings, `dotnet test --solution Crm.sln`
+   (from `backend/`) green, an EF migration added if the schema moved, and every new endpoint exercised through
+   `backend/requests/<feature>.http`.
 6. Frontend done means: `pnpm typecheck`, `pnpm lint`, and `pnpm build` clean, and the screen walked in the
    browser in both `en` (LTR) and `ar` (RTL).
 
 ## Rules
 
-- **No automated tests.** This project has no test projects and no Vitest suites - see the testing policy in
-  `CLAUDE.md`. Do not create `tests/` folders, `*.Tests.csproj`, `*.spec.ts`, or `*.test.ts` files, and do not
-  add a test framework to any project file. Verification is compiler + manual walkthrough.
-- Never silence an analyzer, and never reach for `!`, `any`, or a ts-ignore to make something compile. With no
-  test net, the compiler is the only automated check there is.
-- Enforce invariants in the aggregate, not in the handler. That is where a unit test's assertions would have gone.
+- **Add or update backend unit tests for changed backend code** (xUnit v3 + NSubstitute, plain `Assert`; see the
+  testing policy in `CLAUDE.md`). `dotnet test --solution Crm.sln` from `backend/` must pass. The frontend has no
+  automated tests: do not create `*.spec.ts`/`*.test.ts` files or add Vitest/Playwright.
+- Never silence an analyzer, and never reach for `!`, `any`, or a ts-ignore to make something compile. The compiler
+  and the unit tests are the automated checks.
+- Enforce invariants in the aggregate, not in the handler. Unit tests then assert them.
 - Stay inside the plan's scope. Anything the plan did not ask for goes in a **Follow-ups** list at the end,
   not into the diff.
 - Run the plan's named risks' verification steps first, before building on them.

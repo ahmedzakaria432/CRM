@@ -2,11 +2,13 @@
   <!--
     Module boundary rules for the modular monolith (CLAUDE.md, "Backend - modular monolith").
 
-    There is no test suite and no architecture-test project on this repository, so the build is what
-    enforces the module boundaries: a forbidden ProjectReference fails `dotnet build` with CRM0001
+    Module boundaries are enforced by the build, not by an architecture-test library (NetArchTest and
+    ArchUnitNET are deliberately not used): a forbidden ProjectReference fails `dotnet build` with CRM0001
     before anything compiles. Project names are the contract - every module project is named
     Crm.Modules.<Module>.<Layer>, where <Layer> is Domain, Application, Contracts, Infrastructure or
-    Presentation.
+    Presentation. A module's unit test project (backend/tests) is Crm.Modules.<Module>.Tests: it may
+    reference its own module's projects, but - like any module project - another module only through
+    that module's .Contracts project (rule 1).
 
     Do not weaken or bypass a rule here to make a reference compile. A reference this target rejects
     is a design problem: talk to the other module through its Contracts project instead.
@@ -23,8 +25,8 @@
   <!-- rules below are about what a project declares, not what it inherits. -->
   <Target Name="CrmCheckModuleBoundaries" BeforeTargets="IncludeTransitiveProjectReferences;ResolveProjectReferences;CoreCompile">
     <Error Code="CRM0001"
-           Condition="'$(CrmIsModuleProject)' == 'true' and '$(CrmModuleLayer)' != 'Domain' and '$(CrmModuleLayer)' != 'Application' and '$(CrmModuleLayer)' != 'Contracts' and '$(CrmModuleLayer)' != 'Infrastructure' and '$(CrmModuleLayer)' != 'Presentation'"
-           Text="$(MSBuildProjectName): a module project must be named Crm.Modules.&lt;Module&gt;.&lt;Domain|Application|Contracts|Infrastructure|Presentation&gt;." />
+           Condition="'$(CrmIsModuleProject)' == 'true' and '$(CrmModuleLayer)' != 'Domain' and '$(CrmModuleLayer)' != 'Application' and '$(CrmModuleLayer)' != 'Contracts' and '$(CrmModuleLayer)' != 'Infrastructure' and '$(CrmModuleLayer)' != 'Presentation' and '$(CrmModuleLayer)' != 'Tests'"
+           Text="$(MSBuildProjectName): a module project must be named Crm.Modules.&lt;Module&gt;.&lt;Domain|Application|Contracts|Infrastructure|Presentation|Tests&gt;." />
 
     <ItemGroup>
       <_CrmReference Include="@(ProjectReference->'%(Filename)')" />
