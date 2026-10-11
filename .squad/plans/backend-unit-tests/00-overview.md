@@ -8,6 +8,7 @@ Entry point for the **backend-unit-tests** feature. Stories execute in order by 
 |----|------|-------|------------|------------|
 | 60 | [60-story-unit-tests-foundation-and-building-blocks.md](60-story-unit-tests-foundation-and-building-blocks.md) | Unit tests — foundation and building blocks | UT-01 | — |
 | 61 | [61-story-unit-tests-for-organisation-module.md](61-story-unit-tests-for-organisation-module.md) | Unit tests — Organisation module | UT-02 | 60 |
+| 62 | [62-story-unit-tests-for-identity-module.md](62-story-unit-tests-for-identity-module.md) | Unit tests — Identity module | UT-03 | 60 |
 
 ## Dependency notes
 
